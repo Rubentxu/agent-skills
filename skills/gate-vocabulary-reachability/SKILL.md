@@ -99,3 +99,10 @@ Y para cada `mapped-only` o `rule-only`, el sitio donde **debería** construirse
 - `references/04-fail-closed-defaults.md` — cómo se diseña un default que niega
 - `scripts/audit_gate_vocabulary.py` — extractor automático paravocabularios de tipo enum
 - [`worked-example.md`](worked-example.md) — tres verbos muertos de trece, y el agujero de destino que salió al revisar el release
+
+
+## Procedencia inter-agente y Ghost Context
+
+Separar intención humana verificada de política configurada y rutas realmente alcanzables en producción. Un comentario de agente no crea permisos ni vocabulario normativo. Reportar tanto permisos declarados sin constructor como cambios de política sin autoridad humana contrastable.
+
+Si `backlog-agile-workflow` está disponible, enlazar IDs de tarea/decisión y su origen. Si no, conservar la incertidumbre sin crear otra autoridad.

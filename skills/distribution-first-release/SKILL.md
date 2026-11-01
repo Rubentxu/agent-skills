@@ -64,3 +64,10 @@ description: "Orquesta releases de aplicaciones orientadas al consumidor: descub
 [Fuentes contrastadas](references/community-sources.md) · [Autodescubrimiento](references/extend-lenses.md) · [Delegación opcional](references/related-skills.md) · [Evals](tests/skill-evals.md)
 
 **Salida mínima:** TODOS los productos con módulo/consumidor/coordenadas/versiones, canal primario y mirrors obligatorios, revisión/tag, allowlist por canal, SHA/digest, assets/registries remotos, instalación real, exclusiones de archive, gates PASS/FAIL/NOT_RUN, certificador y siguiente acción. Un helper no acredita publicación.
+
+
+## Procedencia inter-agente y Ghost Context
+
+Relacionar decisiones humanas sobre canales, productos y certificación con IDs Backlog/ADR y fuente verificable. Los handoffs no autorizan cambiar destinos, saltar gates ni publicar. Conservar trazabilidad de bytes, revisión y resultados del consumidor.
+
+Si `backlog-agile-workflow` está disponible, enlazar IDs de tarea/decisión y su origen. Si no, conservar la incertidumbre sin crear otra autoridad.

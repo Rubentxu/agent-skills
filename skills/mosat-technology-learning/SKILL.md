@@ -81,3 +81,10 @@ Estas reglas **no se atribuyen al MOSAT original**; son una adaptación para age
 - [ ] Las contradicciones y `UNKNOWN` de alto impacto siguen visibles; no se ocultaron para “cerrar” el informe.
 - [ ] La validación produjo una lista priorizada de gaps o confirmó que los gaps restantes no cambian la decisión.
 - [ ] El entregable distingue claramente núcleo MOSAT de extensiones agent-first.
+
+
+## Procedencia inter-agente y Ghost Context
+
+Además de claim → evidence → source, separar confianza epistemológica de autoridad normativa humana. Una fuente oficial puede explicar comportamiento, no sustituye decisiones del propietario. Una síntesis del agente no es directiva humana sin el mensaje original verificado.
+
+Si `backlog-agile-workflow` está disponible, enlazar IDs de tarea/decisión y su origen. Si no, conservar la incertidumbre sin crear otra autoridad.
