@@ -11,6 +11,7 @@ import {
 } from "node:fs";
 import { join, resolve, relative, isAbsolute, sep, dirname } from "node:path";
 import { pathToFileURL } from "node:url";
+import { candidateDecisionLinks, resolveDecisionLinks, presentDecisionLinks } from "./decision-context.ts";
 import { emptyState, boundedPush, changedFile, readCalls, sourcePath,
   safeGromaOwner, validTaskId, presentation, recommendTrace, outputContext,
   type HookInput, type State } from "./kernel.ts";
@@ -111,6 +112,30 @@ export function queryOwner(root: string, file: string): {owner: string;parent?: 
   if (result.error || result.status !== 0 || typeof result.stdout !== "string") return null;
   return safeGromaOwner(result.stdout);
 }
+const hasBacklog = (root: string): boolean =>
+  existsSync(join(root, "backlog", "config.yml")) ||
+  existsSync(join(root, ".backlog", "config.yml")) ||
+  existsSync(join(root, "backlog.config.yml"));
+
+function backlogJson(root: string, args: string[]): unknown | null {
+  // Fixed read-only argv; never run shell, Backlog edit/create, or scan.
+  const result = spawnSync("backlog", args, {
+    cwd: root, encoding: "utf8", timeout: 1100, maxBuffer: 128 * 1024,
+    windowsHide: true, stdio: ["ignore", "pipe", "ignore"],
+  });
+  if (result.error || result.status !== 0 || typeof result.stdout !== "string") return null;
+  try { return JSON.parse(result.stdout); } catch { return null; }
+}
+function queryLinkedDecisions(root: string, file: string, owner: string | undefined,
+                              taskId: string | undefined): string | null {
+  if (!hasBacklog(root)) return null;
+  const tasks = backlogJson(root, ["task", "list", "--json"]);
+  const links = candidateDecisionLinks(tasks, file, owner, taskId);
+  if (!links) return null; // Skip the second CLI call if no exact decision link.
+  const decisions = backlogJson(root, ["decision", "list", "--json"]);
+  const resolved = resolveDecisionLinks(links, decisions);
+  return resolved ? presentDecisionLinks(resolved) : null;
+}
 export function handleEvent(event: HookInput, env: NodeJS.ProcessEnv = process.env): Record<string, unknown> | null {
   const kind = event.hook_event_name;
   if (!["SessionStart","UserPromptSubmit","PreCompact","SubagentStop","PostToolBatch","PostToolUse","PostToolUseFailure","Stop","SessionEnd"].includes(String(kind))) return null;
@@ -179,6 +204,14 @@ export function handleEvent(event: HookInput, env: NodeJS.ProcessEnv = process.e
         state.seen = boundedPush(state.seen, "owner:" + first);
         const owner = queryOwner(runtime.root, first);
         if (owner) message = presentation({ kind: "architecture", file: first, ...owner });
+        // At most two native Backlog lookups per session, on distinct files.
+        // Never consider an agent summary or Backlog's status proof of human approval.
+        const lookups = state.seen.filter(x => x.startsWith("decision-lookup:")).length;
+        if (env.BACKLOG_CONTEXT_DECISIONS !== "off" && lookups < 2) {
+          state.seen = boundedPush(state.seen, "decision-lookup:" + first);
+          const related = queryLinkedDecisions(runtime.root, first, owner?.owner, state.taskId);
+          if (related) message = [message, related].filter(Boolean).join("\n");
+        }
       }
       if (changedNow.length) {
         const advice = recommendTrace({ ...state, changed: changedNow });

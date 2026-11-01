@@ -40,10 +40,20 @@ El estado se guarda en `CLAUDE_PLUGIN_DATA/sessions` mediante escritura atómica
 - Para trabajo inesperado y dependencias, seguir las lentes `unplanned-work` y `dependency-management` de la skill; no crear nuevos tickets automáticamente.
 
 La API del núcleo de recomendaciones es puro TypeScript; la integración con eventos de Claude Code permanece en `src/hook.ts`.
-\n
+
 ## Continuidad de autoridad (opt-in)
 
 - **UserPromptSubmit:** detecta expresiones que podrían contener decisiones, sin registrar ni devolver el prompt; este evento no acredita que el autor sea humano.
 - **PreCompact:** recuerda preservar IDs de tarea/decisión, SHA y preguntas pendientes, no transcripciones.
 - **SubagentStop:** solicita validar origen, Backlog, revisión y permisos antes de reutilizar un handoff.
 - La capa de procedencia y handoff se implementa como herramientas puras en `skills/backlog-agile-workflow/scripts`; el hook no invoca Backlog ni altera sus decisiones. El plugin no crea almacenamiento duradero y los JSON externos no son autenticaciones.
+
+## Recuperación automática de decisiones vinculadas
+
+Al leer un archivo fuente, el hook consulta su propietario con `groma view <archivo>` y, cuando hay un Backlog inicializado, busca referencias explícitas mediante `backlog task list --json`. Si encuentra IDs de decisiones asociados, consulta `backlog decision list --json`. Se usan **solo** IDs y estados documentales; no se muestran títulos, cuerpos, citas, transcripciones ni contenido del código.
+
+Una tarea se considera relacionada únicamente cuando su `modifiedFiles` contiene la ruta exacta, sus `references` incluyen el ID exacto del propietario Groma, o ha sido seleccionada explícitamente mediante `BACKLOG_CONTEXT_TASK_ID`. Las referencias a decisiones se reconocen como `decision-N` o `backlog/decisions/decision-N.md`. No se adivinan relaciones usando nombres parecidos ni etiquetas de texto.
+
+El resultado **NO constituye una aprobación humana** aunque Backlog devuelva estado `accepted`. Para reclamar autoridad hay que verificar por separado la procedencia del mensaje original con la lente `decision-provenance` y los validadores de `backlog-agile-workflow` cuando exista evidencia auténtica del host. Ninguna sugerencia concede permisos ni cambia tareas o decisiones.
+
+El hook consulta un máximo de **dos archivos nuevos por sesión** para memoria; ejecuta únicamente comandos de lectura, con un presupuesto de 1,1 s y 128 KiB por comando. La segunda consulta se omite si no hay vínculos explícitos. Si falta la CLI, los resultados están paginados, hay asociaciones ambiguas o la salida es demasiado grande, mantiene solo el contexto arquitectónico. Para desactivar esta recuperación automática: `BACKLOG_CONTEXT_DECISIONS=off`.

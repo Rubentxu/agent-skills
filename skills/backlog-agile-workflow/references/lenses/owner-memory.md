@@ -10,3 +10,7 @@
 6. Los agentes pueden producir votos `useful|misleading|stale`; `owner_memory.py feedback assessment.json votes.json` devuelve propuestas de revisión. Los votos no cambian decisiones, política ni permisos.
 
 **Degradación:** sin CLI/snapshot verificado no afirmar que la memoria cubre todo el historial; sin Groma usar IDs explícitos de tarea/decisión. Sin índices el agente aún puede operar, sin suponer aprobaciones.
+
+### Adaptador Claude Code: vínculos documentales, no autoridad
+
+El plugin `backlog-context` puede consultar automáticamente tareas y decisiones **nativas** de Backlog.md al leer un archivo. Solo conecta referencias exactas de tareas con IDs de decisiones y muestra el estado documental, sin mostrar contenido. Esto **no ejecuta** `owner_memory.py` ni eleva una decisión a `VERIFIED`, porque el hook no recibe un origen humano autenticado. Para aplicar una decisión, recuperar y comprobar el mensaje original usando `decision-provenance`; si falta, mantener `UNVERIFIED`. La búsqueda automática se puede desactivar mediante `BACKLOG_CONTEXT_DECISIONS=off`.
