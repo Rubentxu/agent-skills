@@ -6,7 +6,7 @@ El paquete intermedio `spec-packet` es **efímero** y no pretende sustituir los 
 
 - `kind=spec-packet`, `milestones[]`, `tasks[]`, `snapshotScope` (`unfiltered-visible-corpus` solo cuando el agente observó la lectura íntegra).
 - Hito: `key`, `title`, `sourceRef`, `state`. `key` mantiene el ID existente, sin inventar numeración.
-- Tarea: `key`, `milestone`, `sourceRef`, `title`, `outcome`, `acceptanceCriteria[]`, `definitionOfDone[]`, `dependsOn[]` (keys del paquete, **no** IDs CLI), `documentRefs[]` (ADR/SPEC), `evidenceRefs[]`, `state`, `priorityFactors` (`impact`, `urgency`, `risk`, `effort`) y gate opcional.
+- Tarea: `authorityRefs[]` opcional (IDs de decisiones Backlog observadas, **no** aprobaciones implícitas). `authorityRefs` no cambia el estado del task ni autoriza acciones. Resto de campos: `key`, `milestone`, `sourceRef`, `title`, `outcome`, `acceptanceCriteria[]`, `definitionOfDone[]`, `dependsOn[]` (keys del paquete, **no** IDs CLI), `documentRefs[]` (ADR/SPEC), `evidenceRefs[]`, `state`, `priorityFactors` (`impact`, `urgency`, `risk`, `effort`) y gate opcional.
 - `sourceRef`: exactamente `ruta/relativa.md#ID-estable`, sin traversal. Es identidad *propuesta*, no garantía de resolución por todas las versiones de la CLI.
 - Estado documental: `planned|active|implemented|verified|closed|unknown`. No confundir con columnas configuradas del board ni con gate certificado.
 - Prioridad: el scoring `3*impact + 2*urgency + risk - effort` propone `P0..P3` para orden de revisión. Las magnitudes se **aportan** por el analista y son ordinales, no medidas ni prioridad CLI. Configuración de prioridades por CLI antes de aplicar.

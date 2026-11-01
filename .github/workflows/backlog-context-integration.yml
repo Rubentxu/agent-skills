@@ -48,6 +48,16 @@ jobs:
           printf 'export const answer = 42;\n' > src/example.ts
           backlog init "Context Smoke" --defaults --no-git
           backlog task create "Validate contextual tracking" --ac "Read-only tooling does not change task state"
+          # Native Backlog decisions are the durable source of decision metadata.
+          # The published CLI may lack --context/--decision flags even if main docs show them.
+          backlog decision create --help > decision-create-help.txt
+          backlog decision create "Context policy"
+          backlog decision list --json > decisions.json
+          node -e 'const d=require("./decisions.json");if(d.kind!=="decision-list"||d.schemaVersion!==1||d.decisions.length!==1)process.exit(1)'
+          # 1.55.3 lacks 'decision view'; never assume unreleased subcommands.
+          if backlog decision --help | grep -Eq '(^|[[:space:]])view([[:space:]]|$)'; then
+            backlog decision view decision-1 --json > decision-view.json
+          fi
           backlog task list --json > tasks-before.json
           node -e 'const a=require("./tasks-before.json");if(a.kind!=="task-list"||a.tasks.length<1)process.exit(1)'
           backlog task list --json > tasks-after.json

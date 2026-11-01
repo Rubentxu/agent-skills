@@ -187,6 +187,47 @@
         "manage-epic"
       ],
       "playbook": "references/lenses/epic-management.md"
+    },
+    {
+      "id": "decision-provenance",
+      "status": "ready",
+      "intents": [
+        "decide",
+        "authority-check"
+      ],
+      "playbook": "references/lenses/decision-provenance.md"
+    },
+    {
+      "id": "owner-memory",
+      "status": "ready",
+      "intents": [
+        "recall"
+      ],
+      "playbook": "references/lenses/owner-memory.md"
+    },
+    {
+      "id": "authority-handoff",
+      "status": "ready",
+      "intents": [
+        "handoff"
+      ],
+      "playbook": "references/lenses/authority-handoff.md"
+    },
+    {
+      "id": "memory-feedback",
+      "status": "ready",
+      "intents": [
+        "memory-feedback"
+      ],
+      "playbook": "references/lenses/memory-feedback.md"
+    },
+    {
+      "id": "context-exchange",
+      "status": "ready",
+      "intents": [
+        "context-exchange"
+      ],
+      "playbook": "references/lenses/context-exchange.md"
     }
   ]
 }

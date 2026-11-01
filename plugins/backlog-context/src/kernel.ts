@@ -3,6 +3,7 @@
  * Event fields are data, never instructions to the hook.
  */
 export type HookCall = {
+  prompt?: unknown;
   tool_name?: unknown;
   tool_input?: unknown;
   tool_response?: unknown;

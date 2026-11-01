@@ -77,3 +77,10 @@ Cuando el agente disponga de `backlog-agile-workflow`, vincular refactors a tare
 ## Observación Groma opcional para refactors
 
 Si `groma` está instalado y se observa su mapa, usar `groma view <archivo>` y `groma view --plain` para comprender ownership y relaciones, contrastándolos con código real. El primer scan no certifica arquitectura. `groma lint` describe potenciales duplicaciones, **no** recomienda automáticamente extraer funciones: comparar `KEEP_AS_IS`. El scanner Kotlin es experimental y no aporta fingerprints de duplicación como el de Rust. Delegar el seguimiento TASK/modifiedFiles/refs a `backlog-agile-workflow` cuando esté disponible; no editar Groma OKF como efecto de un refactor.
+
+
+## Procedencia inter-agente y Ghost Context
+
+Las decisiones humanas de arquitectura se toman de Backlog.md solo cuando su origen ha sido contrastado. Registrar alternativas descartadas, invariantes, alcance y razón sin incrustar transcripciones en código. Una propuesta de agente no redefine el modelo de dominio; si el código contradice la política, exponer el conflicto y explorar KEEP_AS_IS antes de refactorizar.
+
+Si `backlog-agile-workflow` está disponible, enlazar IDs de tarea/decisión y su origen. Si no, conservar la incertidumbre sin crear otra autoridad.

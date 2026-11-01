@@ -98,6 +98,54 @@
           }
         ]
       }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "--disable-warning=ExperimentalWarning",
+              "--experimental-strip-types",
+              "${CLAUDE_PLUGIN_ROOT}/src/hook.ts"
+            ],
+            "timeout": 3
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "--disable-warning=ExperimentalWarning",
+              "--experimental-strip-types",
+              "${CLAUDE_PLUGIN_ROOT}/src/hook.ts"
+            ],
+            "timeout": 3
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "--disable-warning=ExperimentalWarning",
+              "--experimental-strip-types",
+              "${CLAUDE_PLUGIN_ROOT}/src/hook.ts"
+            ],
+            "timeout": 3
+          }
+        ]
+      }
     ]
   }
 }

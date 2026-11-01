@@ -40,3 +40,10 @@ El estado se guarda en `CLAUDE_PLUGIN_DATA/sessions` mediante escritura atómica
 - Para trabajo inesperado y dependencias, seguir las lentes `unplanned-work` y `dependency-management` de la skill; no crear nuevos tickets automáticamente.
 
 La API del núcleo de recomendaciones es puro TypeScript; la integración con eventos de Claude Code permanece en `src/hook.ts`.
+\n
+## Continuidad de autoridad (opt-in)
+
+- **UserPromptSubmit:** detecta expresiones que podrían contener decisiones, sin registrar ni devolver el prompt; este evento no acredita que el autor sea humano.
+- **PreCompact:** recuerda preservar IDs de tarea/decisión, SHA y preguntas pendientes, no transcripciones.
+- **SubagentStop:** solicita validar origen, Backlog, revisión y permisos antes de reutilizar un handoff.
+- La capa de procedencia y handoff se implementa como herramientas puras en `skills/backlog-agile-workflow/scripts`; el hook no invoca Backlog ni altera sus decisiones. El plugin no crea almacenamiento duradero y los JSON externos no son autenticaciones.

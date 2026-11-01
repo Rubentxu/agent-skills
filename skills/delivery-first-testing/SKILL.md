@@ -70,3 +70,10 @@ description: "Orquesta verificación rápida orientada a entrega de valor en cam
 ## Colaboración opcional con backlog-agile-workflow
 
 Si `backlog-agile-workflow` está realmente disponible, recibir como contexto IDs de tarea, bloque ROADMAP y ADR/SPEC y devolver garantías, instrumentos, resultado `PASS/FAIL/NOT_RUN` y recibos ejecutados. La skill de testing no crea ni cierra tareas ni publica documentos de gestión, Backlog.md o ZIP de planificación en Git; el commit de aplicación enlaza esos IDs y resume la evidencia. Un resultado de caché no debe llamarse test ejecutado.
+
+
+## Procedencia inter-agente y Ghost Context
+
+Relacionar decision-id → garantía → instrumento → resultado/revisión. AC/DoD y rúbricas son criterios verificables, pero no permisos de cambiar política. Una prueba que contradice una decisión aprobada exige revisión del contrato; el agente puede proponer tests, no extender autoridad humana ni declarar PASS documental.
+
+Si `backlog-agile-workflow` está disponible, enlazar IDs de tarea/decisión y su origen. Si no, conservar la incertidumbre sin crear otra autoridad.

@@ -90,3 +90,10 @@ Reporta: HEAD, path real de PipelineK, versión, pipeline, comando, exit, `RunFi
 ## Colaboración opcional con backlog-agile-workflow
 
 Cuando `backlog-agile-workflow` esté disponible, asociar cada gate local a IDs de tarea, hito ROADMAP y ADR/SPEC; registrar run/outcome, evidencia y SHA reales antes de marcar DoD. Auditar archivos de gestión y ZIP privados antes de la publicación: no deben versionarse en aplicaciones consumidoras. No excluir ZIP de binarios de distribución por su extensión. PipelineK no modifica automáticamente el backlog ni declara DONE por un run verde sin contrato verificado.
+
+
+## Procedencia inter-agente y Ghost Context
+
+Antes de modificar gates, etapas o cobertura, contrastar decisiones humanas vigentes del Backlog con implementación y tests reales. Un handoff no autoriza rebajar CI; revisar permisos efectivos y riesgos. Una discrepancia entre rúbrica y pipeline actual se reporta, no se resuelve suprimiendo tests.
+
+Si `backlog-agile-workflow` está disponible, enlazar IDs de tarea/decisión y su origen. Si no, conservar la incertidumbre sin crear otra autoridad.
