@@ -10,7 +10,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 INTENTS = frozenset({"discover", "capture", "triage", "refine", "plan", "execute",
-                     "verify", "close", "review", "maintain", "specify", "decompose", "sync-specs", "git-hygiene", "trace", "architecture", "curate-architecture", "map-task", "create-task", "move-task", "archive-task", "restore-task", "delete-task", "align-work", "unplanned-work", "manage-dependencies", "manage-epic", "catalog"})
+                     "verify", "close", "review", "maintain", "specify", "decompose", "sync-specs", "git-hygiene", "trace", "architecture", "curate-architecture", "map-task", "create-task", "move-task", "archive-task", "restore-task", "delete-task", "align-work", "unplanned-work", "manage-dependencies", "manage-epic", "catalog", "decide", "authority-check", "recall", "handoff", "memory-feedback", "context-exchange"})
 BASIS = frozenset({"observed", "unknown", "stale"})
 CLI = frozenset({"available", "missing", "unknown"})
 PROJECT = frozenset({"initialized", "absent", "unknown"})
@@ -21,7 +21,7 @@ CONFIG = ("autoCommit", "remoteOperations", "bypassGitHooks", "onStatusChange")
 TASK_ID = re.compile(r"[A-Za-z][A-Za-z0-9_.-]{0,63}")
 NEEDS_TASK = frozenset({"plan", "execute", "verify", "close", "map-task", "move-task", "archive-task", "restore-task", "delete-task", "manage-dependencies"})
 BOARD_INTENTS = frozenset({"create-task", "move-task", "archive-task", "restore-task", "delete-task"})
-WRITE_INTENTS = frozenset({"capture", "refine", "plan", "execute", "verify", "close", "review", "maintain", "map-task", "align-work", "unplanned-work", "manage-dependencies", "manage-epic"})
+WRITE_INTENTS = frozenset({"capture", "refine", "plan", "execute", "verify", "close", "review", "maintain", "map-task", "align-work", "unplanned-work", "manage-dependencies", "manage-epic", "decide"})
 
 
 def _registry(file: str, key: str) -> list[dict[str, Any]]:
@@ -129,7 +129,7 @@ def affordances(state: dict[str, Any]) -> dict[str, Any]:
         if groma == "missing":
             result["warnings"].append("Groma opcional y ausente; Backlog.md puede seguir funcionando sin mapa")
         return result
-    offline_spec = intent in {"specify", "decompose", "git-hygiene", "trace", "architecture", "curate-architecture"}
+    offline_spec = intent in {"specify", "decompose", "git-hygiene", "trace", "architecture", "curate-architecture", "authority-check", "handoff", "memory-feedback", "context-exchange"}
     if cli != "available" and not offline_spec:
         result["decision"] = "DISCOVER"
         result["_links"].append(_notice("inspect-cli", "Verificar backlog --version y backlog --help, sin instalar automáticamente"))
@@ -155,7 +155,7 @@ def affordances(state: dict[str, Any]) -> dict[str, Any]:
                                   and intent not in {"architecture", "curate-architecture"} else [])
     if intent in GROMA_INTENTS:
         result["suggested_reads"].extend([["groma", "plugin", "list"], ["groma", "agent-instructions"]])
-        if intent == "map-task":
+        if intent == "decide":\n        result["_links"].append(_notice("propose-backlog-decision", "Usar decision create/edit/superseded-by solo con origen y aprobación humanos, nunca desde un resumen"))\n    if intent == "map-task":
             result["suggested_reads"].append(["groma", "agent-instructions", "backlog"])
         else:
             result["suggested_reads"].append(["groma", "view", "--plain"])
@@ -165,8 +165,10 @@ def affordances(state: dict[str, Any]) -> dict[str, Any]:
         result["_links"].append(_notice("inspect-specifications", "Inspeccionar ROADMAP, ADR, SPEC, gates y estado de la fuente canónica"))
     if intent == "git-hygiene":
         result["_links"].append(_notice("audit-git-index", "Comprobar índice con git_artifact_guard.py (solo lectura)"))
-    if intent == "trace":
+    if intent in {"decide", "authority-check"}:\n        result["_links"].append(_notice("validate-provenance", "Usar decision list/view, original humano y autoridad_context.py; estado accepted no prueba aprobación"))\n    if intent == "handoff":\n        result["_links"].append(_notice("inspect-handoff", "Validar pins, revisión y permisos del host antes de reutilizar contexto"))\n    if intent == "trace":
         result["_links"].append(_notice("inspect-commit-trailers", "Buscar IDs de tarea, bloque y ADR/SPEC en commits observados"))
+    if intent in {"decide", "authority-check", "recall", "handoff", "memory-feedback"} and cli == "available" and project == "initialized":
+        result["suggested_reads"].append(["backlog", "decision", "list", "--json"])
     if intent in {"capture", "triage", "review", "maintain", "sync-specs", "create-task", "align-work", "unplanned-work", "manage-epic"}:
         result["suggested_reads"].append(["backlog", "task", "list", "--json"])
     elif intent in NEEDS_TASK or intent == "refine":

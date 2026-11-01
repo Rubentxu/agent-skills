@@ -125,3 +125,9 @@ Los estados terminales, nombres de columnas, opciones de Git y callbacks deben o
 ## Plugin contextual Claude Code opcional
 
 `plugins/backlog-context` (véase el [README del plugin](https://github.com/Rubentxu/agent-skills/tree/main/plugins/backlog-context)) recuerda sincronizar tareas después de ediciones y aprovecha `groma view` para dar contexto arquitectónico al leer código, sin escanear, sin editar tareas y sin nuevos servidores. Para otros agentes las lentes de alineamiento, trabajo imprevisto, dependencias y jerarquías permanecen disponibles sin hooks.
+\n
+## Ghost Context: decisiones y traspasos
+
+Las decisiones aprobadas son objetos **nativos de Backlog.md** (`backlog decision list/view/create/edit`, `--superseded-by`), no una segunda base de datos. Las referencias privadas a mensajes humanos incluyen origen, ID, fecha y digest, y solo se interpretan como autoridad tras contraste con el mensaje original. Las proyecciones ejecutables `scripts/authority_context.py`, `owner_memory.py`, `context_handoff.py` y `context_exchange.py` trabajan sobre JSON/snapshots obtenidos previamente y no invocan CLIs ni escriben el proyecto. Véanse [ADR-003](ADR-003.md), [ADR-004](ADR-004.md), [ADR-005](ADR-005.md) y las lentes de [procedencia](references/lenses/decision-provenance.md), [memoria](references/lenses/owner-memory.md) y [handoff](references/lenses/authority-handoff.md).
+
+Los JSON son afirmaciones no autenticadas por sí solos: el host debe verificar identidad del mensaje y controlar permisos efectivos. Las pruebas unitarias no equivalen a un ensayo multiagente en vivo.

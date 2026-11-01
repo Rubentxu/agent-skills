@@ -83,7 +83,7 @@ def _packet(packet: dict) -> tuple[list[dict], list[dict]]:
             raise ValueError("Acceptance criteria required")
         _strings(task.get("definitionOfDone"), "definitionOfDone")
         _strings(task.get("dependsOn"), "dependsOn")
-        _strings(task.get("documentRefs"), "documentRefs")
+        _strings(task.get("documentRefs"), "documentRefs")\n        for authority in _strings(task.get("authorityRefs", []), "authorityRefs"):\n            _key(authority)
         for r in task["documentRefs"]:
             _ref(r)
         if task.get("milestone") not in mkeys:
@@ -240,7 +240,7 @@ def project(packet: dict, snapshot: dict | None, commit_evidence: dict | None = 
                   "priorityProposal": pri, "dependsOnKeys": task["dependsOn"],
                   "pendingDependencyKeys": pending_deps, "acceptanceCriteria": task["acceptanceCriteria"],
                   "definitionOfDone": task["definitionOfDone"], "outcome": task["outcome"],
-                  "documentRefs": task["documentRefs"], "evidenceRefs": task["evidenceRefs"],
+                  "documentRefs": task["documentRefs"], "evidenceRefs": task["evidenceRefs"],\n                  "authorityRefs": task.get("authorityRefs", []),
                   "stateDeclared": task["state"], "gate": task.get("gate"),
                   "next": "Inspect full task view and current source before edit" if match else "Review proposed CLI create parameters, then resolve milestones/dependencies"}
         if same_title and not match:

@@ -71,3 +71,21 @@
 - Estado acotado en `CLAUDE_PLUGIN_DATA`, aislado por sesión/proyecto/subagente, deduplicado y sin guardar fuentes/prompts.
 - Lentes `work-alignment`, `unplanned-work`, `dependency-management` y `epic-management`; el agente autorizado aplica CLI real y gates.
 - Pruebas unitarias sintéticas en Node 22 y pruebas de navegación existentes. Pendiente smoke manual contra Claude Code/Backlog/Groma instalados en un workspace temporal.
+\n
+## S9 — Trail of Authority y decisión nativa (entregado en rama de propuesta)
+
+- Función pura `authority_context.py`: pins verificables por consistencia, contraste del mensaje humano, estado de Backlog y expiry/supersession. Sin permisos de ejecución.
+- Lentes para decisiones Backlog, memoria del propietario y sustitución humana. Sin base de datos de decisiones paralela.
+
+## S10 — Handoff y hooks contextuales (entregado en rama de propuesta)
+
+- `context_handoff.py` prepara y recibe handoffs mínimos por tarea/SHA con comprobaciones fail-closed.
+- `backlog-context` observa candidatos en UserPromptSubmit y recomienda contexto al compactar y entregar subagentes, sin almacenar prompts.
+- `owner_memory.py` recupera hasta cinco referencias, integra votos consultivos sin mutar Backlog.
+- `context_exchange.py` permite paquete offline solo de referencias, sin autenticidad criptográfica ni transporte entre equipos.
+
+## S11 — Validación y evolución posterior
+
+- Tests sintéticos adversariales en Python y Node forman parte de la CI existente.
+- **Pendiente de observación externa:** smoke con agentes y CLI reales por versión, obtención autenticada de message IDs del anfitrión, latencias de recuperación y medición de investigaciones repetidas. Si el host no ofrece identidad verificable, conservar `UNVERIFIED`.
+- Sin sincronización automática multi-máquina, sin transferencia de transcripciones, sin incremento de suites E2E permanentes.
