@@ -48,6 +48,15 @@ jobs:
           printf 'export const answer = 42;\n' > src/example.ts
           backlog init "Context Smoke" --defaults --no-git
           backlog task create "Validate contextual tracking" --ac "Read-only tooling does not change task state"
+          # Native Backlog decisions are the durable source of decision metadata.
+          backlog decision create "Context policy" -s proposed \
+            --context "Synthetic, not an owner approval" \
+            --decision "Keep CI gates in one place" \
+            --consequences "Avoid divergent gates" \
+            --alternatives "Duplicate CI"
+          backlog decision list --json > decisions.json
+          node -e 'const d=require("./decisions.json");if(d.kind!=="decision-list"||d.schemaVersion!==1||d.decisions.length!==1)process.exit(1)'
+          backlog decision view decision-1 --json > decision-view.json
           backlog task list --json > tasks-before.json
           node -e 'const a=require("./tasks-before.json");if(a.kind!=="task-list"||a.tasks.length<1)process.exit(1)'
           backlog task list --json > tasks-after.json

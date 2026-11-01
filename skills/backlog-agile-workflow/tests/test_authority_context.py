@@ -72,6 +72,11 @@ class AuthorityTests(unittest.TestCase):
         a["records"][0]["supersededBy"] = "decision-15"
         self.assertEqual(self.verdict(a, m, d), "STALE")
 
+    def test_inconsistent_source_timestamp_is_conflicted(self):
+        a, m, d = sample()
+        m["messages"][0]["timestamp"] = "2026-10-30T12:00:00Z"
+        self.assertEqual(self.verdict(a, m, d), "CONFLICTED")
+
     def test_expired_decision_is_stale(self):
         a, m, d = sample()
         a["records"][0]["expiresAt"] = "2020-01-01T00:00:00Z"
