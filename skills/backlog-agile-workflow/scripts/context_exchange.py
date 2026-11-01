@@ -39,7 +39,7 @@ def inspect(bundle: dict) -> dict:
         require(isinstance(row, dict) and set(row) == {"id", "sourcePin", "scope"},
                 "unsafe exported decision")
         require(isinstance(row["sourcePin"], dict)
-                and set(row["sourcePin"]) == {"provider", "sessionId", "messageId", "digest"},
+                and set(row["sourcePin"]) == {"provider", "sessionId", "messageId", "digest", "timestamp"},
                 "unsafe source pin")
     body = {key: val for key, val in bundle.items() if key != "contentDigest"}
     require(sha256(canonical(body)) == bundle["contentDigest"], "bundle digest mismatch")

@@ -99,6 +99,8 @@ def validate(claims: dict, messages: dict, decisions: dict, *,
         key = identity(src)
         digest = src.get("digest")
         require(isinstance(digest, str) and DIGEST.fullmatch(digest), "invalid source digest")
+        source_date = src.get("timestamp")
+        timestamp(source_date)
         quote = record.get("exactQuote")
         require(isinstance(quote, str) and 0 < len(quote) <= 4096,
                 "missing exact human quote")
@@ -121,7 +123,7 @@ def validate(claims: dict, messages: dict, decisions: dict, *,
         else:
             msg = matches[0]
             body = msg.get("text")
-            if (not isinstance(body, str) or sha256(body) != digest
+            if (not isinstance(body, str) or sha256(body) != digest\n                    or msg.get("timestamp") != source_date
                     or quote not in body or msg.get("authorKind") != "human"):
                 verdict, reasons = "CONFLICTED", ["SOURCE_MISMATCH_OR_NOT_HUMAN"]
             elif state == "approved" and msg.get("explicitApproval") is not True:
@@ -134,7 +136,7 @@ def validate(claims: dict, messages: dict, decisions: dict, *,
             reasons.append("EXPIRED")
         result.append({"id": rid, "backlogDecisionId": did, "scope": scope,
                        "sourcePin": {"provider": key[0], "sessionId": key[1],
-                                     "messageId": key[2], "digest": digest},
+                                     "messageId": key[2], "digest": digest,\n                                     "timestamp": source_date},
                        "verdict": verdict, "reasons": reasons,
                        "canAuthorizeExecution": False})
     return {"schemaVersion": 1, "kind": "authority-assessment",

@@ -174,3 +174,26 @@ test("malformed contexts and unknown events fail open",()=>{
   assert.equal(handleEvent({hook_event_name:"PostToolBatch",cwd:"/tmp",session_id:"session-1"},f.env),null);
   assert.equal(handleEvent({hook_event_name:"PostToolBatch",cwd:f.root,session_id:"../../bad"},f.env),null);
 });
+\n
+test("candidate owner decision is never saved or certified by UserPromptSubmit", () => {
+  const f = fixture();
+  const reply = handleEvent({...f.event("UserPromptSubmit"),
+    prompt:"Apruebo cambiar los gates para esta tarea"}, f.env);
+  assert.match(reply.hookSpecificOutput.additionalContext,/NO verificada/);
+  assert.doesNotMatch(reply.hookSpecificOutput.additionalContext,/cambiar los gates/);
+  assert.equal(handleEvent({...f.event("UserPromptSubmit"),
+    prompt:"Revisa el README"},f.env),null);
+});
+test("compaction offers bounded context without storing transcripts", () => {
+  const f = fixture();
+  const first = handleEvent(f.event("PreCompact"),f.env);
+  assert.match(first.hookSpecificOutput.additionalContext,/Backlog/);
+  assert.equal(handleEvent(f.event("PreCompact"),f.env),null);
+});
+test("subagent handoff does not inherit agent permissions", () => {
+  const f = fixture();
+  const e = {...f.event("SubagentStop"),agent_id:"reviewer"};
+  const reply = handleEvent(e,f.env);
+  assert.match(reply.hookSpecificOutput.additionalContext,/nunca heredes permisos/);
+  assert.equal(handleEvent(e,f.env),null);
+});
