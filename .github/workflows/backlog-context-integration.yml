@@ -49,11 +49,9 @@ jobs:
           backlog init "Context Smoke" --defaults --no-git
           backlog task create "Validate contextual tracking" --ac "Read-only tooling does not change task state"
           # Native Backlog decisions are the durable source of decision metadata.
-          backlog decision create "Context policy" -s proposed \
-            --context "Synthetic, not an owner approval" \
-            --decision "Keep CI gates in one place" \
-            --consequences "Avoid divergent gates" \
-            --alternatives "Duplicate CI"
+          # The published CLI may lack --context/--decision flags even if main docs show them.
+          backlog decision create --help > decision-create-help.txt
+          backlog decision create "Context policy"
           backlog decision list --json > decisions.json
           node -e 'const d=require("./decisions.json");if(d.kind!=="decision-list"||d.schemaVersion!==1||d.decisions.length!==1)process.exit(1)'
           backlog decision view decision-1 --json > decision-view.json
