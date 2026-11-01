@@ -26,6 +26,8 @@ Tipos:
 - `affected`, `merge_checks`, `integration_checks`, `release_checks`: `not_run|passed|failed|blocked`.
 - `uat`: `pending|passed|failed|not_needed`; `regression`: `pending|decided`.
 - `artifact`: `unknown|ready|missing` para release; `evidence_commit`: SHA o identificador si existe, opcional.
+- `scope`: `unknown|docs|bounded|global`, radio observado del diff ([impacto](lenses/change-impact.md)). `docs` exige `changed == ["docs"]`; si no, el estado es inválido (fallo cerrado). Omitido = `unknown`, nunca `docs`.
+- `selector`: `none|verified|unverified`. `unverified` = el proyecto recorta pruebas con un selector sin contrato de dirección, fallo cerrado y cobertura frente a oráculo.
 - `uat_reason` requerido para `not_needed`; `regression_reason` requerido para `decided`. Los campos omitidos no equivalen a PASS.
 
 ## Señales complementarias de diseño
@@ -40,7 +42,7 @@ La recomendación de **lentes** filtra ahora por señales reales. Una lente sin 
 4. **impact unknown** (feature/merge): `resolve-impact`, sin asumir que no existe impacto.
 5. **fallo observado**: `classify-failure` antes de repetir/verdes.
 6. **feature**: `run-affected` si falta; `explore-uat` si procede; `decide-regression`; `finish-feature`. Para ausencia de UAT, exigir motivo; no omitir UAT que cubre riesgo crítico.
-7. **merge**: `run-merge` y `finish-merge` únicamente tras PASS observado.
+7. **merge**: con `scope=docs`, `run-docs-checks` (contratos y tests que leen documentos; nada compilado); si no, `run-merge`. `finish-merge` únicamente tras PASS observado. Con `selector=unverified` y alcance no global, `verify-selector` antes de la ejecución reducida (feature o merge); no reabre un resultado ya observado.
 8. **integration**: `run-integration` y `finish-integration` únicamente tras PASS observado.
 9. **release**: `inspect-artifact` hasta identidad lista; `run-release` y `finish-release` tras PASS observado sobre el artefacto real.
 10. **audit**: `audit-portfolio` a partir de inventario; entregar recomendaciones sin borrar nada.

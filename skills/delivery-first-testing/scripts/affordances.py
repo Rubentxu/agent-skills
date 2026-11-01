@@ -25,6 +25,8 @@ CHECKS = {'not_run', 'passed', 'failed', 'blocked'}
 UAT = {'pending', 'passed', 'failed', 'not_needed'}
 REGRESSION = {'pending', 'decided'}
 ARTIFACT = {'unknown', 'ready', 'missing'}
+SCOPE = {'unknown', 'docs', 'bounded', 'global'}
+SELECTOR = {'none', 'verified', 'unverified'}
 STATUSES = {'ready', 'planned'}
 
 ACTIONS = {
@@ -38,6 +40,8 @@ ACTIONS = {
     'decide-regression': 'references/lenses/regression-promotion.md',
     'finish-feature': 'references/evidence.md',
     'run-merge': 'references/lenses/merge-assurance.md',
+    'run-docs-checks': 'references/lenses/change-impact.md',
+    'verify-selector': 'references/lenses/change-impact.md',
     'finish-merge': 'references/evidence.md',
     'run-integration': 'references/lenses/integration-assurance.md',
     'finish-integration': 'references/evidence.md',
@@ -111,11 +115,16 @@ def parse_state(state: dict) -> dict:
         'uat': enum_value(state, 'uat', UAT, 'pending'),
         'regression': enum_value(state, 'regression', REGRESSION, 'pending'),
         'artifact': enum_value(state, 'artifact', ARTIFACT, 'unknown'),
+        'scope': enum_value(state, 'scope', SCOPE, 'unknown'),
+        'selector': enum_value(state, 'selector', SELECTOR, 'none'),
     }
     changed = state.get('changed', [])
     if not isinstance(changed, list) or any(not isinstance(x, str) or x not in CHANGES for x in changed):
         raise InvalidState('changed must be an array of supported signals')
     parsed['changed'] = list(dict.fromkeys(changed))
+    if parsed['scope'] == 'docs' and set(parsed['changed']) != {'docs'}:
+        # Fail closed: a docs-only verdict cannot cover an observed code/CI change.
+        raise InvalidState('scope docs requires changed == ["docs"]')
     available = state.get('available_skills', [])
     if not isinstance(available, list) or any(not isinstance(v,str) or not SLUG.fullmatch(v) for v in available):
         raise InvalidState('available_skills must be a list of skill identifiers')
@@ -220,6 +229,13 @@ def affordances(state: dict, catalog: dict[str, dict] | None = None) -> dict:
         return result('refresh-basis', 'NEEDS_EVIDENCE', 'Evidence must match current revision/context')
     if s['intent'] in ('feature', 'merge') and s['impact'] == 'unknown':
         return result('resolve-impact', 'NEEDS_EVIDENCE', 'Determine affected contracts and consumers')
+    reduced_run_pending = (
+        (s['intent'] == 'feature' and s['affected'] == 'not_run')
+        or (s['intent'] == 'merge' and s['merge_checks'] == 'not_run')
+    )
+    if s['selector'] == 'unverified' and s['scope'] != 'global' and reduced_run_pending:
+        return result('verify-selector', 'NEEDS_EVIDENCE',
+                      'A selector that narrows tests must show direction, fail-closed and oracle recall before its green counts')
 
     if s['intent'] == 'feature':
         if s['affected'] == 'failed' or s['uat'] == 'failed':
@@ -240,6 +256,9 @@ def affordances(state: dict, catalog: dict[str, dict] | None = None) -> dict:
             return result('classify-failure', 'FAILED', 'Merge checks failed')
         if s['merge_checks'] == 'blocked':
             return result('classify-failure', 'BLOCKED', 'Merge evidence missing')
+        if s['merge_checks'] != 'passed' and s['scope'] == 'docs':
+            return result('run-docs-checks', 'NEEDS_EVIDENCE',
+                          'Docs-only: run contracts and tests that read repository documents; nothing is compiled')
         if s['merge_checks'] != 'passed':
             return result('run-merge', 'NEEDS_EVIDENCE', 'Run quick risk-based integration gate')
         return result('finish-merge', 'DONE', 'Observed merge checks passed on current basis')

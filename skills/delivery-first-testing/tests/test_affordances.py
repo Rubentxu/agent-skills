@@ -112,11 +112,41 @@ class StageTests(unittest.TestCase):
     def test_no_fake_authority(self): self.assertIn('no suite executed',router.affordances(s())['notice'])
 
 
+class ProportionalGateTests(unittest.TestCase):
+    def test_docs_only_merge_runs_docs_checks_not_full_merge(self):
+        v=router.affordances(s(intent='merge',changed=['docs'],scope='docs',merge_checks='not_run'))
+        self.assertEqual((v['recommended'],v['status']),('run-docs-checks','NEEDS_EVIDENCE'))
+    def test_docs_scope_cannot_cover_code(self):
+        with self.assertRaises(router.InvalidState):
+            router.affordances(s(intent='merge',changed=['docs','domain'],scope='docs'))
+    def test_docs_merge_still_needs_observed_pass(self):
+        self.assertEqual(next_action(intent='merge',changed=['docs'],scope='docs',merge_checks='passed'),'finish-merge')
+        self.assertEqual(next_action(intent='merge',changed=['docs'],scope='docs',merge_checks='failed'),'classify-failure')
+    def test_bounded_merge_keeps_selective_merge(self):
+        self.assertEqual(next_action(intent='merge',scope='bounded',merge_checks='not_run'),'run-merge')
+    def test_unverified_selector_is_verified_before_a_reduced_run(self):
+        self.assertEqual(next_action(intent='merge',scope='bounded',selector='unverified',merge_checks='not_run'),'verify-selector')
+        self.assertEqual(next_action(affected='not_run',selector='unverified'),'verify-selector')
+    def test_verified_selector_proceeds(self):
+        self.assertEqual(next_action(intent='merge',scope='bounded',selector='verified',merge_checks='not_run'),'run-merge')
+    def test_global_scope_does_not_need_selector_fitness(self):
+        self.assertEqual(next_action(intent='merge',scope='global',selector='unverified',merge_checks='not_run'),'run-merge')
+    def test_selector_does_not_reopen_an_observed_result(self):
+        self.assertEqual(next_action(intent='merge',scope='bounded',selector='unverified',merge_checks='passed'),'finish-merge')
+    def test_invalid_scope_and_selector_fail_closed(self):
+        with self.assertRaises(router.InvalidState): router.affordances(s(scope='tiny'))
+        with self.assertRaises(router.InvalidState): router.affordances(s(selector='trust-me'))
+
+
 class CLITests(unittest.TestCase):
     def test_success_json(self):
         run=subprocess.run([sys.executable,str(SCRIPT),str(ROOT/'examples'/'session-feature.json')],capture_output=True,text=True,check=False)
         self.assertEqual(run.returncode,0,run.stderr)
         self.assertEqual(json.loads(run.stdout)['recommended'],'decide-regression')
+    def test_docs_example(self):
+        run=subprocess.run([sys.executable,str(SCRIPT),str(ROOT/'examples'/'session-merge-docs.json')],capture_output=True,text=True,check=False)
+        self.assertEqual(run.returncode,0,run.stderr)
+        self.assertEqual(json.loads(run.stdout)['recommended'],'run-docs-checks')
     def test_invalid_input_exit_2(self):
         run=subprocess.run([sys.executable,str(SCRIPT),'-'],input='{bad',capture_output=True,text=True,check=False)
         self.assertEqual(run.returncode,2)
