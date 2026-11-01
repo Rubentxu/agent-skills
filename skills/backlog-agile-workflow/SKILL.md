@@ -19,7 +19,7 @@ description: "Gestiona trabajo ágil local-first con Backlog.md CLI: captura y r
 
 ## Autoridad humana y continuidad de contexto (Ghost Context)
 
-- **Decisiones nativas:** preferir `backlog decision list/view/create/edit` y su `--superseded-by` para la autoridad de decisiones, con estado verificado y texto original enlazado mediante pin privado; un estado `accepted` sin fuente humana corroborada **no** basta. Consultar [decision-provenance](references/lenses/decision-provenance.md).
+- **Decisiones nativas:** preferir capacidades realmente anunciadas de `backlog decision list/create` y, cuando existan en la versión instalada, `view/edit` y `--superseded-by` para la autoridad de decisiones, con estado verificado y texto original enlazado mediante pin privado; un estado `accepted` sin fuente humana corroborada **no** basta. Consultar [decision-provenance](references/lenses/decision-provenance.md).
 - **Origen:** `scripts/authority_context.py` compara registros con `decision-list --json` y mensajes originales aportados por un adaptador autorizado; `VERIFIED` solo expresa consistencia de snapshots, **no** autenticación independiente de JSON ni permiso de ejecución. Nunca inventar message ID, fecha, cita o aprobación.
 - **Memoria selectiva:** `scripts/owner_memory.py` filtra decisiones relevantes (máximo cinco) por IDs de tarea y scope Groma, sin guardar prompts. [owner-memory](references/lenses/owner-memory.md).
 - **Traspaso:** `scripts/context_handoff.py` empaqueta referencias y SHA, y el receptor los revalida. El handoff nunca es un permiso. [authority-handoff](references/lenses/authority-handoff.md).
