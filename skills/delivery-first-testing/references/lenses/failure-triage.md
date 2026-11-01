@@ -1,6 +1,6 @@
 # Lente: por qué fallan tests y gates
 
-**Pregunta:** ¿falla el producto, el test, la infraestructura o la evidencia? Primero aislar el primer error causal; reproducir con el filtro más pequeño y revisar commit, binario, fixtures, runner, timeouts, variables, procesos y caché. Clasificar `PRODUCT_DEFECT`, `INTENTIONAL_CONTRACT_CHANGE`, `TEST_COUPLING`, `INFRASTRUCTURE`, `FLAKY`, `STALE_EVIDENCE`, `MISSING_EVIDENCE`.
+**Pregunta:** ¿falla el producto, el test, la infraestructura o la evidencia? Primero aislar el primer error causal; reproducir con el filtro más pequeño y revisar commit, binario, fixtures, runner, timeouts, variables, procesos y caché. Clasificar `PRODUCT_DEFECT`, `INTENTIONAL_CONTRACT_CHANGE`, `TEST_COUPLING`, `INFRASTRUCTURE`, `FLAKY`, `STALE_EVIDENCE`, `MISSING_EVIDENCE`, `SELECTOR_ESCAPE` (la batería completa periódica falla en algo que un cambio con selección reducida dio por no afectado: arreglar el producto **y** la regla del selector, con el caso añadido a su contrato).
 
 Un test roto por cambio interno sin cambio observable debe rediseñarse. Evitar modificar producción para ajustar snapshots obsoletos. Para flaky comparar mismo código, entornos y ensayos controlados; no elevar timeouts indefinidamente sin hipótesis medible. Quarantine explícita acotada para pruebas no críticas con responsable, seguimiento y alternativa de protección; crítica nunca bypass automático.
 

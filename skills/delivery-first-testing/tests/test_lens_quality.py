@@ -60,6 +60,15 @@ class RoutingQualityTests(unittest.TestCase):
     def test_unrelated_release_has_no_data_driven(self):
         self.assertNotIn("data-driven-design", lenses(["release"], intent="release"))
 
+    def test_docs_only_merge_routes_impact_and_merge_not_code_probes(self):
+        state = {"intent": "merge", "inventory": "ready", "basis": "current", "impact": "known",
+                 "changed": ["docs"], "scope": "docs", "risk": "routine", "merge_checks": "not_run"}
+        found = {entry["id"] for entry in router.affordances(state)["lenses"]}
+        self.assertIn("change-impact", found)
+        self.assertIn("merge-assurance", found)
+        self.assertNotIn("data-driven-design", found)
+        self.assertNotIn("mutation-guidance", found)
+
     def test_all_ready_playbooks_are_inside_lens_directory(self):
         for lens in router.read_catalog().values():
             if lens["status"] == "ready":

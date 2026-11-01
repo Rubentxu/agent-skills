@@ -1,0 +1,12 @@
+{
+  "intent": "merge",
+  "inventory": "ready",
+  "impact": "known",
+  "basis": "current",
+  "changed": [
+    "docs"
+  ],
+  "scope": "docs",
+  "risk": "routine",
+  "merge_checks": "not_run"
+}

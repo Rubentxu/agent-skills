@@ -9,6 +9,9 @@
 - Clasificar `KEEP | PARAMETERIZE | REPLACE | RETIRE | DEFER`. Una sustitución se valida **antes** de retirar el test original. No eliminar protección de secretos, persistencia, recuperación, aislamiento, integridad, concurrencia o distribución sin equivalencia demostrada.
 - Para muchos tests casi iguales: particiones/límites, data-driven, propiedades y combinaciones t-way antes de crear más E2E. Parametrizar reduce mantenimiento, pero el total de ejecuciones puede permanecer igual.
 - Usar mutación **focalizada** cuando una prueba verde sea sospechosa o una consolidación pueda dejar un hueco; evitar exigir un mutation score global.
+- **Ejecuciones repetidas:** contar por gate cuántas veces corre cada test y con cuántas configuraciones de build (features, perfiles) se compila cada componente; cada configuración distinta es una compilación completa. Un subconjunto que ya contiene otra etapa, o una invocación del runner por test, son coste sin garantía nueva.
+- **Pruebas del proceso:** tests que leen roadmap, journal o README, contratos que comprueban la propia CI y tests con nombre de unidad de planificación (`prf_f6_w3_*`) en lugar de comportamiento. Mantener los baratos; sacar del camino de cada PR los que no protegen al consumidor (carril periódico) salvo que el cambio toque lo que vigilan; renombrar por comportamiento al tocarlos.
+- **Coste por capacidad entregada:** veredictos de gate y minutos de espera por cambio que llega al consumidor; fracción de cambios que solo mueven documentación o proceso (cada uno, ¿cuánto gate pagó?); ciclos donde cerrar una unidad abre otra solo para registrar su cierre.
 
 ## Harness y coste operativo
 

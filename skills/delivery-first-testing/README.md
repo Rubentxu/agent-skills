@@ -6,7 +6,7 @@ La skill **no** es un ejecutor de CI: ofrece lentes para selección, data-driven
 
 ## Activación
 
-«Desarrolla esta feature con pruebas rápidas», «los UAT se rompen al refactorizar», «qué conservar como regresión», «audita costes del harness», «prepara merge», «certifica release».
+«Desarrolla esta feature con pruebas rápidas», «los UAT se rompen al refactorizar», «qué conservar como regresión», «audita costes del harness», «el gate tarda demasiado para lo que cambio», «¿puedo fiarme de este selector de tests?», «prepara merge», «certifica release».
 
 ## Uso
 

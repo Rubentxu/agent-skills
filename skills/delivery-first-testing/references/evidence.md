@@ -2,7 +2,7 @@
 
 Antes de aceptar un PASS comprobar: qué comando o interacción se ejecutó, qué fuente/HEAD o artefacto concreto, salida y exit/evento, tests seleccionados frente a tests realmente ejecutados, skips, entorno y versión relevante, y un caso negativo que confirme que el observador detecta errores cuando esa garantía está en riesgo.
 
-Un `exit 0` de shell puede ocultar un fallo por `|| true`, pipe sin `pipefail`, `exit` prematuro o pruebas omitidas. Una compilación contra binario antiguo no valida un commit reciente. Un checksum de assets existentes no garantiza completitud de una release. Un assert de existencia sin comprobar contenido puede pasar aunque el producto esté roto. No multiplicar pruebas anti-vacuidad: una comprobación discriminante sobre la frontera correcta basta si protege varias suites.
+Un `exit 0` de shell puede ocultar un fallo por `|| true`, pipe sin `pipefail`, `exit` prematuro o pruebas omitidas. Un verde contra un **doble de prueba** (mock HTTP, stub de servicio, fixture grabada) no acredita el contrato real si nada compara el doble con el proveedor: exigir paridad (cada ruta/campo del mock existe en el servidor, tipos generados desde una fuente) o un smoke contra el proveedor real. Un informe UAT con `PASS` y 0 casos ejecutados, o un HTML/YAML de sesión congelado sin SHA vigente, no es evidencia. Una compilación contra binario antiguo no valida un commit reciente. Un checksum de assets existentes no garantiza completitud de una release. Un assert de existencia sin comprobar contenido puede pasar aunque el producto esté roto. No multiplicar pruebas anti-vacuidad: una comprobación discriminante sobre la frontera correcta basta si protege varias suites.
 
 ### Comprobación de reducción y aceptación
 
@@ -23,7 +23,7 @@ Evidencia permanente: test y garantía (si procede)
 Riesgos residuales / siguiente acción de entrega: ...
 ```
 
-Guardarlo en el sistema de registro ya existente si el proyecto lo exige. No crear un directorio de recibos dentro del repo de forma automática. Sin recolección real, informar `NOT_RUN`.
+Guardarlo en el sistema de registro ya existente si el proyecto lo exige. No crear un directorio de recibos dentro del repo de forma automática. Sin recolección real, informar `NOT_RUN`. Si el registro vive en Git, el recibo viaja **con el cambio** (cuerpo del commit/squash, o un carril de documentación que no compila nada): abrir un PR solo para el recibo y pagar por él el gate completo duplica la espera sin añadir garantía.
 
 ## Pruebas parametrizadas y límites de evidencia
 
