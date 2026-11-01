@@ -155,9 +155,7 @@ def affordances(state: dict[str, Any]) -> dict[str, Any]:
                                   and intent not in {"architecture", "curate-architecture"} else [])
     if intent in GROMA_INTENTS:
         result["suggested_reads"].extend([["groma", "plugin", "list"], ["groma", "agent-instructions"]])
-        if intent == "decide":
-        result["_links"].append(_notice("propose-backlog-decision", "Usar decision create/edit/superseded-by solo con origen y aprobación humanos, nunca desde un resumen"))
-    if intent == "map-task":
+        if intent == "map-task":
             result["suggested_reads"].append(["groma", "agent-instructions", "backlog"])
         else:
             result["suggested_reads"].append(["groma", "view", "--plain"])
@@ -169,6 +167,8 @@ def affordances(state: dict[str, Any]) -> dict[str, Any]:
         result["_links"].append(_notice("audit-git-index", "Comprobar índice con git_artifact_guard.py (solo lectura)"))
     if intent in {"decide", "authority-check"}:
         result["_links"].append(_notice("validate-provenance", "Usar decision list/view, original humano y autoridad_context.py; estado accepted no prueba aprobación"))
+    if intent == "decide":
+        result["_links"].append(_notice("propose-backlog-decision", "Usar decision create/edit/superseded-by solo con origen y aprobación humanos, nunca desde un resumen"))
     if intent == "handoff":
         result["_links"].append(_notice("inspect-handoff", "Validar pins, revisión y permisos del host antes de reutilizar contexto"))
     if intent == "trace":
