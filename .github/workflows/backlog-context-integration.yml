@@ -54,7 +54,10 @@ jobs:
           backlog decision create "Context policy"
           backlog decision list --json > decisions.json
           node -e 'const d=require("./decisions.json");if(d.kind!=="decision-list"||d.schemaVersion!==1||d.decisions.length!==1)process.exit(1)'
-          backlog decision view decision-1 --json > decision-view.json
+          # 1.55.3 lacks 'decision view'; never assume unreleased subcommands.
+          if backlog decision --help | grep -Eq '(^|[[:space:]])view([[:space:]]|$)'; then
+            backlog decision view decision-1 --json > decision-view.json
+          fi
           backlog task list --json > tasks-before.json
           node -e 'const a=require("./tasks-before.json");if(a.kind!=="task-list"||a.tasks.length<1)process.exit(1)'
           backlog task list --json > tasks-after.json
