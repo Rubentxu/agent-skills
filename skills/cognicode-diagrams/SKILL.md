@@ -91,3 +91,10 @@ Las propiedades de relación `kind`, `technology`, `endpoint` y `order` se añad
 ## Convivencia opcional con Groma.md y Backlog.md
 
 Groma.md presenta C4/OKF, owners de ficheros, relaciones, arquitectura curada y tareas Backlog sobre el mapa. CogniCode observa y grafica **solo** según las capacidades concretas de cada lenguaje. No introducir un segundo C4 que compita con Groma ni declarar grafo donde no existe. Ante discrepancias, inspeccionar código y contratos antes de decidir la autoridad de cada responsabilidad. Si `backlog-agile-workflow` está instalada, delegar allí la reconciliación de tareas y vínculos; documentación OKF privada y ZIP de gestión permanecen fuera del Git del consumidor.
+
+
+## Procedencia inter-agente y Ghost Context
+
+Las context capsules pueden portar IDs de decisiones/tareas y pins de origen como metadatos externos, no como evidencia de implementación. No habilitan leer código fuera de CogniCode ni evitan revalidar symbol_id. Sin mensaje original verificable, mantener UNVERIFIED; nunca inferir decisiones humanas del atlas.
+
+Si `backlog-agile-workflow` está disponible, enlazar IDs de tarea/decisión y su origen. Si no, conservar la incertidumbre sin crear otra autoridad.

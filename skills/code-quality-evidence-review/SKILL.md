@@ -44,3 +44,10 @@ description: "Audita calidad de código de cualquier repositorio o PR con eviden
 - `references/07-security-supply-chain.md`: amenazas, controles, CVEs, SBOM y manejo de secretos; cuando corresponda.
 - `assets/report-template.md`: informe final; `examples/example-audit.md`: ejemplo sintético; `tests/skill-evals.md`: pruebas de la *skill*, solo al modificarla.
 - `scripts/context_inventory.py`: **opcional**, inventario de archivos de configuración y revisión Git en JSON, sin ejecutar scripts del repositorio. No emite juicios de calidad ni busca contenido sensible.
+
+
+## Procedencia inter-agente y Ghost Context
+
+Separar regla humana aprobada con fuente comprobable, decisión documental no autenticada, preferencia del auditor y comportamiento observado. Un incumplimiento arquitectónico solo es violación de política cuando su autoridad y vigencia están comprobadas; de lo contrario es recomendación o riesgo.
+
+Si `backlog-agile-workflow` está disponible, enlazar IDs de tarea/decisión y su origen. Si no, conservar la incertidumbre sin crear otra autoridad.
