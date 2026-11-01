@@ -16,7 +16,8 @@ def sample():
     message = "Apruebo: PipelineK ejecuta los gates. No duplicar CI."
     digest = "sha256:" + hashlib.sha256(message.encode()).hexdigest()
     source = {"provider": "claude-code", "sessionId": "session-101",
-              "messageId": "msg-55", "digest": digest,\n              "timestamp": "2026-11-01T12:00:00Z"}
+              "messageId": "msg-55", "digest": digest,
+              "timestamp": "2026-11-01T12:00:00Z"}
     claims = {"schemaVersion": 1, "kind": "authority-records", "records": [
         {"id": "authority-14", "backlogDecisionId": "decision-14",
          "state": "approved", "scope": ["pipeline-execution", "ci-gates"],
@@ -24,7 +25,8 @@ def sample():
     messages = {"schemaVersion": 1, "kind": "message-evidence", "messages": [
         {"provider": "claude-code", "sessionId": "session-101",
          "messageId": "msg-55", "authorKind": "human",
-         "text": message, "explicitApproval": True,\n         "timestamp": "2026-11-01T12:00:00Z"}]}
+         "text": message, "explicitApproval": True,
+         "timestamp": "2026-11-01T12:00:00Z"}]}
     decisions = {"schemaVersion": 1, "kind": "decision-list", "decisions": [
         {"id": "decision-14", "title": "No CI duplicado", "status": "accepted"}]}
     return claims, messages, decisions

@@ -123,7 +123,8 @@ def validate(claims: dict, messages: dict, decisions: dict, *,
         else:
             msg = matches[0]
             body = msg.get("text")
-            if (not isinstance(body, str) or sha256(body) != digest\n                    or msg.get("timestamp") != source_date
+            if (not isinstance(body, str) or sha256(body) != digest
+                    or msg.get("timestamp") != source_date
                     or quote not in body or msg.get("authorKind") != "human"):
                 verdict, reasons = "CONFLICTED", ["SOURCE_MISMATCH_OR_NOT_HUMAN"]
             elif state == "approved" and msg.get("explicitApproval") is not True:
@@ -136,7 +137,8 @@ def validate(claims: dict, messages: dict, decisions: dict, *,
             reasons.append("EXPIRED")
         result.append({"id": rid, "backlogDecisionId": did, "scope": scope,
                        "sourcePin": {"provider": key[0], "sessionId": key[1],
-                                     "messageId": key[2], "digest": digest,\n                                     "timestamp": source_date},
+                                     "messageId": key[2], "digest": digest,
+                                     "timestamp": source_date},
                        "verdict": verdict, "reasons": reasons,
                        "canAuthorizeExecution": False})
     return {"schemaVersion": 1, "kind": "authority-assessment",

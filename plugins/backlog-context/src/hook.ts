@@ -120,7 +120,7 @@ export function handleEvent(event: HookInput, env: NodeJS.ProcessEnv = process.e
   if (kind === "UserPromptSubmit") {
     const prompt = event.prompt;
     if (typeof prompt !== "string" || prompt.length > 20_000 ||
-        !/(?:\\bapruebo\\b|\\bconfirmo\\b|\\brechazo\\b|\\badoptamos\\b|\\bdecidimos\\b|\\bdecisi[oó]n\\b)/i.test(prompt)) return null;
+        !/(?:\bapruebo\b|\bconfirmo\b|\brechazo\b|\badoptamos\b|\bdecidimos\b|\bdecisi[oó]n\b)/i.test(prompt)) return null;
     return outputContext("UserPromptSubmit",
       "Posible decisión detectada (NO verificada ni guardada). Consulta backlog decision list --json, "+
       "revisa duplicados y plantea decision create/edit solo tras autorización. "+

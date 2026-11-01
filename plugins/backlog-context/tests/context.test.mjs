@@ -174,7 +174,7 @@ test("malformed contexts and unknown events fail open",()=>{
   assert.equal(handleEvent({hook_event_name:"PostToolBatch",cwd:"/tmp",session_id:"session-1"},f.env),null);
   assert.equal(handleEvent({hook_event_name:"PostToolBatch",cwd:f.root,session_id:"../../bad"},f.env),null);
 });
-\n
+
 test("candidate owner decision is never saved or certified by UserPromptSubmit", () => {
   const f = fixture();
   const reply = handleEvent({...f.event("UserPromptSubmit"),
