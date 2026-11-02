@@ -22,6 +22,7 @@ Colección modular de **skills para agentes de IA**, mantenidas por separado e i
 | [`agentchanges-review`](skills/agentchanges-review/SKILL.md) | Revisa diffs entre refs con agentchanges: notas ancladas por hash de contenido, elección de kind/status, previsualización, aplicación y verificación de parches sin perder al revisor de vista. | Disponible |
 | [`gate-vocabulary-reachability`](skills/gate-vocabulary-reachability/SKILL.md) | Audita que cada elemento del vocabulario de autorización declarado sea alcanzable desde el código de producción, y que los defaults sean fail-closed: enumera acciones, roles, permisos y códigos, y separa los que se construyen de los que solo existen en el mapa o en tests. | Disponible (auditor) |
 | [`retrospective-cycle-audit`](skills/retrospective-cycle-audit/SKILL.md) | Investiga un ciclo ya escrito antes de continuar: reconstruye lo hecho, delimita el radio de impacto, formula hipótesis y las refuta primero, caza falsos éxitos y tests que no pueden fallar, y corrige solo lo confirmado. | Disponible |
+| [`agent-context-audit`](skills/agent-context-audit/SKILL.md) | Audita el presupuesto de contexto de un harness de agente: mide la carga fija por petición, separa lo always-on de lo on-demand, detecta el bucle de compactación continua y propone recortes reversibles por prioridad. | Disponible (router + medidor) |
 
 Consulta el README de [la skill genérica de calidad](skills/code-quality-evidence-review/README.md) y la [skill CogniCode](skills/cognicode-diagrams/README.md). **La skill antigua `cognicode-quality-investigator` ha sido retirada**; no usar sus instrucciones, rutas ni fallback de lectura directa. Las herramientas de terceros descritas en sus anexos **no se instalan automáticamente**.
 
@@ -109,12 +110,18 @@ agent-skill/
     │   ├── scripts/                   # Auditor de alcanzabilidad
     │   ├── worked-example.md          # Caso trabajado
     │   └── tests/                     # Pruebas y evaluaciones de activación
-    └── retrospective-cycle-audit/
-        ├── SKILL.md                   # Auditoría retrospectiva de un ciclo ya escrito
+    ├── retrospective-cycle-audit/
+    │   ├── SKILL.md                   # Auditoría retrospectiva de un ciclo ya escrito
+    │   ├── README.md
+    │   ├── references/                # Reconstrucción, falsación, falsos éxitos y cierre
+    │   ├── worked-example.md          # Caso trabajado
+    │   └── tests/                     # Evaluaciones manuales de activación
+    └── agent-context-audit/
+        ├── SKILL.md                   # Auditoría del presupuesto de contexto del harness
         ├── README.md
-        ├── references/                # Reconstrucción, falsación, falsos éxitos y cierre
-        ├── worked-example.md          # Caso trabajado
-        └── tests/                     # Evaluaciones manuales de activación
+        ├── references/                # Diagnóstico, inventario, recetas y rúbrica
+        ├── scripts/                   # Medidor de carga estática (sólo lectura)
+        └── tests/                     # Pruebas del medidor y evaluaciones de activación
 ```
 
 Una nueva skill se añade exclusivamente como `skills/<slug>/`, con `SKILL.md` y front matter `name` (igual al slug) y `description` no vacíos. No muevas referencias a una carpeta compartida salvo que exista una razón de producto justificada: las skills deben poder distribuirse de forma independiente. Utiliza referencias **relativas al directorio de la propia skill**.
@@ -136,6 +143,7 @@ python3 -m unittest discover -s skills/distribution-first-release/tests -p 'test
 python3 -m unittest discover -s skills/playful-learning-design/tests -p 'test_*.py'
 python3 -m unittest discover -s skills/learning-game-html/tests -p 'test_*.py'
 python3 -m unittest discover -s skills/gate-vocabulary-reachability/tests -p 'test_*.py'
+python3 -m unittest discover -s skills/agent-context-audit/tests -p 'test_*.py'
 ```
 
 El workflow de GitHub Actions ejecuta estas comprobaciones para cada PR y push. Los tests de una skill nueva deben registrarse en CI cuando se añada. El validador rechaza además una skill que traiga scripts sin pruebas: una utilidad sin test es una afirmación que nadie comprueba.

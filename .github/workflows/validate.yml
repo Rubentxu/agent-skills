@@ -71,3 +71,7 @@ jobs:
         run: python3 -m unittest discover -s skills/learning-game-html/tests -p 'test_*.py' -v
       - name: Check learning-game-html navigation smoke
         run: python3 skills/learning-game-html/scripts/affordances.py skills/learning-game-html/examples/session-create.json
+      - name: Run agent-context-audit tests
+        run: python3 -m unittest discover -s skills/agent-context-audit/tests -p 'test_*.py' -v
+      - name: Check agent-context-audit measurement smoke
+        run: python3 skills/agent-context-audit/scripts/measure_context.py --project . --config .
