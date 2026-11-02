@@ -49,6 +49,16 @@
         "maintain"
       ],
       "reason": "Operar credenciales mediante capacidades reales de ASV, sin exponer secretos"
+    },
+    {
+      "id": "code-quality-evidence-review",
+      "intents": [
+        "document-code",
+        "refine",
+        "review",
+        "maintain"
+      ],
+      "reason": "Auditar documentación y contratos contra el código actual con evidencias, solo cuando la skill esté disponible y se necesite revisión especializada"
     }
   ]
 }

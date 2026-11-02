@@ -21,6 +21,17 @@ Skill portable para **trabajo ágil ligero** con [Backlog.md](https://github.com
 4. **Un único propietario:** tareas/estados/IDs solo los escribe Backlog.md. Esta skill nunca toca archivos de trabajo ni crea su propio estado.
 5. **Entrega verificable:** criterios de aceptación y DoD demostrados, no checkboxes optimistas. No modificar aplicaciones por el mero uso de la skill.
 
+## Documentación de código en cualquier lenguaje
+
+La [lente de documentación de código](references/lenses/code-documentation.md) separa contrato vigente, comentario interno y trazabilidad histórica. No presupone Kotlin: consulta las [recetas por lenguaje](references/code-documentation-languages.md) para KDoc/Dokka, Javadoc, Python docstrings, Rust rustdoc, Go doc, TSDoc/JSDoc, C# XML docs, Swift DocC, Dart y otros stacks. No crea tickets ni instala linters por defecto.
+
+```bash
+python3 skills/backlog-agile-workflow/scripts/affordances.py \\
+  skills/backlog-agile-workflow/examples/code-documentation.json
+```
+
+Funciona sin Backlog.md instalado para orientar la revisión. Si la aplicación ya dispone de tareas, los cambios de API se reflejan en los AC/DoD vigentes y la procedencia queda en Backlog.md y trailers Git, **no** en los comentarios del producto. Los identificadores semánticos de protocolos y del dominio siguen documentándose cuando son parte del contrato.
+
 ## Proyección de especificaciones (sin escribir backlog)
 
 [Contrato y reglas de trazabilidad](references/spec-contract.md) · [lente de documentación](references/lenses/specification-intake.md) · [descomposición](references/lenses/spec-decomposition.md) · [reconciliación](references/lenses/spec-reconciliation.md).

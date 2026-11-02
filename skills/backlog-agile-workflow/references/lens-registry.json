@@ -95,6 +95,14 @@
       "playbook": "references/lenses/spec-reconciliation.md"
     },
     {
+      "id": "code-documentation",
+      "status": "ready",
+      "intents": [
+        "document-code"
+      ],
+      "playbook": "references/lenses/code-documentation.md"
+    },
+    {
       "id": "git-artifact-hygiene",
       "status": "ready",
       "intents": [

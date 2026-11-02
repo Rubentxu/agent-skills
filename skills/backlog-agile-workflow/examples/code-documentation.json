@@ -1,0 +1,8 @@
+{
+  "intent": "document-code",
+  "basis": "observed",
+  "cli": "missing",
+  "project": "absent",
+  "mode": "read",
+  "available_skills": []
+}

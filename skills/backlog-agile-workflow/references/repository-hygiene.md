@@ -12,7 +12,7 @@ git status --short
 git ls-files --cached
 ```
 
-El guard produce JSON con archivos ya rastreados, clasificaciones, patrones `.gitignore` sugeridos y argv de **propuestas**. No borra ni altera el índice. Clasifica por rutas y patrones explícitos; un ZIP distribuible de software o documentación técnica de API no debe confundirse con el archivo ZIP de un roadmap. La lista no es exhaustiva: inspeccionar nombres custom, exportaciones, ficheros grandes e historial.
+El guard produce JSON con archivos ya rastreados, clasificaciones, patrones `.gitignore` sugeridos y argv de **propuestas**. No borra ni altera el índice. Clasifica por rutas y patrones explícitos; un ZIP distribuible de software o documentación técnica de API no debe confundirse con el archivo ZIP de un roadmap. La documentación técnica de API, referencias publicadas y ejemplos de uso **son producto y pueden rastrearse en Git** si así lo decide el proyecto; no aplicar la prohibición de ROADMAP/ADR privados por la extensión `.md` o por estar bajo `docs/`. La lista no es exhaustiva: inspeccionar nombres custom, exportaciones, ficheros grandes e historial.
 
 ## Procedimiento de limpieza autorizado
 

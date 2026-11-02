@@ -11,7 +11,7 @@ Entrada JSON para evaluación de **decisiones de la skill**, no un reflejo fiel 
 }
 ```
 
-- `intent`: `discover|capture|triage|refine|plan|execute|verify|close|review|maintain|specify|decompose|sync-specs|git-hygiene|trace|architecture|curate-architecture|map-task|create-task|move-task|archive-task|restore-task|delete-task|align-work|unplanned-work|manage-dependencies|manage-epic|catalog`.
+- `intent`: `discover|capture|triage|refine|plan|execute|verify|close|review|maintain|specify|decompose|sync-specs|document-code|git-hygiene|trace|architecture|curate-architecture|map-task|create-task|move-task|archive-task|restore-task|delete-task|align-work|unplanned-work|manage-dependencies|manage-epic|catalog`.
 - `basis`: `observed|unknown|stale`; `observed` describe evidencias **declaradas**, el router no las verifica.
 - `cli`: `available|missing|unknown`; `project`: `initialized|absent|unknown`.
 - `mode`: `read|propose|apply` (default `read`). `apply` representa autorización declarada por el llamante, **no ejecuta nada**.
@@ -26,6 +26,10 @@ Resultados: `DISCOVER`, `INSPECT_MORE`, `READY`, `PROPOSE_ONLY`, `AUTHORIZED_ACT
 ## Proyección de roadmaps y especificaciones
 
 `specify` abre la lente para descubrir autoridad documental; `decompose` elige hitos/AC/DoD y prioridades; `sync-specs` reconcilia con el corpus CLI. Los tres producen `plan-spec-projection` pero ninguna escritura. Ver [contrato](spec-contract.md).
+
+## Documentación de código transversal (sin CLI)
+
+`document-code` selecciona [code-documentation](lenses/code-documentation.md) sin requerir Backlog.md, Groma ni conexión de red. El router devuelve **orientaciones**, nunca edita un archivo, no ejecuta linters ni crea tareas. Distinguir documentación de producto versionable de ADR/roadmaps y material privado de gestión. Si hay Backlog.md, el agente puede vincular esta revisión a AC/DoD **reales** mediante la CLI autorizada; no abrir tickets por cada KDoc o comentario. La [tabla por lenguaje](code-documentation-languages.md) es opt-in y solo se consulta tras detectar el stack.
 
 ## Auditoría y trazabilidad sin CLI
 

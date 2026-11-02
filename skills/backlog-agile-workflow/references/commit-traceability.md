@@ -9,6 +9,10 @@
 
 Para evitar colisiones, preferir identidades calificadas cuando haga falta: `docs/ROADMAP.md#H2.W1`, `docs/adr/ADR-0012.md#ADR-0012`. Estas rutas son **identificadores lógicos locales privados**, no URLs de GitHub ni promesas de disponibilidad remota. Un archivo ignorado puede seguir sirviendo como referencia local.
 
+## Frontera entre documentación de código e historia
+
+Los IDs de tareas, decisiones y commits se conservan **aquí** (Backlog.md y mensajes Git), no en KDoc, Javadoc, docstrings, rustdoc, código comentado ni anotaciones administrativas del producto. Describir en la fuente solo el **contrato vigente**, la razón técnica actual de una invariante y las restricciones que un consumidor o mantenedor debe conocer. No eliminar identificadores reales del dominio, esquemas o protocolos por confundirlos con tickets. Una documentación de API para consumidores es **producto** y puede versionarse; una hoja de ruta privada es **gestión**. Ver [lente transversal](lenses/code-documentation.md).
+
 ## Plantilla de mensaje de commit
 
 ```text
