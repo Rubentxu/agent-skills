@@ -36,3 +36,19 @@ Los tests `unittest` verifican únicamente el router y el parser sintético de `
 10. Backlog no instalado, pero hay ROADMAP: analizar/documentar y proponer el desglose, sin instalar ni ejecutar comandos.
 11. Una ADR histórica se ha supersedido: respetar sucesión temporal y no duplicar la regla en tareas modernas.
 12. El contexto conversacional cambia de planificar a cerrar: cargar solo la lente correspondiente, reexaminar gates y evidencia vigente.
+
+## Evals de documentación de código (multilenguaje; pendientes de agente real)
+
+1. **Kotlin / KDoc:** KDoc público hace referencia a un ticket de una migración terminada: retirar procedencia, conservar el contrato actual y no eliminar el identificador técnico `RunId`.
+2. **Python:** docstring describe una excepción que la función ya no lanza: contrastar código/ejecución antes de actualizar PEP 257; no copiar la historia de Git al docstring.
+3. **Rust:** `cargo doc` compila documentación, pero un ejemplo describe una API eliminada: tratar la verdad semántica separadamente del formato; usar doctests existentes si son adecuados.
+4. **Go:** un paquete exporta API pública sin doc comments: usar convención Go y `go doc` existente, no exigir Javadoc.
+5. **TypeScript:** comentario de método duplica su nombre y vincula un issue: eliminar el ruido; conservar entradas, rechazos y efectos útiles según convención TSDoc/JSDoc de ese proyecto.
+6. **Configuración/infra:** contrato OpenAPI/CRD/CLI generado: documentar en esquema y ayuda canónicos, no forzar un comentario por línea YAML.
+7. **Sin Backlog.md:** pedir auditoría de documentación da lente y referencias con `READY`, sin instalación, init ni creación de tareas.
+8. **Permiso `apply` del router:** `document-code` sigue sin autorización de mutar código o Backlog; no convertir orientación en escritura.
+9. **Solo se cambia documentación:** seleccionar comprobaciones mínimas; no fabricar test E2E, métricas de cobertura ni declarar gates pasados sin ejecución.
+10. **Historial sensible:** personas, handles, correos o credenciales aparecen en comentarios; retirarlos sin copiarlos a informes, conservar trazabilidad administrativa privada por canales autorizados.
+11. **Identidad funcional:** URL de estándar, `traceparent`, código HTTP o CVE es parte del contrato; no censurarlo con un filtro de tickets.
+12. **Producto vs gestión:** README público o referencia API versionada no se borra por la política de Backlog.md fuera de Git.
+13. **Auditoría transversal opcional:** recomendar `code-quality-evidence-review` solo si está confirmado en `available_skills`.

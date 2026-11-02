@@ -10,7 +10,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 INTENTS = frozenset({"discover", "capture", "triage", "refine", "plan", "execute",
-                     "verify", "close", "review", "maintain", "specify", "decompose", "sync-specs", "git-hygiene", "trace", "architecture", "curate-architecture", "map-task", "create-task", "move-task", "archive-task", "restore-task", "delete-task", "align-work", "unplanned-work", "manage-dependencies", "manage-epic", "catalog", "decide", "authority-check", "recall", "handoff", "memory-feedback", "context-exchange"})
+                     "verify", "close", "review", "maintain", "specify", "decompose", "sync-specs", "document-code", "git-hygiene", "trace", "architecture", "curate-architecture", "map-task", "create-task", "move-task", "archive-task", "restore-task", "delete-task", "align-work", "unplanned-work", "manage-dependencies", "manage-epic", "catalog", "decide", "authority-check", "recall", "handoff", "memory-feedback", "context-exchange"})
 BASIS = frozenset({"observed", "unknown", "stale"})
 CLI = frozenset({"available", "missing", "unknown"})
 PROJECT = frozenset({"initialized", "absent", "unknown"})
@@ -129,7 +129,7 @@ def affordances(state: dict[str, Any]) -> dict[str, Any]:
         if groma == "missing":
             result["warnings"].append("Groma opcional y ausente; Backlog.md puede seguir funcionando sin mapa")
         return result
-    offline_spec = intent in {"specify", "decompose", "git-hygiene", "trace", "architecture", "curate-architecture", "authority-check", "handoff", "memory-feedback", "context-exchange"}
+    offline_spec = intent in {"specify", "decompose", "git-hygiene", "trace", "architecture", "curate-architecture", "authority-check", "handoff", "memory-feedback", "context-exchange", "document-code"}
     if cli != "available" and not offline_spec:
         result["decision"] = "DISCOVER"
         result["_links"].append(_notice("inspect-cli", "Verificar backlog --version y backlog --help, sin instalar automáticamente"))
@@ -152,7 +152,7 @@ def affordances(state: dict[str, Any]) -> dict[str, Any]:
         result["_links"].append(_notice("read-lens", f"Guía {lens['id']}", href=_local(lens["playbook"])))
     result["suggested_reads"] = ([["backlog", "instructions", "overview"]]
                                   if cli == "available" and project == "initialized"
-                                  and intent not in {"architecture", "curate-architecture"} else [])
+                                  and intent not in {"architecture", "curate-architecture", "document-code"} else [])
     if intent in GROMA_INTENTS:
         result["suggested_reads"].extend([["groma", "plugin", "list"], ["groma", "agent-instructions"]])
         if intent == "map-task":
@@ -163,6 +163,8 @@ def affordances(state: dict[str, Any]) -> dict[str, Any]:
         result["_links"].append(_notice("inspect-architecture", "Groma es opcional: inspeccionar dueño de archivos por groma view <file> y referencias Backlog verificadas", href=_local("references/groma-integration.md")))
     if intent in {"specify", "decompose"}:
         result["_links"].append(_notice("inspect-specifications", "Inspeccionar ROADMAP, ADR, SPEC, gates y estado de la fuente canónica"))
+    if intent == "document-code":
+        result["_links"].append(_notice("review-code-docs", "Inspeccionar contrato de API, código, comentarios y guías del lenguaje; no escribir automáticamente", href=_local("references/code-documentation-languages.md")))
     if intent == "git-hygiene":
         result["_links"].append(_notice("audit-git-index", "Comprobar índice con git_artifact_guard.py (solo lectura)"))
     if intent in {"decide", "authority-check"}:
@@ -257,6 +259,8 @@ def affordances(state: dict[str, Any]) -> dict[str, Any]:
         result["_links"].append(_notice("draft-change", "Proponer cambio, sin ejecutar CLI"))
     elif intent not in WRITE_INTENTS:
         result["decision"] = "KEEP_AS_IS"
+        if intent == "document-code":
+            result["warnings"].append("La navegación no autoriza editar comentarios, archivos de producto ni tareas")
     else:
         unknown = [x for x, v in config.items() if v is None]
         effects = [x for x, v in config.items() if v is True and x in

@@ -123,6 +123,32 @@ class RouterTests(unittest.TestCase):
         o=router.affordances(state(intent="verify",available_skills=["delivery-first-testing"]))
         self.assertEqual([l['skill_id'] for l in o['_links'] if l['rel']=="delegate-skill"], ["delivery-first-testing"])
 
+    def test_document_code_runs_offline_without_backlog_or_install(self):
+        o = router.affordances({"intent": "document-code", "basis": "observed",
+                                "cli": "missing", "project": "absent", "mode": "read"})
+        self.assertEqual(o["decision"], "READY")
+        self.assertEqual(o["lenses"], ["code-documentation"])
+        self.assertEqual(o["suggested_reads"], [])
+        self.assertTrue(any(x["rel"] == "review-code-docs" for x in o["_links"]))
+        self.assertFalse(any(x["rel"] == "inspect-cli" for x in o["_links"]))
+
+    def test_document_code_never_authorizes_mutations(self):
+        for mode, decision in [("read", "READY"), ("propose", "PROPOSE_ONLY"),
+                               ("apply", "KEEP_AS_IS")]:
+            with self.subTest(mode=mode):
+                o = router.affordances(state(intent="document-code", mode=mode))
+                self.assertEqual(o["decision"], decision)
+                self.assertFalse(any(x["rel"] == "propose-cli-write" for x in o["_links"]))
+
+    def test_document_code_specialist_only_if_available(self):
+        base = state(intent="document-code", cli="missing", project="absent", task={})
+        o = router.affordances(base)
+        self.assertNotIn("delegate-skill", [x["rel"] for x in o["_links"]])
+        base["available_skills"] = ["code-quality-evidence-review"]
+        o = router.affordances(base)
+        self.assertEqual([x["skill_id"] for x in o["_links"] if x["rel"] == "delegate-skill"],
+                         ["code-quality-evidence-review"])
+
     def test_unknown_skill_never_emits_delegate(self):
         o=router.affordances(state(intent="execute",available_skills=["absent-tool"]))
         self.assertNotIn("delegate-skill", [l['rel'] for l in o['_links']])
