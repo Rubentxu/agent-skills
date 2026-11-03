@@ -255,6 +255,43 @@ escribiendo aunque no tengan el fichero abierto de forma visible.
 
 ---
 
+## R11b · Encender un interruptor por motor (circuit breaker)
+
+**Cuándo:** hay dos o más motores de recuperación y uno falla de forma repetida.
+
+El patrón no es "probar A y si falla probar B" en cada llamada: eso gasta el intento fallido
+una y otra vez. Es un **interruptor** por combinación de (motor, capacidad, lenguaje):
+
+| Estado | Qué hace |
+|---|---|
+| **cerrado** | se intenta el motor |
+| **abierto** | se salta y la cadena sigue al respaldo, sin coste |
+| **medio abierto** | pasado el enfriamiento, un intento de sondeo; si funciona, se cierra |
+
+**La clave es qué se apaga.** Un motor que no funciona con un lenguaje no es un motor roto:
+apagar "CogniCode entero" porque falla con Kotlin mataría también el caso en el que sí funciona.
+La granularidad por (motor, capacidad, lenguaje) es lo que hace que el interruptor sea útil.
+
+**Clasifica el fallo, porque cambia el umbral:**
+
+- **Permanente** — "no soportado", "0 símbolos en un fichero que sí los tiene", "no indexable":
+  abre el interruptor **al primer intento**. No tiene sentido reintentar algo que no va a cambiar.
+- **Transitorio** — timeout, LSP que no arrancó, red: abre al **tercer** intento.
+
+**Dónde vive el estado.** En un fichero bajo `~/.cache/`, no en el repositorio: es estado de la
+máquina, no del proyecto. Si el fichero no existe, todos los interruptores están cerrados (el
+defecto seguro: se intenta el motor preferido).
+
+**La traza dice lo que pasó.** Cada intento registra el estado del interruptor y qué motor se
+saltó, para que el informe pueda responder "¿por qué no se usó la herramienta buena?".
+
+**Lo que esto buys**: cuando el motor preferido falla de forma permanente, el coste por
+consulta pasa de "un intento fallido + un respaldo" a "un respaldo". Y el fallo deja de ser un
+ruido repetido en el log para pasar a ser un dato: la lista de lo que el motor favorito todavía
+no cubre.
+
+---
+
 ## R12 · Que el agente no lea artefactos de build
 
 **Cuándo:** el agente recorre el proyecto y vuelve con rutas de artefactos, o un `Grep`
