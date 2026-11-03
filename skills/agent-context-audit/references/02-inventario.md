@@ -141,25 +141,29 @@ Por eso el inventario estático es el **piso** del diagnóstico, no el techo. Si
 pequeño y el contexto real es grande, la diferencia es runtime: hay que mirar la carga real de
 una petición (`01-diagnostico.md`).
 
-### 9. Lo que el agente puede leer por accidente — `.claudeignore`
+### 9. Lo que el agente puede leer por accidente
 
 No es una fuente de contexto, es un **filtro**: decide qué ficheros el agente puede leer. Sin
-él, un `Grep` recursivo o una exploration de directorio se carries con `node_modules/`,
+él, un `Grep` recursivo o una exploración de directorio se carries con `node_modules/`,
 `target/`, `dist/` o `build/`, y cada resultado entra en el contexto.
 
-El `.gitignore` ya lista esos artefactos, pero el agente no lo lee por defecto: sin
-`.claudeignore`, un `Grep` sobre el repo entra en `target/` y devuelve basura de compilación.
+**No existe `.claudeignore`.** El nombre circula mucho en blogs y no hace nada: no está en el
+harness. Los mecanismos reales son tres, y se acumulan:
 
-| Sin `.claudeignore` | Con `.claudeignore` |
-|---|---|
-| Un `Grep` recursivo devuelve cientos de rutas de `target/` | El recorrido se salta el artefacto |
-| Un `Glob` de `**/*.ts` encuentra `node_modules` | Sólo el código propio |
-| El agente "explora el proyecto" y lee un bundle de 1,5MB | Lee la fuente |
+| Mecanismo | Qué cubre | Costo |
+|---|---|---|
+| `.gitignore` del repo | `Grep` ya lo respeta | **cero** — el repo probablemente ya lo tiene |
+| `CLAUDE_CODE_GLOB_NO_IGNORE=false` | hace que `Glob` también lo respete | un flag global |
+| `Read(...)` deny rules | lectura explícita, comandos de fichero en `Bash`, menciones `@` | una regla por artefacto |
+| `sandbox.filesystem.denyRead` | todo lo que abra un proceso, a nivel de SO | sandbox activado |
 
-**Qué excluir**: artefactos de build, dependencias instaladas, cachés, cobertura, y ficheros
-generados. **Qué NO excluir**: los ficheros que son autoridad del proyecto (roadmap, changelog,
-especificaciones) — el agente debe poder leerlos; lo que se le pide es que no los lea *enteros*,
-y eso se dice en el fichero de instrucciones, no escondiendo el fichero.
+El caso habitual es que el repo ya tiene su `.gitignore` y basta con el flag: **no hace falta
+escribir una lista de artefactos en ningún sitio nuevo**.
+
+Lo que **no** debe hacerse: excluir ficheros que son autoridad del proyecto (roadmap,
+changelog, especificaciones) para "ahorrar contexto". Eso daña el trabajo, y en un proyecto con
+un artefacto canónico —un `pkg/` que es la salida del build— la regla equivocada rompe la
+verificación.
 
 ## Inventario por proyecto y por máquina
 

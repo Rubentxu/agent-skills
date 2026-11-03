@@ -255,35 +255,80 @@ escribiendo aunque no tengan el fichero abierto de forma visible.
 
 ---
 
-## R12 · Añadir un `.claudeignore`
+## R12 · Que el agente no lea artefactos de build
 
 **Cuándo:** el agente recorre el proyecto y vuelve con rutas de artefactos, o un `Grep`
 recursivo devuelve basura de compilación.
 
-```bash
-cat > .claudeignore <<'EOF'
-# artefactos de build
-target/
-build/
-dist/
-out/
-.gradle/
-node_modules/
-# cobertura y caché
-coverage/
-__pycache__/
-*.pyc
-EOF
+**Ojo: no existe `.claudeignore`.** Un fichero con ese nombre se ignora: no está en el
+harness y no produce ningún efecto. Es una idea muy extendida en blogs que no es cierta
+para este harness — y una receta que no aplica es peor que ninguna, porque da una
+sensación de protección que no existe.
+
+Los tres mecanismos reales, de menos a más fuerte:
+
+### 1 · `Grep` ya respeta `.gitignore`
+
+`Grep` salta los ficheros ignorados por git. No hay nada que configurar: si el repo ya
+ignora `target/`, `Grep` no lo devuelve.
+
+### 2 · `Glob` no lo respeta por defecto — un flag lo arregla
+
+`Glob` encuentra los ficheros ignorados junto a los versionados. El flag que lo corrige:
+
+```json
+{ "env": { "CLAUDE_CODE_GLOB_NO_IGNORE": "false" } }
 ```
 
-**Regla de discernimiento:** se excluye lo **generado**, no lo **autoritativo**. Un `ROADMAP.md`
-de 500KB es autoridad y debe poder leerse; lo que se le pide al agente es que lo lea por
-partes, y eso se dice en las instrucciones del proyecto. Excluir un fichero de autoridad para
-"ahorrar contexto" es un recorte que **daña el trabajo**.
+En el `settings.json` del usuario, para que aplique a todos los repos. Con esto, `Glob`
+respeta el `.gitignore` que el repo ya tiene, y no hay que escribir una lista de
+artefactos en ningún sitio nuevo.
 
-**Reversión:** borrar el fichero.
+### 3 · `Read(...)` deny rules: la segunda capa
 
-**Comprobar:** un `Grep` recursivo que antes devolvía `target/` ahora no lo devuelve.
+Bloquean la lectura explícita de un artefacto, y alcanzan también a los comandos de
+fichero que el harness reconoce en `Bash` (`cat`, `head`, `tail`, `sed`, `tee`) y a las
+menciones `@`.
+
+En `.claude/settings.json` del proyecto:
+
+```json
+{
+  "permissions": {
+    "deny": [
+      "Read(node_modules/**)",
+      "Read(target/**)",
+      "Read(build/**)",
+      "Read(dist/**)",
+      "Read(coverage/**)"
+    ]
+  }
+}
+```
+
+Sin barra inicial la regla casa a **cualquier profundidad** (un `target/` dentro de un
+workspace Rust también queda fuera); con `/` inicial se ancla a la raíz del proyecto.
+
+**Efecto secundario que hay que conocer:** una regla `Read` alcanza a los comandos de
+`Bash` que leen ficheros. Un `find .` que recorra un directorio bloqueado puede ser
+denegado aunque el comando en sí no apunte al artefacto. El agente debe usar `Glob` y
+`Grep`, que además son las herramientas correctas.
+
+**Lo que las deny rules NO cubren:** un `grep -r` launched sin nombrar el fichero, o un
+script que abre los ficheros por su cuenta. Para eso está el sandbox
+(`sandbox.filesystem.denyRead`), que es un nivel distinto.
+
+**Regla de discernimiento:** se excluye lo **generado**, no lo **autoritativo**. Un
+`ROADMAP.md` de 500KB es autoridad y debe poder leerse; lo que se le pide al agente es que
+lo lea por partes, y eso se dice en las instrucciones del proyecto. Excluir un fichero de
+autoridad para "ahorrar contexto" es un recorte que **daña el trabajo** — y en un proyecto
+con un artefacto canónico (un `pkg/` que es la salida del build), la regla equivocada
+rompe la verificación.
+
+**Reversión:** borrar las reglas y el flag.
+
+**Comprobar:** un `Glob` que antes devolvía `target/` ya no lo devuelve, y un `Read` de un
+artefacto se deniega nombrando la regla.
 
 ---
 

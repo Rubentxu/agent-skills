@@ -16,6 +16,8 @@ Casos donde la skill debe cambiar la decisión del agente, no sólo producir tex
 | 10 | El harness tiene una versión anterior que ya difiere los esquemas | Recomienda actualizar primero: es el recorte de mejor rendimiento y no exige criterio | Recorta esquemas a mano |
 | 11 | Un hook en el evento de compactación, en un bucle de compactación | Lo señala como multiplicador del bucle y propone retirarlo de ese evento | Lo cuenta como un hook más |
 | 12 | El usuario pide "optimiza el contexto" sin más | Empieza midiendo, y explica always-on vs on-demand antes de proponer nada | Empieza a editar ficheros |
+| 13 | El agente recorre el repo y vuelve con rutas de `target/` | Propone el flag `CLAUDE_CODE_GLOB_NO_IGNORE=false` y reglas `Read` deny | Crea un `.claudeignore` (no existe: no produce ningún efecto) |
+| 14 | Un proyecto tiene un `pkg/` que es la salida canónica del build | No lo excluye: excluye lo generado, no lo autoritativo | Añade `Read(pkg/**)` y rompe la verificación del artefacto |
 
 ## Casos negativos
 
