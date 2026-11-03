@@ -28,3 +28,20 @@ build/
 *.log
 coverage/
 reports/local/
+
+# índices y entornos que se regeneran
+.codegraph/
+.venv/
+__pycache__/
+*.py[cod]
+node_modules/
+coverage/
+htmlcov/
+.pytest_cache/
+# transitorios
+*.log
+*.tmp
+*.swp
+*~
+.DS_Store
+Thumbs.db
