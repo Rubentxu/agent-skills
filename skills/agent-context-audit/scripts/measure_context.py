@@ -180,7 +180,11 @@ def scan_skills(project: Path, config_dir: Path, inv: Inventory) -> None:
 
 
 def scan_agents(project: Path, config_dir: Path, inv: Inventory) -> None:
-    """Las descripciones de agentes cargan siempre; su cuerpo, al lanzarse."""
+    """Las descripciones de agentes cargan siempre; su cuerpo, al lanzarse.
+
+    Un fichero de agente sin front matter **no se registra**: el harness lo ignora, así que no
+    cuesta nada en el catálogo. Contarlo como catálogo inflaría la medición.
+    """
     roots = [config_dir / "agents", project / ".claude" / "agents",
              project / ".agents" / "agents"]
     for root in roots:
@@ -189,9 +193,14 @@ def scan_agents(project: Path, config_dir: Path, inv: Inventory) -> None:
         for path in sorted(root.glob("*.md")):
             text = read(path)
             description = frontmatter_description(text)
-            catalogue = len(description.split()) * 1.3 if description else len(text.split()) * 1.3
-            inv.add_always("agent-catalogue", "user" if root.is_relative_to(config_dir) else "project",
-                           path, int(catalogue))
+            if not description:
+                # Sin front matter no hay agente registrado: el fichero no carga nada.
+                inv.add_on_demand("agent-unregistered", path, tokens_of(text))
+                continue
+            catalogue = len(description.split()) * 1.3
+            inv.add_always("agent-catalogue",
+                           "user" if root.is_relative_to(config_dir) else "project",
+                           path, int(catalogue), note=description[:120])
             inv.add_on_demand("agent-body", path, max(tokens_of(text) - int(catalogue), 0))
 
 

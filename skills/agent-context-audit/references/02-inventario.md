@@ -141,6 +141,26 @@ Por eso el inventario estático es el **piso** del diagnóstico, no el techo. Si
 pequeño y el contexto real es grande, la diferencia es runtime: hay que mirar la carga real de
 una petición (`01-diagnostico.md`).
 
+### 9. Lo que el agente puede leer por accidente — `.claudeignore`
+
+No es una fuente de contexto, es un **filtro**: decide qué ficheros el agente puede leer. Sin
+él, un `Grep` recursivo o una exploration de directorio se carries con `node_modules/`,
+`target/`, `dist/` o `build/`, y cada resultado entra en el contexto.
+
+El `.gitignore` ya lista esos artefactos, pero el agente no lo lee por defecto: sin
+`.claudeignore`, un `Grep` sobre el repo entra en `target/` y devuelve basura de compilación.
+
+| Sin `.claudeignore` | Con `.claudeignore` |
+|---|---|
+| Un `Grep` recursivo devuelve cientos de rutas de `target/` | El recorrido se salta el artefacto |
+| Un `Glob` de `**/*.ts` encuentra `node_modules` | Sólo el código propio |
+| El agente "explora el proyecto" y lee un bundle de 1,5MB | Lee la fuente |
+
+**Qué excluir**: artefactos de build, dependencias instaladas, cachés, cobertura, y ficheros
+generados. **Qué NO excluir**: los ficheros que son autoridad del proyecto (roadmap, changelog,
+especificaciones) — el agente debe poder leerlos; lo que se le pide es que no los lea *enteros*,
+y eso se dice en el fichero de instrucciones, no escondiendo el fichero.
+
 ## Inventario por proyecto y por máquina
 
 Un agente que trabaja en varios repos carga la misma configuración global en todos ellos. Dos

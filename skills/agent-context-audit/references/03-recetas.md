@@ -255,6 +255,61 @@ escribiendo aunque no tengan el fichero abierto de forma visible.
 
 ---
 
+## R12 · Añadir un `.claudeignore`
+
+**Cuándo:** el agente recorre el proyecto y vuelve con rutas de artefactos, o un `Grep`
+recursivo devuelve basura de compilación.
+
+```bash
+cat > .claudeignore <<'EOF'
+# artefactos de build
+target/
+build/
+dist/
+out/
+.gradle/
+node_modules/
+# cobertura y caché
+coverage/
+__pycache__/
+*.pyc
+EOF
+```
+
+**Regla de discernimiento:** se excluye lo **generado**, no lo **autoritativo**. Un `ROADMAP.md`
+de 500KB es autoridad y debe poder leerse; lo que se le pide al agente es que lo lea por
+partes, y eso se dice en las instrucciones del proyecto. Excluir un fichero de autoridad para
+"ahorrar contexto" es un recorte que **daña el trabajo**.
+
+**Reversión:** borrar el fichero.
+
+**Comprobar:** un `Grep` recursivo que antes devolvía `target/` ahora no lo devuelve.
+
+---
+
+## R13 · Verificar que la clave existe antes de proponerla
+
+**Cuándo:** vas a recomendar un ajuste de configuración.
+
+Una clave que no existe en la versión instalada **no hace nada** — o peor, hace algo distinto
+del que crees. Antes de proponer un ajuste:
+
+```bash
+claude --version                     # la versión que la va a leer
+strings "$(readlink -f "$(which claude)")" | grep -x 'CLAUDE_CODE_MAX_CONTEXT_TOKENS'
+```
+
+Si la clave no aparece, **no la propongas**: di que la versión instalada no la expone y ofrece
+la alternativa (un porcentaje de reserva, si el harness lo ofrece, o el ajuste equivalente
+en la configuración del proveedor).
+
+Una recomendación que no aplica es peor que ninguna: el usuario la aplica, no ve efecto y
+concluye que la auditoría no sirve.
+
+**Reversión:** no aplica — es un requisito de la propuesta.
+
+---
+
 ## Orden recomendado
 
 ```text

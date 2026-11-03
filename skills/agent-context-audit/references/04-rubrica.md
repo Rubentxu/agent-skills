@@ -44,6 +44,7 @@ Empieza en 100 y descuenta. Suelo en 0.
 | Umbral de ventana por encima del techo real observado | -10 |
 | Versión del harness anterior a la que difiere los esquemas | -10 |
 | Falta `permissions.deny` sobre directorios pesados presentes | -5 |
+| Sin `.claudeignore` con los artefactos de build del repo | -5 |
 
 Etiquetas: **90-100** limpio · **70-89** necesita trabajo · **50-69** inflado ·
 **0-49** crítico.

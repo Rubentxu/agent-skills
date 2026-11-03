@@ -1,6 +1,6 @@
 ---
 name: agent-context-audit
-description: "Audita y recorta el presupuesto de contexto de un harness de agente (Claude Code y compatibles): mide la carga fija de cada petición, distingue lo always-on de lo on-demand, detecta el bucle de compactación continua y propone recortes reversibles por prioridad (MCP, AGENTS.md/CLAUDE.md, memoria, skills, hooks, settings). Úsala cuando el agente 'compacta y no avanza', repite compactaciones, se queda sin ventana, el contexto se llena de golpe, o consume tokens de más — aunque el síntoma se describa como 'el modelo no me entiende', 'la sesión va lenta' o 'se le olvida todo'."
+description: "Audita y recorta el contexto de un harness de agente (Claude Code y otros): mide la carga fija por petición, separa lo always-on de lo on-demand, detecta el bucle de compactación y propone recortes reversibles (MCP, instrucciones, memoria, skills, hooks). Úsala si el agente 'compacta y no avanza', repite compactaciones o se queda sin ventana."
 metadata:
   version: "1.0.0"
 ---
@@ -70,6 +70,24 @@ sano; el mismo 40K en `AGENTS.md` es un impuesto permanente. **Mide los dos por 
    pierde, no lo recortes: consúltalo.
 8. **Mide el antes y el después con el mismo método.** Comparar un `/context` con una
    estimación por bytes no prueba nada.
+
+## El primer paso, antes de auditar nada
+
+**Audítate a ti primero.** Esta skill declara un presupuesto de contexto; si su propio
+`SKILL.md` se pasa de 200 líneas, si su descripción es un párrafo, o si sus referencias
+cargan de más, tiene menos autoridad para hablar del presupuesto de otro.
+
+Mídete con el mismo medidor que usarás después:
+
+```bash
+python3 scripts/measure_context.py --project . --config .
+```
+
+Tres cosas que se miran de una: **líneas del `SKILL.md`** (objetivo ≤200), **palabras de la
+descripción** (objetivo ≤60) y **carga always-on** de la propia skill en el catálogo. Si una
+de las tres falla, se arregla antes de auditar a nadie.
+
+Una skill de auditoría inflada no tiene autoridad para hablar de inflación.
 
 ## Flujo por defecto
 

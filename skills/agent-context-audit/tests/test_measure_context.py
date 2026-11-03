@@ -138,6 +138,20 @@ class InventoryTests(unittest.TestCase):
     def test_slug_derives_from_absolute_path(self):
         self.assertEqual(measure.project_slug(Path("/var/home/u/proy")), "-var-home-u-proy")
 
+    def test_agent_without_frontmatter_is_not_in_the_catalogue(self):
+        write(self.config / "agents" / "sin-frontmatter.md", "cuerpo " * 400)
+        inv = measure.build(self.project, self.config)
+        self.assertEqual([i for i in inv.always_on if i["source"] == "agent-catalogue"], [])
+        self.assertEqual(len([i for i in inv.on_demand if i["source"] == "agent-unregistered"]), 1)
+
+    def test_agent_with_description_is_in_the_catalogue(self):
+        write(self.config / "agents" / "con-frontmatter.md",
+              "---\nname: x\ndescription: 'Revisa riesgos de seguridad'\n---\n" + "cuerpo " * 400)
+        inv = measure.build(self.project, self.config)
+        catalogue = [i for i in inv.always_on if i["source"] == "agent-catalogue"]
+        self.assertEqual(len(catalogue), 1)
+        self.assertLess(catalogue[0]["tokens"], 20)
+
     def test_always_on_and_on_demand_are_reported_separately(self):
         write(self.project / "AGENTS.md", "regla " * 100)
         write(self.config / "skills" / "demo" / "SKILL.md",
