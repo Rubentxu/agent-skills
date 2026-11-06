@@ -36,6 +36,21 @@ def state(op="transition", **overrides):
     return result
 
 
+
+def wip_policy(global_limit=3, owner_limit=1, active=None):
+    return {"activeStatuses": active or ["In Progress"],
+            "maxGlobal": global_limit, "maxPerAssignee": owner_limit}
+
+
+def item(identity, status, assignees=None, archived=False):
+    return {"id": identity, "status": status, "assignees": assignees or [], "archived": archived}
+
+
+def start_board(*others, owner=None):
+    return {"schemaVersion": 1, "kind": "task-list",
+            "tasks": [item("BACK-21", "To Do", owner if owner is not None else ["@alice"]), *others]}
+
+
 class BoardCrudTests(unittest.TestCase):
     def test_create_is_proposal_and_preserves_repeated_acceptance(self):
         r = board.plan(sample("board-create.json"))
@@ -100,7 +115,10 @@ class BoardCrudTests(unittest.TestCase):
         self.assertEqual(board.plan(s)["decision"], "NO_CHANGE")
 
     def test_restore_keeps_identity_and_status(self):
-        s = state("restore", task={**task(), "archived": True, "status": "In Progress"})
+        s = state("restore", task={**task(), "archived": True, "status": "In Progress",
+                                    "assignees": ["@alice"]}, wipPolicy=wip_policy(),
+                  boardSnapshot={"schemaVersion": 1, "kind": "task-list", "tasks": []},
+                  boardComplete=True)
         self.assertEqual(board.plan(s)["suggestedArgv"], ["backlog", "task", "restore", "BACK-21"])
         s["task"]["archived"] = False
         self.assertEqual(board.plan(s)["decision"], "NO_CHANGE")
@@ -112,7 +130,7 @@ class BoardCrudTests(unittest.TestCase):
         self.assertIsNone(r["suggestedArgv"])
 
     def test_effects_apply_to_creation_and_restoration(self):
-        for s in (sample("board-create.json"), state("restore", task={**task(), "archived": True})):
+        for s in (sample("board-create.json"), state("restore", task={**task(), "archived": True, "status": "To Do"})):
             with self.subTest(operation=s["operation"]):
                 s["config"]["onStatusChange"] = True
                 self.assertEqual(board.plan(s)["decision"], "BLOCKED")
@@ -121,6 +139,121 @@ class BoardCrudTests(unittest.TestCase):
 
     def test_unknown_config_blocks_write(self):
         self.assertEqual(board.plan(state(config={}))["decision"], "INSPECT_MORE")
+
+
+    def start(self, *others, owner=None, **overrides):
+        data = state(task={**task(), "status": "To Do", "isReady": True, "assignees": owner or ["@alice"]},
+                     targetStatus="In Progress", authorized=True,
+                     wipPolicy=wip_policy(), boardSnapshot=start_board(*others, owner=owner),
+                     boardComplete=True)
+        data.update(overrides)
+        return data
+
+    def test_wip_unknown_policy_and_snapshot_fail_closed(self):
+        s = self.start()
+        del s["wipPolicy"]
+        self.assertEqual(board.plan(s)["decision"], "INSPECT_MORE")
+        s["wipPolicy"] = wip_policy()
+        del s["boardComplete"]
+        self.assertEqual(board.plan(s)["decision"], "INSPECT_MORE")
+        s["boardComplete"] = True
+        s["boardSnapshot"]["total"] = 5
+        self.assertEqual(board.plan(s)["decision"], "INSPECT_MORE")
+
+    def test_wip_allows_capacity_and_exact_argv(self):
+        s = self.start(item("OTHER-1", "In Progress", ["@bob"]))
+        self.assertEqual(board.plan(s)["decision"], "AUTHORIZED_ACTION")
+        self.assertEqual(board.plan(s)["suggestedArgv"],
+                         ["backlog", "task", "edit", "BACK-21", "-s", "In Progress"])
+
+    def test_wip_global_limit_blocks_additional_work(self):
+        s = self.start(item("OTHER-1", "In Progress", ["@bob"]),
+                       item("OTHER-2", "In Progress", ["@carol"]),
+                       wipPolicy=wip_policy(global_limit=2))
+        result = board.plan(s)
+        self.assertEqual(result["decision"], "BLOCKED")
+        self.assertIn("Global WIP full", result["reason"])
+        self.assertIsNone(result["suggestedArgv"])
+
+    def test_wip_owner_limit_blocks_same_owner(self):
+        s = self.start(item("OTHER-1", "In Progress", ["@alice"]))
+        result = board.plan(s)
+        self.assertEqual(result["decision"], "BLOCKED")
+        self.assertIn("Owner WIP full", result["reason"])
+
+    def test_wip_unassigned_pool_and_multiowner_both_count(self):
+        s = self.start(item("OTHER-1", "In Progress", []), owner=[])
+        self.assertEqual(board.plan(s)["decision"], "BLOCKED")
+        s = self.start(item("OTHER-1", "In Progress", ["@bob"]),
+                       owner=["@alice", "@bob"])
+        self.assertEqual(board.plan(s)["decision"], "BLOCKED")
+
+    def test_wip_archived_and_finished_excluded(self):
+        s = self.start(item("OLD-1", "In Progress", ["@alice"], archived=True),
+                       item("OLD-2", "Done", ["@alice"]))
+        self.assertEqual(board.plan(s)["decision"], "AUTHORIZED_ACTION")
+        s["boardSnapshot"]["tasks"].append(item("OLD-3", "In Progress", ["@bob"]))
+        self.assertEqual(board.plan(s)["decision"], "AUTHORIZED_ACTION")
+
+    def test_wip_active_to_active_and_exiting_not_blocked(self):
+        s = state(statuses=["To Do", "In Progress", "Review", "Done"],
+                  task={**task(), "status": "In Progress"}, targetStatus="Review",
+                  wipPolicy=wip_policy(active=["In Progress", "Review"]), authorized=True)
+        self.assertEqual(board.plan(s)["decision"], "AUTHORIZED_ACTION")
+        s["targetStatus"] = "To Do"
+        del s["wipPolicy"]
+        self.assertEqual(board.plan(s)["decision"], "AUTHORIZED_ACTION")
+
+    def test_wip_stale_task_view_and_missing_candidate_fail_closed(self):
+        s = self.start()
+        s["boardSnapshot"]["tasks"][0]["status"] = "In Progress"
+        self.assertEqual(board.plan(s)["decision"], "INSPECT_MORE")
+        s["boardSnapshot"]["tasks"] = []
+        self.assertEqual(board.plan(s)["decision"], "INSPECT_MORE")
+        s["boardSnapshot"]["tasks"] = [item("BACK-21", "To Do", ["@bob"])]
+        self.assertEqual(board.plan(s)["decision"], "INSPECT_MORE")
+
+    def test_wip_unknown_assignees_or_duplicate_ids_fail_closed(self):
+        s = self.start()
+        del s["boardSnapshot"]["tasks"][0]["assignees"]
+        self.assertEqual(board.plan(s)["decision"], "INSPECT_MORE")
+        s = self.start()
+        s["boardSnapshot"]["tasks"].append(item("BACK-21", "To Do", ["@alice"]))
+        self.assertEqual(board.plan(s)["decision"], "INSPECT_MORE")
+
+    def test_wip_policy_invalid_fails_validation(self):
+        for pol in (wip_policy(global_limit=True), wip_policy(global_limit=0),
+                    wip_policy(active=["Done"]), wip_policy(active=["No such status"]),
+                    wip_policy(active=["In Progress", "In Progress"])):
+            with self.subTest(pol=pol), self.assertRaises(ValueError):
+                board.plan(self.start(wipPolicy=pol))
+
+    def test_wip_recovery_from_blocked_uses_configured_columns(self):
+        s = state(statuses=["Pendiente", "En curso", "Bloqueado", "Comprobado"],
+                  defaultStatus="Pendiente", terminalStatus="Comprobado",
+                  task={**task(), "status": "Bloqueado", "isReady": True, "assignees": ["@alice"]},
+                  targetStatus="En curso", authorized=True,
+                  wipPolicy=wip_policy(active=["En curso"]),
+                  boardSnapshot={"schemaVersion": 1, "kind": "task-list",
+                                 "tasks": [item("BACK-21", "Bloqueado", ["@alice"])]},
+                  boardComplete=True)
+        self.assertEqual(board.plan(s)["decision"], "AUTHORIZED_ACTION")
+
+    def test_wip_restoring_active_work_consumes_capacity(self):
+        s = state("restore", task={**task(), "archived": True,
+                                    "assignees": ["@alice"]},
+                  wipPolicy=wip_policy(),
+                  boardSnapshot={"schemaVersion": 1, "kind": "task-list",
+                                 "tasks": [item("OTHER-1", "In Progress", ["@alice"])]},
+                  boardComplete=True)
+        self.assertEqual(board.plan(s)["decision"], "BLOCKED")
+
+    def test_wip_create_directly_active_is_refused(self):
+        s = sample("board-create.json")
+        s["newTask"]["status"] = "In Progress"
+        result = board.plan(s)
+        self.assertEqual(result["decision"], "BLOCKED")
+        self.assertIn("defaultStatus", result["reason"])
 
     def test_no_mutation_and_determinism(self):
         s = sample("board-create.json")
