@@ -41,6 +41,17 @@ description: "Gestiona trabajo ágil local-first con Backlog.md CLI: captura y r
 - **Cerrar:** escribir `--final-summary` con resultado y riesgos, marcar estado final configurado solo con evidencias; archivar después durante mantenimiento explícito, no al completar.
 - **Revisar:** analizar bloqueos, exceso de WIP y tareas abandonadas; ajustar primero políticas y descomposición, no multiplicar reuniones ni burocracia.
 
+
+## Política de WIP (Work In Progress)
+
+**Norma operativa:** terminar antes de empezar. El **valor inicial recomendado**, configurable por equipo y por proyecto, es **máximo 1 tarea activa por responsable y 3 en total**; no imponer los valores como regla global inmutable. Definir explícitamente qué columnas son activas (puede haber `In Progress` y `Review`), cuáles son espera/bloqueo y cuál es el estado final. Los límites abarcan todas las tareas visibles en el ámbito declarado y se aplican a todos los agentes que compartan el mismo tablero. Una tarea con varios responsables cuenta para cada uno; las no asignadas comparten un único cupo.
+
+**Antes de entrar en WIP:** leer `backlog config get statuses`, `backlog task list --json` **sin filtros ni paginación**, `backlog task view <id> --json` y comprobar `isReady=true`. El planificador `scripts/board_crud.py` requiere `wipPolicy`, `boardSnapshot` (envoltura nativa `task-list`) y confirmación `boardComplete=true` de ámbito completo. Si faltan datos, están desactualizados, no hay cupo o cambia la tarea, debe devolver `INSPECT_MORE` o `BLOCKED` **sin proponer argv**. Crear una tarea no la inicia: primero se crea en la columna inicial. Restaurar una tarea archivada que vuelve activa también consume cupo.
+
+**Ante saturación:** elegir una tarea activa para **terminar**, o **pausar explícitamente** una tarea verdaderamente bloqueada en una columna de espera configurada, preservando notas, dependencias y causa. No marcar falsamente `Done`, archivar para ocultarla, desasignar artificialmente, trocear tickets para saltarse el límite ni aprobar excepciones automáticas. Una incidencia urgente puede justificar una excepción **humana documentada** a la política o una preempción explícita; no es un bypass silencioso en el router. Volver de `In Progress` a pendiente, pasar de columna activa a activa o cerrar trabajo no requiere cupo adicional.
+
+**Importante:** el control es un **preflight del agente**, no una restricción atómica implementada por la CLI de Backlog.md. Releer inmediatamente antes de ejecutar; dos agentes concurrentes aún podrían competir por el último hueco. El universo visible de ramas/worktrees puede variar; `boardComplete` nunca se infiere de un listado filtrado. Ver [contrato y ejemplo](references/wip-policy.md).
+
 ## Contrato transversal de documentación de código (cualquier lenguaje)
 
 **Regla:** el código explica cómo funciona; la documentación explica el contrato vigente y las decisiones no evidentes; el historial de desarrollo pertenece a Git y Backlog.md, no a comentarios de producción. Aplicar a cualquier stack, con el formato nativo del lenguaje, sin suponer Kotlin ni herramientas instaladas.

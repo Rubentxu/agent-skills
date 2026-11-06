@@ -97,3 +97,11 @@
 - Grafo determinista con validación de términos, contextos, duplicidades y relaciones; exportación OKF v0.2 solo bajo pedido, con index.md.
 - Pruebas unitarias sintéticas para rechazos y no sobrescritura; los estados verified/generated no se inventan.
 - Pendiente: smoke real de extracción CLI en entorno efímero, contraste con cambios de versión, migración semántica incremental y medición del coste de contexto.
+
+## S14 — Límite de trabajo en curso (WIP) por política de proyecto
+
+- Preflight en `board_crud.py` antes de iniciar una tarea o restaurar una tarea archivada directamente activa; crear tareas solo en estado por defecto.
+- Política explícita `activeStatuses, maxPerAssignee, maxGlobal`; recomendación inicial 1 por responsable y 3 globales. Se cuenta trabajo sin asignar y coasignado.
+- Instantánea nativa `task-list` sin filtros/paginación, `boardComplete` observado y comparación con tarea detallada; fail-closed ante ausencia, inconsistencia, duplicados o saturación.
+- Salidas de WIP y cambios entre estados activos no consumen cupos nuevos. No marcar Done ni archivar sin pruebas para vaciar el tablero.
+- Tests unitarios sobre el planificador y ejemplo sintético; pendiente garantía atómica interagente si Backlog.md expone en un futuro una primitiva de transición condicional.

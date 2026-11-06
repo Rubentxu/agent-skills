@@ -62,6 +62,39 @@ jobs:
           node -e 'const a=require("./tasks-before.json");if(a.kind!=="task-list"||a.tasks.length<1)process.exit(1)'
           backlog task list --json > tasks-after.json
           diff -u tasks-before.json tasks-after.json
+      - name: Validate WIP preflight against real Backlog task-list JSON
+        run: |
+          set -euo pipefail
+          cd "$FIXTURE"
+          backlog task view TASK-1 --json > /tmp/wip-task-view.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          from os import environ
+          fixture = Path(environ['FIXTURE'])
+          board = json.loads((fixture / 'tasks-before.json').read_text())
+          task = json.loads(Path('/tmp/wip-task-view.json').read_text())['task']
+          payload = {
+              'schemaVersion': 1, 'kind': 'board-operation', 'operation': 'transition',
+              'statuses': ['To Do', 'In Progress', 'Done'],
+              'defaultStatus': 'To Do', 'terminalStatus': 'Done', 'targetStatus': 'In Progress',
+              'task': {key: task[key] for key in ('id', 'status', 'archived', 'isReady', 'assignees')},
+              'wipPolicy': {'activeStatuses': ['In Progress'], 'maxGlobal': 3, 'maxPerAssignee': 1},
+              'boardSnapshot': board, 'boardComplete': True,
+              'config': {'autoCommit': False, 'remoteOperations': False,
+                         'bypassGitHooks': False, 'onStatusChange': False},
+              'authorized': False
+          }
+          Path('/tmp/wip-preflight.json').write_text(json.dumps(payload))
+          PY
+          python3 "$GITHUB_WORKSPACE/skills/backlog-agile-workflow/scripts/board_crud.py" /tmp/wip-preflight.json > /tmp/wip-proposal.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          result = json.loads(Path('/tmp/wip-proposal.json').read_text())
+          assert result['decision'] == 'PROPOSE_ONLY', result
+          assert result['suggestedArgv'][-2:] == ['-s', 'In Progress'], result
+          PY
       - name: Exercise real Groma CLI without launching servers or scanning implicitly
         run: |
           set -euxo pipefail

@@ -10,3 +10,5 @@
 - Revisar callbacks `onStatusChange`, operaciones Git y autocommits antes de escribir. `scripts/board_crud.py` rechaza borrados automáticos y distingue archivo/completado.
 
 **Salida:** ID, motivo, dependencias afectadas, estado previo, ubicación final, confirmación por CLI y siguiente acción.
+
+**Restauración y WIP:** si una tarea archivada recupera un estado activo, reservar cupo global y por responsable usando `boardSnapshot` y `wipPolicy` antes de restaurar; no dar por hecho que restaurar es neutro para la capacidad. Si falta cupo, mantener archivada y proponer secuencia explícita de recuperación.

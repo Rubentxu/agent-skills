@@ -1,6 +1,6 @@
 # Review & Maintenance — mejora continua sin burocracia
 
-1. Inspeccionar tablero/listado y milestones con opciones no interactivas; comparar WIP, bloqueos, antigüedad visible y tareas listas, sin inventar velocity.
+1. Inspeccionar `backlog task list --json` completo y columnas configuradas; comparar WIP global y por responsable con los límites declarados, bloqueos, antigüedad visible y tareas listas, sin inventar velocity. Una tarea archivada/finalizada no consume WIP; las no asignadas cuentan en cupo compartido. Ver [política](../wip-policy.md).
 2. Si hay documentación desfasada, priorizar contratos expuestos y decisiones de seguridad/replay antes de comentarios cosméticos; revisar solo el diff y los componentes de alto riesgo. Usar [code-documentation](code-documentation.md) y no abrir una tarea por cada línea de comentario.
 3. Preguntar qué impidió entregar valor: tareas demasiado grandes, dependencias evitables, AC difusos, fallos repetidos o interrupciones. Elegir **una** mejora de flujo que pueda verificarse.
 4. Repriorizar con autorización, registrar una decisión si cambia una política real. No reescribir todo el backlog ni regenerar ROADMAP.md automáticamente.

@@ -30,3 +30,9 @@ Si la CLI fue inicializada con `--no-git`, no trasladar automáticamente políti
 ## Política de documentos de gestión privados
 
 Si el proyecto consumidor requiere no versionar ROADMAP/ADR/SPEC/Backlog.md, revisar [procedimiento Git](repository-hygiene.md) antes de configurar. `autoCommit=false` **no impide** un `git add` manual ni hace que Git deje de rastrear documentos existentes. `remoteOperations` y `checkActiveBranches` pueden perder semántica habitual con el backlog ignorado; documentar explícitamente esa limitación. No ejecutar `backlog init --no-git` sin confirmar la versión y el tipo de repositorio. Pactar ubicación persistente y sincronización privada, no confiar solo en `.gitignore`.
+
+## Límite de trabajo activo (WIP)
+
+Backlog.md no expone en la CLI consultada un límite atómico `maxInProgress`. La skill propone un **preflight configurable**, no altera el modelo de estados. Recomendación inicial para un equipo pequeño: **1 activo por responsable y 3 activos globales**, después ajustar según capacidad y throughput observado. Registrar la política aceptada en un documento de proyecto gestionado por la CLI si es necesario; nunca reescribir por rutina las columnas del backlog. Consultar [wip-policy](wip-policy.md).
+
+`wipPolicy.activeStatuses` es un subconjunto explícito de `statuses` que incluye las columnas que consumen capacidad (por ejemplo `In Progress` y `Review`); `maxGlobal` y `maxPerAssignee` son enteros positivos. El snapshot `task-list` se obtiene sin filtrar, se verifica que esté completo y no se usa `--watch` para una consulta puntual. La política de responsabilidad multiagente cuenta cada coasignación y considera todas las tareas no asignadas un cupo compartido.

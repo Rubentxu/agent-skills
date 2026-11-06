@@ -192,6 +192,9 @@ def affordances(state: dict[str, Any]) -> dict[str, Any]:
             result["_links"].append(_notice("select-task", "Elegir el ID observado de una tarea"))
             return result
 
+    if intent == "move-task":
+        result["suggested_reads"].append(["backlog", "task", "list", "--json"])
+        result["_links"].append(_notice("inspect-wip", "Antes de entrar en WIP, comparar snapshot completo y límites de la política", href=_local("references/wip-policy.md")))
     if intent in BOARD_INTENTS:
         result["_links"].append(_notice(
             "plan-board-operation",

@@ -49,3 +49,7 @@ Backlog.md admite solamente readme, guide, specification y other como tipo de do
 Comandos nativos útiles: backlog doc create "Run" -t other -p glossary/execution; backlog doc view doc-1; backlog doc update doc-1 --tags "kind:term,ctx:execution,term:execution.run"; backlog doc search "execution.run".
 
 Antes de actualizar, leer: --tags reemplaza todas las etiquetas y --content reemplaza el cuerpo. La ruta para task edit --add-doc debe tomarse de la salida real de la CLI. La CLI no añade campos YAML personalizados arbitrarios: usar proyección OKF separada, no editar frontmatter a mano.
+
+## WIP antes de mover a In Progress
+
+No existe una opción nativa de Backlog.md que impida atómicamente superar el WIP. Inspeccionar `backlog config get statuses`, `backlog task list --json` **sin filtros** y `backlog task view <ID> --json`. El helper `scripts/board_crud.py` acepta `wipPolicy`, `boardSnapshot` (envoltura JSON oficial) y `boardComplete: true` (atestación de alcance por el agente) y responde `BLOCKED/INSPECT_MORE` si excede capacidad o faltan datos. Ver [contrato](wip-policy.md). Los valores 1 por persona y 3 totales son recomendación inicial, no config nativa.
