@@ -98,3 +98,23 @@ jobs:
           diff -u tasks-before.json tasks-final.json
           find groma -type f -print0 | sort -z | xargs -0 sha256sum > /tmp/groma-final.txt
           diff -u /tmp/groma-before.txt /tmp/groma-final.txt
+      - name: Smoke Backlog native documents and semantic tags in disposable project
+        run: |
+          set -euo pipefail
+          cd "$FIXTURE"
+          backlog doc create "Run term" -t other -p glossary/execution > /tmp/term-created.txt
+          docid="$(sed -n 's/^Created document //p' /tmp/term-created.txt)"
+          docpath="$(sed -n 's/^Path: //p' /tmp/term-created.txt)"
+          test -n "$docid"
+          test -n "$docpath"
+          backlog doc update "$docid" --tags 'kind:term,ctx:execution,term:execution.run'
+          backlog doc update "$docid" --content '# Run (execution)'
+          backlog doc view "$docid" --plain > /tmp/term-view.txt
+          grep -q 'execution.run' /tmp/term-view.txt
+          backlog task edit TASK-1 --add-doc "$docpath"
+          backlog task view TASK-1 --json > /tmp/term-task-view.json
+          node -e 'const t=require("/tmp/term-task-view.json").task; if (!t.documentation || !t.documentation.some(x=>x.includes("doc-"))) process.exit(1)'
+          python3 "$GITHUB_WORKSPACE/skills/backlog-agile-workflow/scripts/knowledge_graph.py" \
+            "$GITHUB_WORKSPACE/skills/backlog-agile-workflow/examples/knowledge-corpus.json" --mode export --output "$FIXTURE/knowledge-okf"
+          test -f "$FIXTURE/knowledge-okf/index.md"
+          test -f "$FIXTURE/knowledge-okf/glossary/execution.run.md"

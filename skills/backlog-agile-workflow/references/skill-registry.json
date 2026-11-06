@@ -8,7 +8,8 @@
         "close",
         "plan",
         "execute",
-        "sync-specs"
+        "sync-specs",
+        "emergent-architecture"
       ],
       "reason": "Elegir pruebas mínimas y conservar evidencia sin crear un segundo harness"
     },
@@ -19,7 +20,9 @@
         "plan",
         "execute",
         "decompose",
-        "sync-specs"
+        "sync-specs",
+        "research-orchestration",
+        "emergent-architecture"
       ],
       "reason": "Explorar una transformación funcional o refactor si el problema lo requiere"
     },
@@ -56,9 +59,18 @@
         "document-code",
         "refine",
         "review",
-        "maintain"
+        "maintain",
+        "research-orchestration",
+        "emergent-architecture"
       ],
       "reason": "Auditar documentación y contratos contra el código actual con evidencias, solo cuando la skill esté disponible y se necesite revisión especializada"
+    },
+    {
+      "id": "mosat-technology-learning",
+      "intents": [
+        "research-orchestration"
+      ],
+      "reason": "Investigar fuentes y modelos tecnológicos con evidencia y criterio de parada, si está disponible"
     }
   ]
 }

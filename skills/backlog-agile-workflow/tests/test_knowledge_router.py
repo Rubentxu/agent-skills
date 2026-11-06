@@ -29,6 +29,13 @@ class KnowledgeRouterTests(unittest.TestCase):
         self.assertEqual(router.affordances(self.state("ubiquitous-language", mode="apply"))["decision"], "AUTHORIZED_ACTION")
         self.assertEqual(router.affordances(self.state("semantic-consistency", mode="apply"))["decision"], "KEEP_AS_IS")
 
+    def test_research_delegates_only_when_skill_is_available(self):
+        base = self.state("research-orchestration")
+        self.assertFalse(any(x["rel"] == "delegate-skill" for x in router.affordances(base)["_links"]))
+        base["available_skills"] = ["mosat-technology-learning"]
+        self.assertEqual([x["skill_id"] for x in router.affordances(base)["_links"]
+                          if x["rel"] == "delegate-skill"], ["mosat-technology-learning"])
+
     def test_offline_export_does_not_invent_cli(self):
         outcome = router.affordances(self.state("okf-documentation", cli="missing", project="absent"))
         self.assertEqual(outcome["decision"], "READY")
