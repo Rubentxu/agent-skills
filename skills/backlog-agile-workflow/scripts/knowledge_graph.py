@@ -51,7 +51,7 @@ def validate(corpus: dict[str, Any]) -> list[dict[str, str]]:
             issue("AMBIGUOUS_LABEL", at, f"Duplicate label in {ctx}: {label}")
         else:
             labels.add((ctx, label.casefold()))
-        if t.get("status", "proposed") not in STATUSES:
+        if not isinstance(t.get("status", "proposed"), str) or t.get("status", "proposed") not in STATUSES:
             issue("TERM_STATUS", at, "Invalid glossary status")
         aliases = t.get("aliases", [])
         if not isinstance(aliases, list) or any(not isinstance(a, str) or not a.strip() for a in aliases):
@@ -74,7 +74,7 @@ def validate(corpus: dict[str, Any]) -> list[dict[str, str]]:
             issue("DOCUMENT_BODY", at, "Title and content required")
         if not isinstance(d.get("type"), str) or not d["type"].strip():
             issue("DOCUMENT_TYPE", at, "OKF type required")
-        if d.get("status", "draft") not in {"draft", "stable", "deprecated"}:
+        if not isinstance(d.get("status", "draft"), str) or d.get("status", "draft") not in {"draft", "stable", "deprecated"}:
             issue("DOCUMENT_STATUS", at, "Unknown OKF status")
         tags = d.get("tags")
         if not isinstance(tags, list) or any(not isinstance(t, str) or not t.strip() for t in tags):
@@ -88,15 +88,21 @@ def validate(corpus: dict[str, Any]) -> list[dict[str, str]]:
                 issue("UNKNOWN_TERM", at, term)
             if "ctx:" + term.split(".")[0] not in tags:
                 issue("CONTEXT_TAG", at, term)
+        for tag in tags:
+            if tag.startswith("ctx:") and tag[4:] not in {tid.split(".")[0] for tid in term_ids}:
+                issue("UNKNOWN_CONTEXT", at, tag)
         if len(set(attached)) != len(attached):
             issue("DUPLICATE_TAG", at, "Repeated term tag")
+        sources = d.get("sources", [])
+        if not isinstance(sources, list) or any(not isinstance(s, dict) or not isinstance(s.get("resource"), str) or not s["resource"].strip() for s in sources):
+            issue("SOURCES", at, "sources require resource strings")
         relations = d.get("relations", [])
         if not isinstance(relations, list):
             issue("RELATIONS", at, "relations must be an array")
             continue
         for j, edge in enumerate(relations):
             loc = f"{at}.relations[{j}]"
-            if not isinstance(edge, dict) or edge.get("predicate") not in PREDICATES:
+            if not isinstance(edge, dict) or not isinstance(edge.get("predicate"), str) or edge.get("predicate") not in PREDICATES:
                 issue("PREDICATE", loc, "Unrecognized relationship")
                 continue
             target = edge.get("target")
@@ -105,7 +111,7 @@ def validate(corpus: dict[str, Any]) -> list[dict[str, str]]:
             edge_terms = edge.get("terms")
             if not isinstance(edge_terms, list) or not edge_terms:
                 issue("RELATION_TERMS", loc, "Tag each semantic relationship")
-            elif any(t not in attached for t in edge_terms):
+            elif any(not isinstance(t, str) or t not in attached for t in edge_terms):
                 issue("RELATION_TERMS", loc, "Relationship terms must also tag its source document")
     return problems
 
@@ -136,6 +142,9 @@ def _path(identifier: str, is_term: bool) -> str:
 
 def export_okf(corpus: dict[str, Any], target: Path) -> list[str]:
     """Create a new OKF bundle only, never overwrite an existing directory."""
+    problems = validate(corpus)
+    if problems:
+        raise ValueError("Invalid knowledge corpus; refusing to export")
     if target.exists():
         raise ValueError("Output already exists; refusing to overwrite")
     target.parent.mkdir(parents=True, exist_ok=True)

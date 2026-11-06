@@ -50,6 +50,24 @@ class KnowledgeProjectionTests(unittest.TestCase):
         data["documents"][0]["id"] = "../../escape"
         self.assertTrue({"DUPLICATE_TERM", "DOCUMENT_ID"} <= {p["code"] for p in kg.validate(data)})
 
+    def test_malformed_types_produce_diagnostics_instead_of_crashes(self):
+        data = fixture()
+        data["terms"][0]["status"] = {"unexpected": True}
+        data["documents"][0]["status"] = ["draft"]
+        data["documents"][0]["sources"] = [{"title": "no resource"}]
+        data["documents"][0]["relations"][0]["predicate"] = []
+        self.assertTrue({"TERM_STATUS", "DOCUMENT_STATUS", "SOURCES", "PREDICATE"} <=
+                        {p["code"] for p in kg.validate(data)})
+
+    def test_export_revalidates_even_when_called_as_library(self):
+        data = fixture()
+        data["documents"][0]["id"] = "../../outside"
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "bundle"
+            with self.assertRaisesRegex(ValueError, "Invalid knowledge corpus"):
+                kg.export_okf(data, target)
+            self.assertFalse(target.exists())
+
     def test_export_is_okf_markdown_and_never_overwrites(self):
         with tempfile.TemporaryDirectory() as tmp:
             target = Path(tmp) / "bundle"
