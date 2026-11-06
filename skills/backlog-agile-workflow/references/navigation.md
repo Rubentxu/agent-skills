@@ -50,3 +50,7 @@ Los intents `create-task`, `move-task`, `archive-task`, `restore-task` y `delete
 ## Navegación semántica
 
 Las intenciones ubiquitous-language, semantic-tagging, okf-documentation, semantic-consistency, research-orchestration y emergent-architecture consultan el contrato knowledge-contract.md y una lente propia. Solo ubiquitous-language y semantic-tagging se consideran candidatas a escrituras CLI autorizadas. El resto analiza o proyecta archivos fuera de Backlog. No se exige Groma para el glosario; las lecturas doc list se sugieren solo si la CLI está presente.
+
+## Control de trabajo en curso (WIP)
+
+Para `move-task` el router recomienda leer `task list --json` además de `task view --json`. El planificador `board_crud.py` evalúa límites antes de toda entrada a estados activos, usando [WIP](wip-policy.md); si faltan la política o la foto completa, no propone una operación ejecutable. El router solo guía y no debe prometer atomicidad o automatizar excepciones.

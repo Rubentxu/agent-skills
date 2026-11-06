@@ -1,7 +1,7 @@
 # Execution — una tarea, progreso verificable
 
-1. Leer tarea completa y `backlog instructions task-execution`; constatar no archivada, `isReady=true` y plan vigente. Si hay otra tarea activa, evitar crear una segunda sin necesidad.
-2. Antes de proponer estado In Progress, comprobar que ese estado existe en `statuses` del proyecto; y revisar `onStatusChange`, `autoCommit`, `remoteOperations`, `bypassGitHooks` antes de escribir.
+1. Leer tarea completa y `backlog instructions task-execution`; constatar no archivada, `isReady=true` y plan vigente. Si ya existe una tarea activa del mismo responsable, completar o pausar explícitamente antes de comenzar otra según [WIP](../wip-policy.md).
+2. Antes de proponer estado de trabajo activo, consultar las columnas configuradas, obtener `task list --json` completo y `task view --json`, verificar límite WIP global y por responsable con `board_crud.py`, y revisar `onStatusChange`, `autoCommit`, `remoteOperations`, `bypassGitHooks`. En caso de datos incompletos o saturación, no iniciar.
 3. Registrar progresos con `backlog task edit <id> --append-notes "..."` o comentarios para preguntas; nunca sobreescribir notas existentes con `--notes` por rutina.
 4. Al editar un contrato público o una invariante, revisar comentarios/docstrings/documentación adyacente contra el código **actual**. Eliminar historia de implementación y referencias administrativas del producto; registrar IDs y decisiones en Backlog.md/trailers Git. Aplicar [code-documentation](code-documentation.md) al stack detectado sin abrir tarea documental por rutina.
 5. Trabajo de aplicación real pertenece al agente consumidor y sus herramientas; esta skill sólo ordena el flujo y mantiene los metadatos de Backlog.md. No instalar, pushear ni ejecutar software desde el router.

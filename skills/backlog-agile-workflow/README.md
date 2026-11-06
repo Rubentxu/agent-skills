@@ -152,3 +152,7 @@ Validador y grafo determinista: python3 scripts/knowledge_graph.py examples/know
 Exportación opt-in a directorio nuevo: python3 scripts/knowledge_graph.py examples/knowledge-corpus.json --mode export --output /tmp/new-okf-bundle
 
 El [contrato de datos](references/knowledge-contract.md) explica cómo normalizar lecturas CLI sin introducir una segunda autoridad.
+
+## Límites de trabajo en curso (WIP)
+
+[Política configurable](references/wip-policy.md) y verificación previa en `scripts/board_crud.py`. Valor inicial recomendado: **1 tarea activa por responsable y 3 en total** (incluidas coasignaciones, las no asignadas como cupo compartido); la política y las columnas se ajustan por proyecto. Ejecutar `python3 scripts/board_crud.py examples/board-wip-start.json` para consultar un ejemplo sin escribir tareas. El control necesita foto completa de `backlog task list --json`; **no** ofrece exclusión mutua transaccional entre agentes.

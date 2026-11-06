@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "kind": "board-operation",
+  "operation": "transition",
+  "statuses": [
+    "To Do",
+    "In Progress",
+    "Done"
+  ],
+  "defaultStatus": "To Do",
+  "terminalStatus": "Done",
+  "targetStatus": "In Progress",
+  "task": {
+    "id": "TASK-7",
+    "status": "To Do",
+    "archived": false,
+    "isReady": true,
+    "assignees": [
+      "@alice"
+    ]
+  },
+  "wipPolicy": {
+    "activeStatuses": [
+      "In Progress"
+    ],
+    "maxGlobal": 3,
+    "maxPerAssignee": 1
+  },
+  "boardComplete": true,
+  "boardSnapshot": {
+    "schemaVersion": 1,
+    "kind": "task-list",
+    "tasks": [
+      {
+        "id": "TASK-7",
+        "title": "Deliver a small change",
+        "status": "To Do",
+        "archived": false,
+        "assignees": [
+          "@alice"
+        ]
+      },
+      {
+        "id": "TASK-8",
+        "title": "Existing work",
+        "status": "In Progress",
+        "archived": false,
+        "assignees": [
+          "@bob"
+        ]
+      }
+    ]
+  },
+  "config": {
+    "autoCommit": false,
+    "remoteOperations": false,
+    "bypassGitHooks": false,
+    "onStatusChange": false
+  },
+  "authorized": false
+}
