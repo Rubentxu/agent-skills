@@ -236,6 +236,54 @@
         "context-exchange"
       ],
       "playbook": "references/lenses/context-exchange.md"
+    },
+    {
+      "id": "ubiquitous-language",
+      "status": "ready",
+      "intents": [
+        "ubiquitous-language"
+      ],
+      "playbook": "references/lenses/ubiquitous-language.md"
+    },
+    {
+      "id": "semantic-tagging",
+      "status": "ready",
+      "intents": [
+        "semantic-tagging"
+      ],
+      "playbook": "references/lenses/semantic-tagging.md"
+    },
+    {
+      "id": "okf-documentation",
+      "status": "ready",
+      "intents": [
+        "okf-documentation"
+      ],
+      "playbook": "references/lenses/okf-documentation.md"
+    },
+    {
+      "id": "semantic-consistency",
+      "status": "ready",
+      "intents": [
+        "semantic-consistency"
+      ],
+      "playbook": "references/lenses/semantic-consistency.md"
+    },
+    {
+      "id": "research-orchestration",
+      "status": "ready",
+      "intents": [
+        "research-orchestration"
+      ],
+      "playbook": "references/lenses/research-orchestration.md"
+    },
+    {
+      "id": "emergent-architecture",
+      "status": "ready",
+      "intents": [
+        "emergent-architecture"
+      ],
+      "playbook": "references/lenses/emergent-architecture.md"
     }
   ]
 }
