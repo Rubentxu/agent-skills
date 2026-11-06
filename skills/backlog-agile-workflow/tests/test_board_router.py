@@ -53,6 +53,9 @@ class BoardRoutingTests(unittest.TestCase):
             x = router.affordances(state(intent, task={"id": "TASK-10", "archived": archived}))
             self.assertEqual(x["decision"], "PROPOSE_ONLY")
             self.assertIn("plan-board-operation", [i["rel"] for i in x["_links"]])
+            if intent == "move-task":
+                self.assertIn(["backlog", "task", "list", "--json"], x["suggested_reads"])
+                self.assertIn("inspect-wip", [i["rel"] for i in x["_links"]])
 
     def test_delete_never_authorized_by_router(self):
         x = router.affordances(state("delete-task", task={"id": "TASK-10", "archived": True}))
