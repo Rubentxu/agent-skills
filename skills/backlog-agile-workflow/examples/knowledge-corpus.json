@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "kind": "knowledge-corpus",
+  "terms": [
+    {
+      "id": "execution.run",
+      "context": "execution",
+      "label": "Run",
+      "definition": "Ejecución identificable en el contexto execution.",
+      "status": "proposed",
+      "aliases": [
+        "Ejecución"
+      ]
+    },
+    {
+      "id": "execution.worker",
+      "context": "execution",
+      "label": "Worker",
+      "definition": "Ejecutor de trabajo de un Run.",
+      "status": "proposed"
+    }
+  ],
+  "documents": [
+    {
+      "id": "doc-12",
+      "type": "specification",
+      "title": "Recuperación de ejecuciones",
+      "content": "# Recuperación\n\nUn Run debe recuperarse respetando sus invariantes.",
+      "status": "draft",
+      "tags": [
+        "ctx:execution",
+        "term:execution.run",
+        "term:execution.worker"
+      ],
+      "relations": [
+        {
+          "predicate": "constrains",
+          "target": "execution.run",
+          "terms": [
+            "execution.run"
+          ]
+        },
+        {
+          "predicate": "related",
+          "target": "execution.worker",
+          "terms": [
+            "execution.worker"
+          ]
+        }
+      ]
+    }
+  ]
+}
