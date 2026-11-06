@@ -142,7 +142,7 @@ class BoardCrudTests(unittest.TestCase):
 
 
     def start(self, *others, owner=None, **overrides):
-        data = state(task={**task(), "status": "To Do", "isReady": True, "assignees": owner or ["@alice"]},
+        data = state(task={**task(), "status": "To Do", "isReady": True, "assignees": owner if owner is not None else ["@alice"]},
                      targetStatus="In Progress", authorized=True,
                      wipPolicy=wip_policy(), boardSnapshot=start_board(*others, owner=owner),
                      boardComplete=True)
