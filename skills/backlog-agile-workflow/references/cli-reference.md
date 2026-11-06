@@ -41,3 +41,11 @@ backlog task restore <ID>
 
 Ver las guías [creación](lenses/board-create.md), [transiciones](lenses/board-transitions.md) y [archivo/restauración](lenses/board-archive-restore.md). **No se archiva de oficio cuando Done**, ni se marca Done por archivar. Archivar una tarea sin terminar deja sus dependencias bloqueadas. La restauración conserva ID y estado; la tarea archivada no puede editarse. `backlog task delete` requiere archivado previo, puede liberar IDs y actualizar enlaces de otros registros: fuera de automatizaciones.
 `backlog board` es una interfaz interactiva, no un API para agentes; preferir `task list/view --json`. `backlog browser` inicia servidor local y no es necesario para CRUD. Antes de editar, leer `config get statuses` y efectos Git/callbacks. Tras cada operación, releer la tarea observada.
+
+## Documentos y glosario
+
+Backlog.md admite solamente readme, guide, specification y other como tipo de documento. Los tipos lógicos se expresan en tags kind:term, kind:research, kind:invariant, kind:algorithm, kind:risk.
+
+Comandos nativos útiles: backlog doc create "Run" -t other -p glossary/execution; backlog doc view doc-1; backlog doc update doc-1 --tags "kind:term,ctx:execution,term:execution.run"; backlog doc search "execution.run".
+
+Antes de actualizar, leer: --tags reemplaza todas las etiquetas y --content reemplaza el cuerpo. La ruta para task edit --add-doc debe tomarse de la salida real de la CLI. La CLI no añade campos YAML personalizados arbitrarios: usar proyección OKF separada, no editar frontmatter a mano.

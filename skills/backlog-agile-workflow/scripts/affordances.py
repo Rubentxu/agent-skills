@@ -10,18 +10,19 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 INTENTS = frozenset({"discover", "capture", "triage", "refine", "plan", "execute",
-                     "verify", "close", "review", "maintain", "specify", "decompose", "sync-specs", "document-code", "git-hygiene", "trace", "architecture", "curate-architecture", "map-task", "create-task", "move-task", "archive-task", "restore-task", "delete-task", "align-work", "unplanned-work", "manage-dependencies", "manage-epic", "catalog", "decide", "authority-check", "recall", "handoff", "memory-feedback", "context-exchange"})
+                     "verify", "close", "review", "maintain", "specify", "decompose", "sync-specs", "document-code", "git-hygiene", "trace", "architecture", "curate-architecture", "map-task", "create-task", "move-task", "archive-task", "restore-task", "delete-task", "align-work", "unplanned-work", "manage-dependencies", "manage-epic", "catalog", "decide", "authority-check", "recall", "handoff", "memory-feedback", "context-exchange", "ubiquitous-language", "semantic-tagging", "okf-documentation", "semantic-consistency", "research-orchestration", "emergent-architecture"})
 BASIS = frozenset({"observed", "unknown", "stale"})
 CLI = frozenset({"available", "missing", "unknown"})
 PROJECT = frozenset({"initialized", "absent", "unknown"})
 MODES = frozenset({"read", "propose", "apply"})
 GROMA = frozenset({"available", "missing", "unknown"})
 GROMA_INTENTS = frozenset({"architecture", "curate-architecture", "map-task"})
+KNOWLEDGE_INTENTS = frozenset({"ubiquitous-language", "semantic-tagging", "okf-documentation", "semantic-consistency", "research-orchestration", "emergent-architecture"})
 CONFIG = ("autoCommit", "remoteOperations", "bypassGitHooks", "onStatusChange")
 TASK_ID = re.compile(r"[A-Za-z][A-Za-z0-9_.-]{0,63}")
 NEEDS_TASK = frozenset({"plan", "execute", "verify", "close", "map-task", "move-task", "archive-task", "restore-task", "delete-task", "manage-dependencies"})
 BOARD_INTENTS = frozenset({"create-task", "move-task", "archive-task", "restore-task", "delete-task"})
-WRITE_INTENTS = frozenset({"capture", "refine", "plan", "execute", "verify", "close", "review", "maintain", "map-task", "align-work", "unplanned-work", "manage-dependencies", "manage-epic", "decide"})
+WRITE_INTENTS = frozenset({"capture", "refine", "plan", "execute", "verify", "close", "review", "maintain", "map-task", "align-work", "unplanned-work", "manage-dependencies", "manage-epic", "decide", "ubiquitous-language", "semantic-tagging"})
 
 
 def _registry(file: str, key: str) -> list[dict[str, Any]]:
@@ -129,7 +130,7 @@ def affordances(state: dict[str, Any]) -> dict[str, Any]:
         if groma == "missing":
             result["warnings"].append("Groma opcional y ausente; Backlog.md puede seguir funcionando sin mapa")
         return result
-    offline_spec = intent in {"specify", "decompose", "git-hygiene", "trace", "architecture", "curate-architecture", "authority-check", "handoff", "memory-feedback", "context-exchange", "document-code"}
+    offline_spec = intent in {"specify", "decompose", "git-hygiene", "trace", "architecture", "curate-architecture", "authority-check", "handoff", "memory-feedback", "context-exchange", "document-code", "okf-documentation", "semantic-consistency", "research-orchestration", "emergent-architecture"}
     if cli != "available" and not offline_spec:
         result["decision"] = "DISCOVER"
         result["_links"].append(_notice("inspect-cli", "Verificar backlog --version y backlog --help, sin instalar automáticamente"))
@@ -165,6 +166,10 @@ def affordances(state: dict[str, Any]) -> dict[str, Any]:
         result["_links"].append(_notice("inspect-specifications", "Inspeccionar ROADMAP, ADR, SPEC, gates y estado de la fuente canónica"))
     if intent == "document-code":
         result["_links"].append(_notice("review-code-docs", "Inspeccionar contrato de API, código, comentarios y guías del lenguaje; no escribir automáticamente", href=_local("references/code-documentation-languages.md")))
+    if intent in KNOWLEDGE_INTENTS:
+        result["_links"].append(_notice("inspect-knowledge-contract", "Normalizar instantáneas leídas por CLI; validar y proyectar OKF sin alterar Backlog", href=_local("references/knowledge-contract.md")))
+        if cli == "available" and project == "initialized":
+            result["suggested_reads"].append(["backlog", "doc", "list", "--plain"])
     if intent == "git-hygiene":
         result["_links"].append(_notice("audit-git-index", "Comprobar índice con git_artifact_guard.py (solo lectura)"))
     if intent in {"decide", "authority-check"}:

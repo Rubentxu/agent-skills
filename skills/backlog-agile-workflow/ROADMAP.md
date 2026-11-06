@@ -89,3 +89,11 @@
 - Tests sintéticos adversariales en Python y Node forman parte de la CI existente.
 - **Pendiente de observación externa:** smoke con agentes y CLI reales por versión, obtención autenticada de message IDs del anfitrión, latencias de recuperación y medición de investigaciones repetidas. Si el host no ofrece identidad verificable, conservar `UNVERIFIED`.
 - Sin sincronización automática multi-máquina, sin transferencia de transcripciones, sin incremento de suites E2E permanentes.
+
+## S13 — Lenguaje ubicuo, arquitectura emergente y OKF (primer slice implementado)
+
+- Lentes contextuales para términos, etiquetado, investigación, arquitectura y consistencia.
+- Snapshot efímero knowledge-corpus v1. Los documentos y glosarios siguen siendo nativos de Backlog; los scripts no ejecutan Backlog.
+- Grafo determinista con validación de términos, contextos, duplicidades y relaciones; exportación OKF v0.2 solo bajo pedido, con index.md.
+- Pruebas unitarias sintéticas para rechazos y no sobrescritura; los estados verified/generated no se inventan.
+- Pendiente: smoke real de extracción CLI en entorno efímero, contraste con cambios de versión, migración semántica incremental y medición del coste de contexto.

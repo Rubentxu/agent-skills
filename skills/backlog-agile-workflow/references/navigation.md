@@ -46,3 +46,7 @@ Los intents `create-task`, `move-task`, `archive-task`, `restore-task` y `delete
 ## Recomendaciones contextuales
 
 `align-work` propone reconciliar tareas y cambios reales sin certificar Done; `unplanned-work` clasifica hallazgos no planificados; `manage-dependencies` exige ID real y verifica bloqueos; `manage-epic` elige milestone, padre o tarea independiente sin jerarquía artificial. El plugin opcional `plugins/backlog-context` proporciona observaciones de Claude Code y Groma sin alterar Backlog ni ejecutar escaneos. Ver [contextual-events](lenses/contextual-events.md).
+
+## Navegación semántica
+
+Las intenciones ubiquitous-language, semantic-tagging, okf-documentation, semantic-consistency, research-orchestration y emergent-architecture consultan el contrato knowledge-contract.md y una lente propia. Solo ubiquitous-language y semantic-tagging se consideran candidatas a escrituras CLI autorizadas. El resto analiza o proyecta archivos fuera de Backlog. No se exige Groma para el glosario; las lecturas doc list se sugieren solo si la CLI está presente.

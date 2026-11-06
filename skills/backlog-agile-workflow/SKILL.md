@@ -9,7 +9,7 @@ description: "Gestiona trabajo ágil local-first con Backlog.md CLI: captura y r
 
 ## Contrato de arranque y descubrimiento
 
-1. Determinar la **intención de la conversación** y etapa vigente: `discover|capture|triage|refine|plan|execute|verify|close|review|maintain|specify|decompose|sync-specs|document-code|git-hygiene|trace|architecture|curate-architecture|map-task|create-task|move-task|archive-task|restore-task|delete-task|align-work|unplanned-work|manage-dependencies|manage-epic|decide|authority-check|recall|handoff|memory-feedback|context-exchange|catalog`. No arrastrar lentes de otra intención por inercia.
+1. Determinar la **intención de la conversación** y etapa vigente: `discover|capture|triage|refine|plan|execute|verify|close|review|maintain|specify|decompose|sync-specs|document-code|git-hygiene|trace|architecture|curate-architecture|map-task|create-task|move-task|archive-task|restore-task|delete-task|align-work|unplanned-work|manage-dependencies|manage-epic|decide|authority-check|recall|handoff|memory-feedback|context-exchange|ubiquitous-language|semantic-tagging|okf-documentation|semantic-consistency|research-orchestration|emergent-architecture|catalog`. No arrastrar lentes de otra intención por inercia.
 2. Verificar si `backlog` existe y qué proyecto está activo **sin instalar ni inicializar automáticamente**. Para tareas reales, leer primero `backlog instructions overview`; después solo `backlog instructions task-creation`, `task-execution` o `task-finalization` cuando correspondan. La ayuda local prevalece si difiere de la documentación empaquetada.
 3. Si la CLI no está disponible, mostrar opciones de instalación para aprobación; `npx backlog.md ...` es una alternativa ocasional, **nunca** `npx backlog ...` (paquete distinto). Si no hay proyecto inicializado, proponer `backlog init` pero no ejecutar una configuración interactiva sin autorización.
 4. Descubrir preferencias y límites del proyecto vía `backlog config get <clave>` cuando se conozca el comando y consultando la CLI actual; `statuses`, `defaultStatus`, `definition_of_done`, `projects`, `remoteOperations`, `autoCommit`, `bypassGitHooks`, `checkActiveBranches`, `onStatusChange`. No suponer columnas fijas ni que cerrar equivale a archivar.
@@ -67,6 +67,18 @@ description: "Gestiona trabajo ágil local-first con Backlog.md CLI: captura y r
 - Las subtareas son opcionales, no una métrica. Evitar tareas huérfanas y dependencias circulares. No crear nuevos estados o prioridades sin observar configuración real.
 - `--notes` reemplaza el campo; preferir `--append-notes` para progresos. Las secuencias literales `\n` no se convierten en saltos: usar saltos reales o flags repetidas. Para mensajes de comentario, usar `--comment`; para cierre, `--final-summary`.
 - En automatizaciones no interactivas, evitar `backlog config` sin argumentos, `backlog init` interactivo, `board`, `browser`, `cleanup`, editores y suscripciones `--watch` sin ciclo de vida controlado.
+
+## Conocimiento semántico y arquitectura emergente
+
+Backlog.md conserva tareas, documentos y decisiones como autoridad. Los glosarios por bounded context son documentos Backlog gestionados solo por CLI/MCP oficial. El grafo semántico es una proyección derivada y no sustituye Groma, Backlog ni la autoridad humana.
+
+- [Lenguaje ubicuo](references/lenses/ubiquitous-language.md): IDs estables context.concept, definiciones, alias y ejemplos, sin imponer un vocabulario único entre contextos.
+- [Etiquetado semántico](references/lenses/semantic-tagging.md): etiquetas ctx:context y term:context.concept en documentos de conocimiento; relaciones con predicado, destino y términos.
+- [Google OKF v0.2](references/lenses/okf-documentation.md): exportación opt-in e interoperable, sin sobrescribir documentos de Backlog.
+- [Consistencia y grafo](references/lenses/semantic-consistency.md): validador puro scripts/knowledge_graph.py sobre instantáneas explícitas.
+- [Investigación dirigida](references/lenses/research-orchestration.md): hipótesis, evidencia, alternativas, costes y criterio de parada.
+- [Arquitectura emergente](references/lenses/emergent-architecture.md): contratos, invariantes, seams reales y cambios reversibles.
+- [Contrato de normalización y CLI](references/knowledge-contract.md): tipos nativos de documento limitados a readme, guide, specification y other. Usar tags kind:term, kind:research, kind:invariant, etc. No escribir frontmatter personalizado a mano.
 
 ## Enlaces bajo demanda
 

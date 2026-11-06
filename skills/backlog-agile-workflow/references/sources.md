@@ -15,3 +15,9 @@ Las referencias son enlaces, no copias completas de documentación externa. Los 
 - [Inspección, scanner coverage y lint](https://github.com/MrLesk/Groma.md/blob/main/docs/agent-instructions/inspect.md).
 - [Escáner Kotlin](https://github.com/MrLesk/Groma.md/blob/main/docs/scanners/kotlin/index.md) y [escáner Rust](https://github.com/MrLesk/Groma.md/blob/main/docs/scanners/rust/index.md).
 - [Exportación estática y seguridad](https://github.com/MrLesk/Groma.md/blob/main/docs/viewers/web/index.md).
+
+## Lenguaje y conocimiento interoperable
+
+- [Google Open Knowledge Format v0.2](https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/SPEC.md): formato, tags, status, enlaces, fuentes y extensiones.
+- [SKOS de W3C](https://www.w3.org/TR/skos-reference/): vocabulario de términos y relaciones, sin necesidad de RDF.
+- [Backlog.md DocumentType](https://github.com/MrLesk/Backlog.md/blob/main/src/types/index.ts): enum nativo; validar versión instalada.
