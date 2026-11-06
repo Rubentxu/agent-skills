@@ -59,6 +59,80 @@ def verified(task, gate):
                for k in ("acceptanceCriteria", "definitionOfDone"))
 
 
+
+
+def _owners(value):
+    """An empty observed assignees list is a shared, unassigned WIP lane."""
+    if not isinstance(value, list) or any(not isinstance(x, str) or not x.strip() for x in value):
+        return None
+    names = [x.strip() for x in value]
+    return (names or ["<unassigned>"]) if len(set(names)) == len(names) else None
+
+
+def wip_guard(data, operation, target, current=None, task_id=None):
+    """Fail closed on new active slots using an unfiltered CLI task-list snapshot."""
+    policy = data.get("wipPolicy")
+    if policy is None:
+        return outcome(operation, "INSPECT_MORE", "WIP policy not observed: define activeStatuses, maxGlobal, maxPerAssignee")
+    if not isinstance(policy, dict) or set(policy) != {"activeStatuses", "maxGlobal", "maxPerAssignee"}:
+        raise ValueError("WIP policy requires activeStatuses, maxGlobal, maxPerAssignee")
+    active = policy["activeStatuses"]
+    if (not isinstance(active, list) or not active
+            or any(not isinstance(x, str) or x not in data["statuses"] for x in active)
+            or len(active) != len(set(active))
+            or data["defaultStatus"] in active or data["terminalStatus"] in active):
+        raise ValueError("WIP activeStatuses must be distinct, configured, non-default and nonterminal")
+    if any(type(policy[key]) is not int or policy[key] < 1 for key in ("maxGlobal", "maxPerAssignee")):
+        raise ValueError("WIP limits must be positive integers")
+    if target not in active or (operation == "transition" and current in active):
+        return None  # Exiting WIP or changing an active column consumes no extra slot.
+
+    board = data.get("boardSnapshot")
+    if (not isinstance(board, dict) or board.get("schemaVersion") != 1
+            or board.get("kind") != "task-list" or not isinstance(board.get("tasks"), list)
+            or data.get("boardComplete") is not True or "total" in board
+            or board.get("nextSkip") is not None):
+        return outcome(operation, "INSPECT_MORE",
+                       "Read unfiltered backlog task list --json; verify complete policy scope and boardComplete=true")
+    observed = {}
+    for item in board["tasks"]:
+        if (not isinstance(item, dict) or not isinstance(item.get("id"), str)
+                or not IDENTITY.fullmatch(item["id"]) or item["id"] in observed
+                or item.get("status") not in data["statuses"] or type(item.get("archived")) is not bool
+                or _owners(item.get("assignees")) is None):
+            return outcome(operation, "INSPECT_MORE", "WIP snapshot contains missing, duplicate or inconsistent task data")
+        observed[item["id"]] = item
+    if operation == "transition":
+        candidate = observed.get(task_id)
+        if candidate is None or candidate["status"] != current or candidate["archived"]:
+            return outcome(operation, "INSPECT_MORE", "Task-view and task-list differ; refresh both before starting")
+        owners = _owners(candidate["assignees"])
+        if "assignees" in data["task"] and _owners(data["task"]["assignees"]) != owners:
+            return outcome(operation, "INSPECT_MORE", "Task assignees changed since board snapshot")
+        if data["task"].get("isReady") is not True:
+            return outcome(operation, "INSPECT_MORE", "Starting a WIP slot requires isReady=true")
+    elif operation == "restore":
+        owners = _owners(data["task"].get("assignees"))
+        if owners is None or (task_id in observed and not observed[task_id]["archived"]):
+            return outcome(operation, "INSPECT_MORE", "Review archived task assignees and board identity")
+    else:
+        raise ValueError("WIP guard only handles transition and restore")
+
+    running = [x for x in observed.values() if not x["archived"] and x["status"] in active]
+    if len(running) >= policy["maxGlobal"]:
+        return outcome(operation, "BLOCKED",
+                       f"Global WIP full: {len(running)}/{policy['maxGlobal']}; finish or pause work first")
+    occupied = {}
+    for entry in running:
+        for owner in _owners(entry["assignees"]):
+            occupied[owner] = occupied.get(owner, 0) + 1
+    for owner in owners:
+        if occupied.get(owner, 0) >= policy["maxPerAssignee"]:
+            return outcome(operation, "BLOCKED",
+                           f"Owner WIP full for {owner}: {occupied[owner]}/{policy['maxPerAssignee']}")
+    return None
+
+
 def plan(data):
     if not isinstance(data, dict) or data.get("kind") != "board-operation" or data.get("schemaVersion") != 1:
         raise ValueError("Expected board-operation schemaVersion 1")
@@ -92,6 +166,8 @@ def plan(data):
         selected = creation.get("status", default)
         if selected not in statuses or selected == terminal:
             return outcome(op, "BLOCKED", "New task requires configured, nonterminal status")
+        if selected != default:
+            return outcome(op, "BLOCKED", "Create in defaultStatus, then start by a WIP-checked transition")
         refs = strings(creation.get("references", []), "references")
         argv = ["backlog", "task", "create", title, "-d", description]
         if selected != default:
@@ -119,6 +195,10 @@ def plan(data):
                 return outcome(op, "INSPECT_MORE", "Reopening needs an explicit reason")
             if current == default and target != terminal and task.get("isReady") is not True:
                 return outcome(op, "INSPECT_MORE", "Check readiness and dependencies before starting")
+            if target not in (default, terminal):
+                verdict = wip_guard(data, op, target, current=current, task_id=tid)
+                if verdict is not None:
+                    return verdict
             argv = ["backlog", "task", "edit", tid, "-s", target]
         elif op == "archive":
             if task["archived"]:
@@ -135,6 +215,10 @@ def plan(data):
         else:
             if not task["archived"]:
                 return outcome(op, "NO_CHANGE", "Task already on the board")
+            if current not in (default, terminal):
+                verdict = wip_guard(data, op, current, task_id=tid)
+                if verdict is not None:
+                    return verdict
             argv = ["backlog", "task", "restore", tid]
     config = data.get("config")
     if (not isinstance(config, dict) or set(config) != set(CONFIG)
