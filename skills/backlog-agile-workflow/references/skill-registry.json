@@ -71,6 +71,19 @@
         "research-orchestration"
       ],
       "reason": "Investigar fuentes y modelos tecnológicos con evidencia y criterio de parada, si está disponible"
+    },
+    {
+      "id": "goldfish-review",
+      "intents": [
+        "independent-review",
+        "review-resolution",
+        "context-drift",
+        "emergent-architecture",
+        "research-orchestration",
+        "specify",
+        "refine"
+      ],
+      "reason": "Revisar diseños en subagentes frescos solo si host y skill están disponibles, sin escribir tareas ni aprobar decisiones"
     }
   ]
 }

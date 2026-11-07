@@ -105,3 +105,9 @@
 - Instantánea nativa `task-list` sin filtros/paginación, `boardComplete` observado y comparación con tarea detallada; fail-closed ante ausencia, inconsistencia, duplicados o saturación.
 - Salidas de WIP y cambios entre estados activos no consumen cupos nuevos. No marcar Done ni archivar sin pruebas para vaciar el tablero.
 - Tests unitarios sobre el planificador y ejemplo sintético; pendiente garantía atómica interagente si Backlog.md expone en un futuro una primitiva de transición condicional.
+
+## S15 — Goldfish nativo (código y contratos, ensayo de host pendiente)
+
+- Skill independiente, nuevas intenciones, rúbricas y reportes estructurados, sin segunda fuente de verdad.
+- Tests unitarios adversariales; faltan ensayos en vivo para verificar permisos e instrucciones heredadas del host.
+- Detección diferencial de fingerprints es señal de revisión, no evidencia de drift semántico.

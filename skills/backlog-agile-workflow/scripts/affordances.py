@@ -10,7 +10,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 INTENTS = frozenset({"discover", "capture", "triage", "refine", "plan", "execute",
-                     "verify", "close", "review", "maintain", "specify", "decompose", "sync-specs", "document-code", "git-hygiene", "trace", "architecture", "curate-architecture", "map-task", "create-task", "move-task", "archive-task", "restore-task", "delete-task", "align-work", "unplanned-work", "manage-dependencies", "manage-epic", "catalog", "decide", "authority-check", "recall", "handoff", "memory-feedback", "context-exchange", "ubiquitous-language", "semantic-tagging", "okf-documentation", "semantic-consistency", "research-orchestration", "emergent-architecture"})
+                     "verify", "close", "review", "maintain", "specify", "decompose", "sync-specs", "document-code", "git-hygiene", "trace", "architecture", "curate-architecture", "map-task", "create-task", "move-task", "archive-task", "restore-task", "delete-task", "align-work", "unplanned-work", "manage-dependencies", "manage-epic", "catalog", "decide", "authority-check", "recall", "handoff", "memory-feedback", "context-exchange", "ubiquitous-language", "semantic-tagging", "okf-documentation", "semantic-consistency", "research-orchestration", "emergent-architecture", "independent-review", "review-resolution", "context-drift"})
 BASIS = frozenset({"observed", "unknown", "stale"})
 CLI = frozenset({"available", "missing", "unknown"})
 PROJECT = frozenset({"initialized", "absent", "unknown"})
@@ -130,7 +130,7 @@ def affordances(state: dict[str, Any]) -> dict[str, Any]:
         if groma == "missing":
             result["warnings"].append("Groma opcional y ausente; Backlog.md puede seguir funcionando sin mapa")
         return result
-    offline_spec = intent in {"specify", "decompose", "git-hygiene", "trace", "architecture", "curate-architecture", "authority-check", "handoff", "memory-feedback", "context-exchange", "document-code", "okf-documentation", "semantic-consistency", "research-orchestration", "emergent-architecture"}
+    offline_spec = intent in {"specify", "decompose", "git-hygiene", "trace", "architecture", "curate-architecture", "authority-check", "handoff", "memory-feedback", "context-exchange", "document-code", "okf-documentation", "semantic-consistency", "research-orchestration", "emergent-architecture", "independent-review", "review-resolution", "context-drift"}
     if cli != "available" and not offline_spec:
         result["decision"] = "DISCOVER"
         result["_links"].append(_notice("inspect-cli", "Verificar backlog --version y backlog --help, sin instalar automáticamente"))
@@ -166,6 +166,8 @@ def affordances(state: dict[str, Any]) -> dict[str, Any]:
         result["_links"].append(_notice("inspect-specifications", "Inspeccionar ROADMAP, ADR, SPEC, gates y estado de la fuente canónica"))
     if intent == "document-code":
         result["_links"].append(_notice("review-code-docs", "Inspeccionar contrato de API, código, comentarios y guías del lenguaje; no escribir automáticamente", href=_local("references/code-documentation-languages.md")))
+    if intent in {"independent-review", "review-resolution", "context-drift"}:
+        result["_links"].append(_notice("inspect-review-contract", "Prepara fuentes, SHA y fingerprints; el router no ejecuta revisores", href=_local("references/lenses/independent-review.md")))
     if intent in KNOWLEDGE_INTENTS:
         result["_links"].append(_notice("inspect-knowledge-contract", "Normalizar instantáneas leídas por CLI; validar y proyectar OKF sin alterar Backlog", href=_local("references/knowledge-contract.md")))
         if cli == "available" and project == "initialized":
@@ -178,6 +180,10 @@ def affordances(state: dict[str, Any]) -> dict[str, Any]:
         result["_links"].append(_notice("propose-backlog-decision", "Usar decision create/edit/superseded-by solo con origen y aprobación humanos, nunca desde un resumen"))
     if intent == "handoff":
         result["_links"].append(_notice("inspect-handoff", "Validar pins, revisión y permisos del host antes de reutilizar contexto"))
+    if intent == "context-drift":
+        result["_links"].append(_notice("review-fingerprints", "Comparar fingerprints no demuestra divergencia semántica"))
+    if intent == "review-resolution":
+        result["_links"].append(_notice("resolve-findings", "Contrastar y deduplicar; persistir solo mediante Backlog CLI con autorización"))
     if intent == "trace":
         result["_links"].append(_notice("inspect-commit-trailers", "Buscar IDs de tarea, bloque y ADR/SPEC en commits observados"))
     if intent in {"decide", "authority-check", "recall", "handoff", "memory-feedback"} and cli == "available" and project == "initialized":

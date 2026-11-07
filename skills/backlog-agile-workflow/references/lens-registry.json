@@ -284,6 +284,30 @@
         "emergent-architecture"
       ],
       "playbook": "references/lenses/emergent-architecture.md"
+    },
+    {
+      "id": "independent-review",
+      "status": "ready",
+      "intents": [
+        "independent-review"
+      ],
+      "playbook": "references/lenses/independent-review.md"
+    },
+    {
+      "id": "review-resolution",
+      "status": "ready",
+      "intents": [
+        "review-resolution"
+      ],
+      "playbook": "references/lenses/review-resolution.md"
+    },
+    {
+      "id": "context-drift",
+      "status": "ready",
+      "intents": [
+        "context-drift"
+      ],
+      "playbook": "references/lenses/context-drift.md"
     }
   ]
 }

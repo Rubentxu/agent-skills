@@ -9,7 +9,7 @@ description: "Gestiona trabajo ágil local-first con Backlog.md CLI: captura y r
 
 ## Contrato de arranque y descubrimiento
 
-1. Determinar la **intención de la conversación** y etapa vigente: `discover|capture|triage|refine|plan|execute|verify|close|review|maintain|specify|decompose|sync-specs|document-code|git-hygiene|trace|architecture|curate-architecture|map-task|create-task|move-task|archive-task|restore-task|delete-task|align-work|unplanned-work|manage-dependencies|manage-epic|decide|authority-check|recall|handoff|memory-feedback|context-exchange|ubiquitous-language|semantic-tagging|okf-documentation|semantic-consistency|research-orchestration|emergent-architecture|catalog`. No arrastrar lentes de otra intención por inercia.
+1. Determinar la **intención de la conversación** y etapa vigente: `discover|capture|triage|refine|plan|execute|verify|close|review|maintain|specify|decompose|sync-specs|document-code|git-hygiene|trace|architecture|curate-architecture|map-task|create-task|move-task|archive-task|restore-task|delete-task|align-work|unplanned-work|manage-dependencies|manage-epic|decide|authority-check|recall|handoff|memory-feedback|context-exchange|ubiquitous-language|semantic-tagging|okf-documentation|semantic-consistency|research-orchestration|emergent-architecture|independent-review|review-resolution|context-drift|catalog`. No arrastrar lentes de otra intención por inercia.
 2. Verificar si `backlog` existe y qué proyecto está activo **sin instalar ni inicializar automáticamente**. Para tareas reales, leer primero `backlog instructions overview`; después solo `backlog instructions task-creation`, `task-execution` o `task-finalization` cuando correspondan. La ayuda local prevalece si difiere de la documentación empaquetada.
 3. Si la CLI no está disponible, mostrar opciones de instalación para aprobación; `npx backlog.md ...` es una alternativa ocasional, **nunca** `npx backlog ...` (paquete distinto). Si no hay proyecto inicializado, proponer `backlog init` pero no ejecutar una configuración interactiva sin autorización.
 4. Descubrir preferencias y límites del proyecto vía `backlog config get <clave>` cuando se conozca el comando y consultando la CLI actual; `statuses`, `defaultStatus`, `definition_of_done`, `projects`, `remoteOperations`, `autoCommit`, `bypassGitHooks`, `checkActiveBranches`, `onStatusChange`. No suponer columnas fijas ni que cerrar equivale a archivar.
@@ -25,6 +25,14 @@ description: "Gestiona trabajo ágil local-first con Backlog.md CLI: captura y r
 - **Traspaso:** `scripts/context_handoff.py` empaqueta referencias y SHA, y el receptor los revalida. El handoff nunca es un permiso. [authority-handoff](references/lenses/authority-handoff.md).
 - **Votos y portabilidad:** feedback de agente solo genera sugerencias de revisión; `scripts/context_exchange.py` exporta punteros, sin contenido, firma ni transporte automático. Revalidar siempre en destino. [feedback](references/lenses/memory-feedback.md) · [intercambio](references/lenses/context-exchange.md).
 - No crear una base de datos, servidor ni vaciar transcripciones por defecto. Las decisiones son de Backlog, la propiedad del código de Groma y los permisos reales del host. Una skill no tiene capacidad para ampliar por sí sola autoridad humana o reglas organizativas.
+
+## Revisión Goldfish propia y opcional
+
+- Intenciones `independent-review`, `review-resolution` y `context-drift`: usar la lente apropiada (máximo dos) y delegar a `goldfish-review` solo si `available_skills` confirma la instalación y el host ofrece subagentes de contexto nuevo.
+- El Elephant recupera términos, decisiones, tareas y código por las capacidades ya existentes. Goldfish recibe rúbrica, target y fuentes permitidas, **nunca la conversación del autor**. No añadir memoria, base de datos, tareas ni decisiones alternativas.
+- El host controla permisos de solo lectura, revisión SHA y aislamiento conversacional. Instrucciones del proyecto pueden filtrarse por el host: documentar aislamiento parcial; sin subagentes nuevos, NOT_RUN. No interpretar resultados sintéticos como prueba del host.
+- Resolver hallazgos con evidencia y KEEP_AS_IS; registrar conocimiento reusable mediante Backlog CLI, sin producir tickets por cada observación ni superar WIP. Fingerprint modificado solo indica candidato a drift.
+- Ver [revisión independiente](references/lenses/independent-review.md), [resolución](references/lenses/review-resolution.md) y [drift](references/lenses/context-drift.md).
 
 ## Flujo ágil: valor, límites de WIP y evidencia
 
