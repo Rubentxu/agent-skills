@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "kind": "goldfish-review-request",
+  "target": {
+    "path": "docs/design.md",
+    "gitRevision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "scope": {
+    "question": "¿Puede implementarse sin dependencias ocultas?",
+    "allowedSources": [
+      "docs/design.md",
+      "src/"
+    ],
+    "mode": "focused"
+  },
+  "reviewers": [
+    "comprehension",
+    "architecture",
+    "codebase"
+  ],
+  "limits": {
+    "maxRounds": 2
+  },
+  "taskId": "TASK-42"
+}

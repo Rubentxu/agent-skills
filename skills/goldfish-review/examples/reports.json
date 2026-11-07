@@ -1,0 +1,63 @@
+[
+  {
+    "schemaVersion": 1,
+    "kind": "goldfish-review-report",
+    "reviewer": "comprehension",
+    "target": {
+      "gitRevision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "execution": {
+      "status": "completed",
+      "conversationFresh": true,
+      "toolsReadOnly": true,
+      "sourcesRestricted": true,
+      "hostReported": true
+    },
+    "findings": [
+      {
+        "scope": "Goal",
+        "claim": "No se define el comportamiento de reintentos",
+        "severity": "Major",
+        "evidence": [
+          "docs/design.md"
+        ],
+        "verification": "Definir un ejemplo con reintento y resultado observable"
+      }
+    ]
+  },
+  {
+    "schemaVersion": 1,
+    "kind": "goldfish-review-report",
+    "reviewer": "architecture",
+    "target": {
+      "gitRevision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "execution": {
+      "status": "completed",
+      "conversationFresh": true,
+      "toolsReadOnly": true,
+      "sourcesRestricted": true,
+      "hostReported": true
+    },
+    "findings": []
+  },
+  {
+    "schemaVersion": 1,
+    "kind": "goldfish-review-report",
+    "reviewer": "codebase",
+    "target": {
+      "gitRevision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "execution": {
+      "status": "completed",
+      "conversationFresh": true,
+      "toolsReadOnly": true,
+      "sourcesRestricted": true,
+      "hostReported": true
+    },
+    "findings": []
+  }
+]
