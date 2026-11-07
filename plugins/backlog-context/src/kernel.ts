@@ -95,6 +95,11 @@ export function presentation(recommendation: Recommendation): string {
         "sin crear tareas ni modificar estados desde este hook.";
   }
 }
+/** Opt-in advisory only: never delegates, writes or asserts isolation. */
+export const goldfishHint = (taskId: string): string =>
+  "Revisión Goldfish opcional para la tarea " + JSON.stringify(taskId) +
+  ": ante cambio de contrato, seam o seguridad, plantea independent-review desde backlog-agile-workflow. " +
+  "Solo el host con subagentes frescos y permisos read-only puede ejecutarla; este hook NO inicia revisores ni cambia Backlog.";
 export const outputContext = (event: string, value: string): Record<string, unknown> => ({
   hookSpecificOutput: { hookEventName: event, additionalContext: value.slice(0, 1300) },
 });

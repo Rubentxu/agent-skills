@@ -26,3 +26,7 @@ python3 -m unittest discover -s tests -p 'test_*.py'
 El comando \`aggregate\` no ejecuta Goldfish: valida **resultados aportados** y genera una vista derivada. \`drift\` detecta **cambios de fingerprints**, no divergencia semántica demostrada.
 
 Ver [contratos](references/contracts.md), [aislamiento](references/isolation.md), [guía de hosts](references/host-capabilities.md) y [resolución](references/resolution.md).
+
+## Pilotos y estado de garantías
+
+Ver [matriz de pilotos](references/pilots.md). Los tests verifican contratos, deduplicación, rechazo de reportes obsoletos y diferencias de SHA/digest. No se ha ejecutado un smoke con agentes de contexto nuevo en este cambio: su estatus es **NOT_RUN** hasta aportar evidencia del host. El hook Claude Code (plugin independiente) puede mostrar una sugerencia opt-in, pero nunca lanza revisores.

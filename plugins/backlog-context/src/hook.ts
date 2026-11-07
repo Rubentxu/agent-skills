@@ -13,7 +13,7 @@ import { join, resolve, relative, isAbsolute, sep, dirname } from "node:path";
 import { pathToFileURL } from "node:url";
 import { candidateDecisionLinks, resolveDecisionLinks, presentDecisionLinks } from "./decision-context.ts";
 import { emptyState, boundedPush, changedFile, readCalls, sourcePath,
-  safeGromaOwner, validTaskId, presentation, recommendTrace, outputContext,
+  safeGromaOwner, validTaskId, presentation, recommendTrace, goldfishHint, outputContext,
   type HookInput, type State } from "./kernel.ts";
 
 type Runtime = {
@@ -243,7 +243,8 @@ export function handleEvent(event: HookInput, env: NodeJS.ProcessEnv = process.e
           !existsSync(join(runtime.root, "backlog.config.yml"))) return { state };
       return { state, context: state.taskId
         ? "Backlog contextual: tarea seleccionada por BACKLOG_CONTEXT_TASK_ID=" + state.taskId +
-          ". Comprueba backlog task view " + state.taskId + " --json antes de actualizar; el hook no ejecuta CLI."
+          ". Comprueba backlog task view " + state.taskId + " --json antes de actualizar; el hook no ejecuta CLI." +
+           (env.BACKLOG_CONTEXT_GOLDFISH === "hint" ? " " + goldfishHint(state.taskId) : "")
         : "Backlog contextual disponible. Consulta backlog task list --json y, si hay una decisión relevante, backlog decision list --json. Verifica procedencia antes de usar autoridad humana; ningún estado se cambia por el hook." };
     });
     return context ? outputContext("SessionStart", context) : null;

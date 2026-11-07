@@ -41,3 +41,7 @@ python3 -m unittest discover -s tests -p 'test_*.py' -v
 ## Procedencia
 
 Concepto inspirado por Google EGM (Apache-2.0); implementación, contratos, descripciones y rúbricas redactados para este repositorio, sin copiar el plugin ni sus prompts.
+
+## Validación externa y adopción
+
+Los casos reales y canaries de host se describen en [pilotos](references/pilots.md). **No están certificados por las pruebas puras de esta skill**: el agente ejecutor debe aportar trazas de delegación en un entorno que realmente soporte subagentes con contexto nuevo. También pueden adoptarse sugerencias opt-in en `plugins/backlog-context` cuando el plugin separado esté instalado; este paquete no lo necesita.
