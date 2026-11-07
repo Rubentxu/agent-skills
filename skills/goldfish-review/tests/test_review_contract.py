@@ -50,9 +50,28 @@ class ReviewContractTests(unittest.TestCase):
 
     def test_unlisted_evidence_rejected(self):
         a = copy.deepcopy(self.reports)
-        a[0]["findings"][0]["evidence"] = ["secrets.env"]
+        a[0]["findings"][0]["evidence"] = [{"path": "secrets.env", "lineStart": 1, "lineEnd": 1}]
         with self.assertRaises(ValueError):
             mod.aggregate(self.req, a)
+
+    def test_evidence_must_be_reproducibly_anchored(self):
+        a = copy.deepcopy(self.reports)
+        a[0]["findings"][0]["evidence"] = [{"path": "docs/design.md"}]
+        with self.assertRaises(ValueError):
+            mod.aggregate(self.req, a)
+        a[0]["findings"][0]["evidence"] = [{"path": "docs/design.md", "lineStart": 10, "lineEnd": 2}]
+        with self.assertRaises(ValueError):
+            mod.aggregate(self.req, a)
+
+    def test_malformed_reviewer_or_severity_is_rejected(self):
+        a = copy.deepcopy(self.req)
+        a["reviewers"] = ["architecture", {"role": "external"}]
+        with self.assertRaises(ValueError):
+            mod.request(a)
+        b = copy.deepcopy(self.reports)
+        b[0]["findings"][0]["severity"] = []
+        with self.assertRaises(ValueError):
+            mod.aggregate(self.req, b)
 
     def test_complete_reports_are_not_a_safety_certificate(self):
         out = mod.aggregate(self.req, self.reports)
@@ -91,6 +110,14 @@ class ReviewContractTests(unittest.TestCase):
         self.assertEqual(a["status"], "CHANGED")
         self.assertEqual(a["changed"], ["src/run.kt"])
         self.assertIn("not proven semantic", a["note"])
+
+    def test_same_finding_merges_distinct_anchors(self):
+        a = copy.deepcopy(self.reports)
+        b = copy.deepcopy(a[0]["findings"][0])
+        b["evidence"] = [{"path": "src/worker.py", "lineStart": 3, "lineEnd": 6}]
+        a[1]["findings"] = [b]
+        out = mod.aggregate(self.req, a)
+        self.assertEqual(len(out["findings"][0]["evidence"]), 2)
 
     def test_same_snapshot_is_unchanged(self):
         a = example("baseline.json")

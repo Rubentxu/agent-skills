@@ -38,7 +38,7 @@ def _sha(v: Any, pattern: re.Pattern, label: str) -> str:
 def _path(v: Any, directory: bool = False) -> str:
     if not isinstance(v, str) or not v or len(v) > 1024 or "\\" in v or "\x00" in v:
         raise ValueError("invalid source path")
-    if v.startswith("/") or "://" in v or any(p in (".", "..", "") for p in v.rstrip("/").split("/")):
+    if v.startswith("/") or "://" in v or any(ord(c) < 32 or ord(c) == 127 for c in v) or v.endswith("//") or any(p in (".", "..", "") for p in v.rstrip("/").split("/")):
         raise ValueError("source path escapes repository")
     if not directory and v.endswith("/"):
         raise ValueError("target must be a file")
@@ -80,7 +80,7 @@ def request(data: Any) -> dict:
     if not _allowed(target["path"], sources):
         raise ValueError("target is outside allowed sources")
     reviewers = r["reviewers"]
-    if not isinstance(reviewers, list) or not reviewers or len(reviewers) > 4 or len(set(map(str, reviewers))) != len(reviewers) or any(x not in REVIEWERS for x in reviewers):
+    if not isinstance(reviewers, list) or not reviewers or len(reviewers) > 4 or len(set(x for x in reviewers if isinstance(x, str))) != len(reviewers) or any(not isinstance(x, str) or x not in REVIEWERS for x in reviewers):
         raise ValueError("invalid reviewer set")
     limits = _record(r["limits"], "limits")
     _keys(limits, {"maxRounds"})
@@ -116,12 +116,25 @@ def report(data: Any, req: dict) -> dict:
     for f in findings:
         f = _record(f, "finding")
         _keys(f, {"scope", "claim", "severity", "evidence", "verification"})
-        if f["severity"] not in SEVERITIES or any(not isinstance(f[k], str) or not f[k].strip() or len(f[k]) > 3000 for k in ("scope", "claim", "verification")):
+        if not isinstance(f["severity"], str) or f["severity"] not in SEVERITIES or any(not isinstance(f[k], str) or not f[k].strip() or len(f[k]) > 3000 for k in ("scope", "claim", "verification")):
             raise ValueError("invalid finding")
         if not isinstance(f["evidence"], list) or not f["evidence"] or len(f["evidence"]) > 16:
             raise ValueError("missing evidence")
-        if any(not _allowed(_path(p), req["scope"]["allowedSources"]) for p in f["evidence"]):
-            raise ValueError("evidence outside allowed sources")
+        for evidence in f["evidence"]:
+            evidence = _record(evidence, "evidence")
+            _keys(evidence, {"path"}, {"lineStart", "lineEnd", "section"})
+            if not _allowed(_path(evidence["path"]), req["scope"]["allowedSources"]):
+                raise ValueError("evidence outside allowed sources")
+            line, end = evidence.get("lineStart"), evidence.get("lineEnd")
+            if (line is None) != (end is None):
+                raise ValueError("line range must have both boundaries")
+            if line is not None and (type(line) is not int or type(end) is not int or line < 1 or end < line or end - line > 200):
+                raise ValueError("invalid line range")
+            section = evidence.get("section")
+            if section is not None and (not isinstance(section, str) or not section.strip() or len(section) > 200):
+                raise ValueError("invalid section")
+            if line is None and section is None:
+                raise ValueError("evidence needs an anchor")
     return v
 
 
@@ -148,7 +161,9 @@ def aggregate(req_data: Any, reports_data: Any) -> dict:
                 findings[fid] = {**f, "findingId": fid, "reviewers": [], "disposition": "UNVERIFIED"}
             entry = findings[fid]
             entry["reviewers"].append(r["reviewer"])
-            entry["evidence"] = sorted(set(entry["evidence"]) | set(f["evidence"]))
+            all_evidence = {json.dumps(e, sort_keys=True, ensure_ascii=False): e for e in (entry["evidence"] + f["evidence"])}
+            entry["evidence"] = sorted(all_evidence.values(),
+                                       key=lambda e: (e["path"], e.get("lineStart", 0), e.get("section", "")))
             if SEVERITIES[f["severity"]] > SEVERITIES[entry["severity"]]:
                 entry["severity"] = f["severity"]
     incomplete = [id for id in req["reviewers"] if id not in by_reviewer or

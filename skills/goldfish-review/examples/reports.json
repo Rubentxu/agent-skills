@@ -20,7 +20,10 @@
         "claim": "No se define el comportamiento de reintentos",
         "severity": "Major",
         "evidence": [
-          "docs/design.md"
+          {
+            "path": "docs/design.md",
+            "section": "Goal"
+          }
         ],
         "verification": "Definir un ejemplo con reintento y resultado observable"
       }

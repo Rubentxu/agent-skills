@@ -30,3 +30,5 @@ Ver [contratos](references/contracts.md), [aislamiento](references/isolation.md)
 ## Pilotos y estado de garantías
 
 Ver [matriz de pilotos](references/pilots.md). Los tests verifican contratos, deduplicación, rechazo de reportes obsoletos y diferencias de SHA/digest. No se ha ejecutado un smoke con agentes de contexto nuevo en este cambio: su estatus es **NOT_RUN** hasta aportar evidencia del host. El hook Claude Code (plugin independiente) puede mostrar una sugerencia opt-in, pero nunca lanza revisores.
+
+Los reportes requieren evidencia anclada por rango de líneas o sección del documento; una ruta sin ubicación no es suficiente. La deduplicación conserva todas las referencias originales de distintos revisores.

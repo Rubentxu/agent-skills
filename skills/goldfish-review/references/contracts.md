@@ -16,3 +16,7 @@ La agregación es una **proyección pura**:
 El resultado señala \`assurance=HOST_REPORTED_ONLY\`. No tiene efecto ejecutivo ni conserva autoridad. No convertir su estado en un gate de publicación sin comprobación externa.
 
 La entrada de drift es un snapshot \`{schemaVersion:1,kind:"goldfish-source-snapshot",gitRevision:"SHA",sources:{"ruta":"sha256"}}\`. El detector compara identificadores/fingerprints y no inspecciona contenido. \`changed\` y \`missing\` exigen investigación posterior: cambio de hash no significa drift semántico.
+
+### Evidencias ancladas
+
+Cada elemento de `findings[].evidence` es un objeto `{path, lineStart, lineEnd}` con rango inclusivo máximo 201 líneas, o `{path, section}` para documentos sin numeración estable. La ruta debe estar en `allowedSources`; una ruta aislada sin rango o sección no valida un hallazgo. Las fuentes se deduplican por objeto exacto; el host revalida que su contenido corresponde al SHA/digest indicado. La similitud de reclamos no fusiona problemas diferentes.
