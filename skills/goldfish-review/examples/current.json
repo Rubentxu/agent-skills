@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "kind": "goldfish-source-snapshot",
+  "gitRevision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "sources": {
+    "docs/design.md": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "src/run.kt": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  }
+}

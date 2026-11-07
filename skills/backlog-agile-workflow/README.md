@@ -156,3 +156,7 @@ El [contrato de datos](references/knowledge-contract.md) explica cómo normaliza
 ## Límites de trabajo en curso (WIP)
 
 [Política configurable](references/wip-policy.md) y verificación previa en `scripts/board_crud.py`. Valor inicial recomendado: **1 tarea activa por responsable y 3 en total** (incluidas coasignaciones, las no asignadas como cupo compartido); la política y las columnas se ajustan por proyecto. Ejecutar `python3 scripts/board_crud.py examples/board-wip-start.json` para consultar un ejemplo sin escribir tareas. El control necesita foto completa de `backlog task list --json`; **no** ofrece exclusión mutua transaccional entre agentes.
+
+## Revisión Goldfish propia
+
+Se añade la intención `independent-review` (revisores aislados), `review-resolution` (hallazgos contra Backlog CLI) y `context-drift` (cambios de fingerprints). `goldfish-review` se descubre de forma opt-in por `available_skills`, sin instalar el plugin EGM original. Sin subagente nuevo, NOT_RUN; sin evidencia de host no se puede certificar aislamiento.

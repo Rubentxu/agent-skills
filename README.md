@@ -12,6 +12,7 @@ Colección modular de **skills para agentes de IA**, mantenidas por separado e i
 | [`cognicode-diagrams`](skills/cognicode-diagrams/SKILL.md) | Investigación exclusivamente con CogniCode CLI/MCP, C4 y atlas HATEOAS; evolución planificada a informes agent-first, lenguaje ubicuo DDD y vistas moldables para personas y agentes. | Disponible (C4 y editorial); Report Thinking planificado |
 | [`delivery-first-testing`](skills/delivery-first-testing/SKILL.md) | Orquestación de testing orientado a valor: UAT efímeros, selección por impacto, promoción selectiva de regresiones y lentes navegables. | Disponible (router) |
 | [`pure-functional-design`](skills/pure-functional-design/SKILL.md) | Diseño y refactorización funcional en Rust/Kotlin: descubrimiento del dominio, ADTs, invariantes, separación de efectos, algoritmos y vertical slices mediante lentes bajo demanda. | Disponible (router + lentes Rust/Kotlin) |
+| [`goldfish-review`](skills/goldfish-review/SKILL.md) | Revisión adversarial de diseños con agentes de contexto nuevo, contratos puros y fingerprints sin dependencia del plugin EGM. | Disponible; aislamiento condicionado al host |
 | [`backlog-agile-workflow`](skills/backlog-agile-workflow/SKILL.md) | Gestión ágil y conversión de ROADMAP/ADR/SPEC/hitos a propuestas de tareas priorizadas, trazables y reconciliables sin duplicación. | Disponible (router y proyector) |
 | [`distribution-first-release`](skills/distribution-first-release/SKILL.md) | Releases orientadas al consumidor: binarios instalables, higiene Git, source archives, SBOM/checksums, verificación de instalación y lentes HATEOAS-like. | Disponible (router + auditor) |
 | [`pipelinek-local-ci`](skills/pipelinek-local-ci/SKILL.md) | Bootstrap con mise/asdf, diseña/revisa/migra `pipeline.kts` y opera PipelineK como CI/CD local agent-first con DSL Jenkins-familiar, eventos y gates. | Disponible |
@@ -43,6 +44,9 @@ npx skills add Rubentxu/agent-skill --skill delivery-first-testing --agent openc
 
 # Diseñar y refactorizar Rust/Kotlin con programación funcional pura
 npx skills add Rubentxu/agent-skill --skill pure-functional-design --agent opencode
+
+# Revisión de diseños con Goldfish nativo
+npx skills add Rubentxu/agent-skills --skill goldfish-review --agent opencode
 
 # Gestionar flujo ágil local-first con Backlog.md CLI
 npx skills add Rubentxu/agent-skill --skill backlog-agile-workflow --agent opencode
@@ -126,6 +130,8 @@ agent-skill/
 
 Una nueva skill se añade exclusivamente como `skills/<slug>/`, con `SKILL.md` y front matter `name` (igual al slug) y `description` no vacíos. No muevas referencias a una carpeta compartida salvo que exista una razón de producto justificada: las skills deben poder distribuirse de forma independiente. Utiliza referencias **relativas al directorio de la propia skill**.
 
+`goldfish-review` es instalable de forma independiente. `backlog-agile-workflow` solo recomienda su uso si está disponible; el aislamiento conversacional requiere agentes nativos nuevos en el host. No instala EGM oficial.
+
 ## Publicación
 
 Consulta [PUBLISHING.md](PUBLISHING.md) para publicar actualizaciones en el repositorio público existente. La publicación en skills.sh depende de que la skill sea descubierta por el instalador; no se considera completada por la mera creación del repositorio.
@@ -135,6 +141,7 @@ Consulta [PUBLISHING.md](PUBLISHING.md) para publicar actualizaciones en el repo
 ```bash
 python3 scripts/validate_skills.py
 python3 -m unittest discover -s tests -p 'test_*.py'
+python3 -m unittest discover -s skills/goldfish-review/tests -p 'test_*.py'
 python3 -m unittest discover -s skills/code-quality-evidence-review/tests -p 'test_*.py'
 python3 -m unittest discover -s skills/cognicode-diagrams/tests -p 'test_*.py'
 python3 -m unittest discover -s skills/delivery-first-testing/tests -p 'test_*.py'

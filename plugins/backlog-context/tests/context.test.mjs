@@ -197,3 +197,22 @@ test("subagent handoff does not inherit agent permissions", () => {
   assert.match(reply.hookSpecificOutput.additionalContext,/nunca heredes permisos/);
   assert.equal(handleEvent(e,f.env),null);
 });
+
+test("Goldfish hint is strictly opt-in, bound to an explicit task and never executes review", () => {
+  const ordinary = fixture();
+  const defaultReply = handleEvent(ordinary.event("SessionStart"), {
+    ...ordinary.env, BACKLOG_CONTEXT_TASK_ID: "TASK-9"
+  });
+  assert.doesNotMatch(defaultReply.hookSpecificOutput.additionalContext, /Revisión Goldfish/);
+  const optin = fixture();
+  const reply = handleEvent(optin.event("SessionStart"), {
+    ...optin.env, BACKLOG_CONTEXT_TASK_ID: "TASK-9", BACKLOG_CONTEXT_GOLDFISH: "hint"
+  });
+  assert.match(reply.hookSpecificOutput.additionalContext, /Revisión Goldfish opcional/);
+  assert.match(reply.hookSpecificOutput.additionalContext, /NO inicia revisores/);
+  const withoutTask = fixture();
+  const noTaskReply = handleEvent(withoutTask.event("SessionStart"), {
+    ...withoutTask.env, BACKLOG_CONTEXT_GOLDFISH: "hint"
+  });
+  assert.doesNotMatch(noTaskReply.hookSpecificOutput.additionalContext, /Revisión Goldfish/);
+});

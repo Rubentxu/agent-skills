@@ -54,3 +54,7 @@ Las intenciones ubiquitous-language, semantic-tagging, okf-documentation, semant
 ## Control de trabajo en curso (WIP)
 
 Para `move-task` el router recomienda leer `task list --json` además de `task view --json`. El planificador `board_crud.py` evalúa límites antes de toda entrada a estados activos, usando [WIP](wip-policy.md); si faltan la política o la foto completa, no propone una operación ejecutable. El router solo guía y no debe prometer atomicidad o automatizar excepciones.
+
+## Intenciones de revisión independiente
+
+`independent-review`, `review-resolution` y `context-drift` funcionan para lectura sin CLI. Solo recomiendan `goldfish-review` cuando está instalada; no ejecutan subagentes, no escriben Backlog y `mode=apply` no concede autoridad. Ver [guía](lenses/independent-review.md).

@@ -57,3 +57,7 @@ Una tarea se considera relacionada únicamente cuando su `modifiedFiles` contien
 El resultado **NO constituye una aprobación humana** aunque Backlog devuelva estado `accepted`. Para reclamar autoridad hay que verificar por separado la procedencia del mensaje original con la lente `decision-provenance` y los validadores de `backlog-agile-workflow` cuando exista evidencia auténtica del host. Ninguna sugerencia concede permisos ni cambia tareas o decisiones.
 
 El hook consulta un máximo de **dos archivos nuevos por sesión** para memoria; ejecuta únicamente comandos de lectura, con un presupuesto de 1,1 s y 128 KiB por comando. La segunda consulta se omite si no hay vínculos explícitos. Si falta la CLI, los resultados están paginados, hay asociaciones ambiguas o la salida es demasiado grande, mantiene solo el contexto arquitectónico. Para desactivar esta recuperación automática: `BACKLOG_CONTEXT_DECISIONS=off`.
+
+## Sugerencia Goldfish opcional
+
+Definir `BACKLOG_CONTEXT_GOLDFISH=hint` **y** un `BACKLOG_CONTEXT_TASK_ID` válido para añadir, solo en `SessionStart`, un recordatorio de revisar diseños de riesgo mediante la skill separada `goldfish-review`. Por defecto permanece **desactivado**. El hook no evalúa riesgo, no inicia subagentes, no crea reportes, no cambia Backlog ni añade permisos. Si el host carece de subagentes de contexto nuevo, la revisión se declara NOT_RUN. Las sugerencias no sustituyen el consentimiento para cambios ni las pruebas de aislamiento.

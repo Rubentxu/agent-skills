@@ -39,6 +39,13 @@ jobs:
         run: python3 -m unittest discover -s skills/pure-functional-design/tests -p 'test_*.py' -v
       - name: Check pure-functional-design navigation smoke
         run: python3 skills/pure-functional-design/scripts/affordances.py skills/pure-functional-design/examples/design-kotlin.json
+      - name: Run Goldfish review contract tests
+        run: python3 -m unittest discover -s skills/goldfish-review/tests -p 'test_*.py' -v
+      - name: Goldfish contract example smoke
+        run: |
+          python3 skills/goldfish-review/scripts/review_contract.py validate-request skills/goldfish-review/examples/request.json
+          python3 skills/goldfish-review/scripts/review_contract.py aggregate skills/goldfish-review/examples/request.json skills/goldfish-review/examples/reports.json
+          python3 skills/goldfish-review/scripts/review_contract.py drift skills/goldfish-review/examples/baseline.json skills/goldfish-review/examples/current.json
       - name: Run backlog-agile-workflow unit tests
         run: python3 -m unittest discover -s skills/backlog-agile-workflow/tests -p 'test_*.py' -v
       - name: Check backlog-agile-workflow navigation smoke
