@@ -1,13 +1,11 @@
-# Kanban: transiciones de estado por CLI
+# Kanban — transiciones reales, sin autorizaciones administrativas extra
 
-1. Leer `backlog config get statuses` y `backlog config get defaultStatus`; el estado terminal se determina por política del proyecto, **no** por texto "Done" supuesto. Inspeccionar `backlog task view <ID> --json`, `readiness` y `archived`. Releer inmediatamente antes de escribir: puede haber ediciones concurrentes del Web UI/agentes.
-2. **Iniciar tarea:** `isReady=true`, dependencias resueltas y cupo WIP verificado mediante [política](../wip-policy.md). Releer `task list --json` sin filtros, `task view` y configurar límites por responsable y global. `board_crud.py` bloquea entrada cuando no hay información suficiente o se supera el máximo; nunca invocar `backlog task edit <ID> -s "<estado-activo-configurado>"` saltando ese preflight. `backlog instructions task-execution` dirige planificación y registro de progreso.
-3. **Progreso entre columnas:** solo según estado real, nunca para mejorar métricas de tablero. Las columnas del proyecto pueden tener nombres personalizados. Cambiar columna no comprueba AC/DoD.
-4. **Finalizar:** `backlog instructions task-finalization`, verificar individualmente AC/DoD/gates reales, registrar `--final-summary` y después `backlog task edit <ID> -s "<estado-final-configurado>"`. No inferir PASS de existencia de commit o tests sin ejecutar.
-5. **Reabrir:** preservar historia/IDs; justificar por qué el final ya no es válido, revisar las dependencias y volver a un estado configurado. Revalidar gates que lo necesiten.
-6. Antes de cada cambio, revisar `onStatusChange` (puede ejecutar shell) y `autoCommit`, `remoteOperations`, `bypassGitHooks`. No tratar la transición como un cambio libre de efectos. La ayuda del CLI instalado prevalece.
-7. Reconsultar `task view --json` y `task list --json` después de escribir. Error, estado sin cambios o snapshot antiguo ≠ transición conseguida.
+1. Consultar estados configurados y `backlog task view <id> --json` antes de escribir, revalidando ante concurrencia real.
+2. **Iniciar:** con permiso de edición, estado válido y dependencias funcionales satisfechas. No exigir cupo WIP ni un `task list` global como precondición de esta skill.
+3. **WIP:** aconsejar terminar antes de abrir más. El preflight estricto de `board_crud.py` se usa **solo por petición expresa del proyecto**; su `BLOCKED` no es un bloqueo técnico de Backlog.md.
+4. **Progresar:** cambiar estados y notas cuando reflejen trabajo real, sin inventar bloqueos para ajustar métricas.
+5. **Finalizar:** verificar AC/DoD pertinentes con evidencia, registrar resumen breve y mover al estado final. No exigir gates de gestión ni referencias externas.
+6. **Reabrir:** cuando el resultado deje de satisfacer realmente el contrato, preservando historia e inspeccionando dependencias técnicas.
+7. Revisar callbacks `onStatusChange`, efectos Git y permisos según riesgos reales de cada operación; releer el estado después de mutar.
 
-**Propuestas automáticas:** `scripts/board_crud.py` comprueba configuraciones, readiness, estado de archivo, objetivo configurado y evidencia de finalización. Nunca modifica tareas. 
-
-**Cupo y concurrencia:** un traslado entre dos columnas activas no consume nueva plaza; una restauración archivada hacia columna activa sí. No hay enforcement atómico en Backlog.md: otro agente puede empezar entre el preflight y la escritura. Revalidar justo antes de ejecutar y después consultar el tablero. Los límites admiten excepciones humanas revisadas, no bypass automático.
+`board_crud.py` propone argumentos; sus simulaciones optativas de WIP o evidencia no sustituyen la CLI ni el juicio técnico.
