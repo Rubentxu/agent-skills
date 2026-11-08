@@ -1,12 +1,11 @@
-# Verification y cierre — comprobar antes de marcar
+# Verification y cierre — demostrar calidad con implementación real
 
-1. Consultar `backlog instructions task-finalization` y `backlog task view <id> --json`; inspeccionar `acceptanceCriteria`/`definitionOfDone` y comprobar los índices reales de cada ítem.
-2. Si se modificó un contrato de API, comprobar que su documentación explica las garantías reales y que las referencias/ejemplos siguen vigentes; linters y generadores comprueban formato, no verdad semántica. Para cambios **solo** de comentarios, seleccionar la comprobación más barata, sin nuevos E2E por inercia. Ver [code-documentation](code-documentation.md) cuando aplique. Verificar AC por comportamiento y artefacto observado. Un test no ejecutado es `NOT_RUN`, no `PASS`; usar `delivery-first-testing` sólo cuando esté confirmado disponible.
-3. Marcar individualmente con `backlog task edit <id> --check-ac <índice>` y `--check-dod <índice>` **únicamente** si son reales y hay autorización de actualización.
-4. Escribir `backlog task edit <id> --final-summary "..."` con cambios, evidencia y límites; si existe un resumen anterior, distinguir reemplazo de `--append-final-summary`.
-5. Cambiar al estado final configurado (`backlog task edit <id> -s "<estado-final>"`) **solo después** de validar DoD/AC, respetando callback `onStatusChange` y efectos Git.
-6. No archivar al cerrar automáticamente. Archivar exige operación de mantenimiento independiente; nunca borrar por inercia.
+1. Leer tarea y AC/DoD mediante la CLI oficial; verificar **comportamientos entregados**, invariantes, seguridad y compatibilidad afectados con pruebas proporcionadas al riesgo.
+2. Actualizar documentación técnica de API/contratos cuando el código los modifique. No exigir README, ROADMAP, CHANGELOG, ADR, informes ni recibos de gates como criterio de cierre.
+3. Registrar solo evidencia real: `PASS/FAIL/NOT_RUN`, pruebas, revisión o demostración concreta. Una prueba no ejecutada no es PASS; un fallo pertinente requiere corrección o alcance claramente acotado.
+4. Marcar AC/DoD verdaderos con `--check-ac` y `--check-dod` utilizando índices observados. Escribir un `--final-summary` breve sobre valor entregado y limitaciones técnicas.
+5. Pasar al estado final configurado **tan pronto como se satisfagan aceptación y calidad pertinentes**. Nunca esperar certificaciones administrativas, documentos de tracking, reuniones, snapshots o gates ajenos a la entrega.
+6. La publicación o despliegue puede exigir verificaciones técnicas/regulatorias obligatorias; no falsearlas ni saltarlas. Si son una entrega distinta, gestionarlas aparte sin retener artificialmente una tarea de implementación ya verificada.
+7. No archivar automáticamente y no borrar sin autorización.
 
-**Anti-patrón:** marcar todas las casillas cuando «parece terminado». **Resultado:** cierre sustentado o `BLOCKED` con lo pendiente.
-
-**Antes del cierre:** enlazar tarea Backlog.md, bloque de roadmap, ADR/SPEC pertinentes y SHA del commit sin copiar contenidos privados. Verificar que el commit documenta qué implementó y qué verificó. Recoger evidencia realmente ejecutada de `delivery-first-testing` / `pipelinek-local-ci`, y de `agent-secretless` solo metadatos seguros. No cerrar por la existencia de un SHA; actualizar Backlog.md vía CLI y controlar los efectos de sus callbacks.
+**Resultado:** tarea terminada con evidencia o problema técnico pendiente descrito. Nunca declarar DONE sin garantía suficiente ni BLOCKED solo por burocracia.
