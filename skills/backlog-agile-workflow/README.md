@@ -30,6 +30,13 @@ El agente observa **resultado verificable**, no actividad o número de commits. 
 
 [Guía operativa de recuperación](references/lenses/flow-recovery.md). Esta regla se aplica durante la ejecución; no requiere daemon ni documentos o nuevos gates.
 
+```bash
+python3 skills/backlog-agile-workflow/scripts/affordances.py \
+  skills/backlog-agile-workflow/examples/stalled-work.json
+```
+
+La entrada describe una tarea observada, **no** inicia un monitor ni escribe automáticamente el Backlog.
+
 ## Documentación de código en cualquier lenguaje
 
 La [lente de documentación de código](references/lenses/code-documentation.md) separa contrato vigente, comentario interno y trazabilidad histórica. No presupone Kotlin: consulta las [recetas por lenguaje](references/code-documentation-languages.md) para KDoc/Dokka, Javadoc, Python docstrings, Rust rustdoc, Go doc, TSDoc/JSDoc, C# XML docs, Swift DocC, Dart y otros stacks. No crea tickets ni instala linters por defecto.
