@@ -57,6 +57,12 @@ class BoardRoutingTests(unittest.TestCase):
                 self.assertIn(["backlog", "task", "list", "--json"], x["suggested_reads"])
                 self.assertIn("inspect-wip", [i["rel"] for i in x["_links"]])
 
+    def test_move_does_not_require_global_snapshot_or_wip(self):
+        x = router.affordances(state("move-task", task={"id": "TASK-10", "archived": False}))
+        self.assertEqual(x["decision"], "PROPOSE_ONLY")
+        self.assertNotIn(["backlog", "task", "list", "--json"], x["suggested_reads"])
+        self.assertNotIn("inspect-wip", [item["rel"] for item in x["_links"]])
+
     def test_delete_never_authorized_by_router(self):
         x = router.affordances(state("delete-task", task={"id": "TASK-10", "archived": True}))
         self.assertEqual(x["decision"], "BLOCKED")
