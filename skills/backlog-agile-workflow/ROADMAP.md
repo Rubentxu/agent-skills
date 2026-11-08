@@ -1,3 +1,5 @@
+> **Archivo histórico de diseño de esta skill.** No es una fuente de tracking ni una plantilla para proyectos consumidores. Tareas, prioridades, seguimiento y estado se gestionan únicamente mediante Backlog.md. Los gates o fases descritos aquí no son exigencias para ejecutar esta skill.
+
 # Roadmap de backlog-agile-workflow
 
 ## S0 — Skill portable y navegación (entregado)
