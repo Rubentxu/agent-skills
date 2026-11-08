@@ -22,6 +22,25 @@ def state(intent="triage", mode="read", task=None, config=None, **kwargs):
 
 
 class RouterTests(unittest.TestCase):
+    def test_stalled_work_routes_directly_to_recovery(self):
+        o = router.affordances(state(intent="stalled-work", mode="read"))
+        self.assertEqual(o["decision"], "READY")
+        self.assertEqual(o["lenses"], ["flow-recovery"])
+        self.assertIn("recover-delivery", [x["rel"] for x in o["_links"]])
+        self.assertIn(["backlog", "task", "view", "TASK-7", "--json"], o["suggested_reads"])
+
+    def test_stalled_work_does_not_require_cli_or_create_gate(self):
+        o = router.affordances(state(intent="stalled-work", cli="missing",
+                                     project="absent", task={}, mode="propose"))
+        self.assertEqual(o["lenses"], ["flow-recovery"])
+        self.assertEqual(o["decision"], "PROPOSE_ONLY")
+        self.assertFalse(any(x["rel"] == "inspect-cli" for x in o["_links"]))
+
+    def test_stalled_work_never_claims_automatic_write(self):
+        o = router.affordances(state(intent="stalled-work", mode="apply", config={}))
+        self.assertEqual(o["decision"], "PROPOSE_ONLY")
+        self.assertFalse(any(x["rel"] == "propose-cli-write" for x in o["_links"]))
+
     def test_catalog_includes_planned_but_does_not_load_it(self):
         o = router.affordances({"intent": "catalog"})
         self.assertIn({"id": "sprint-forecast", "status": "planned"}, o["available"])
