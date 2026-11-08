@@ -16,11 +16,9 @@
     "acceptanceCriteriaCount": 2,
     "acceptanceCriteriaCompleted": 2,
     "definitionOfDoneCount": 1,
-    "definitionOfDoneCompleted": 1,
-    "finalSummaryRecorded": true
+    "definitionOfDoneCompleted": 1
   },
   "targetStatus": "Done",
-  "gateResult": "PASS",
   "config": {
     "autoCommit": false,
     "remoteOperations": false,
