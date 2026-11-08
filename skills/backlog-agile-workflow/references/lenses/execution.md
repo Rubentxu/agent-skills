@@ -1,16 +1,12 @@
-# Execution — una tarea, progreso verificable
+# Execution — implementar el siguiente incremento útil
 
-1. Leer tarea completa y `backlog instructions task-execution`; constatar no archivada, `isReady=true` y plan vigente. Si ya existe una tarea activa del mismo responsable, completar o pausar explícitamente antes de comenzar otra según [WIP](../wip-policy.md).
-2. Antes de proponer estado de trabajo activo, consultar las columnas configuradas, obtener `task list --json` completo y `task view --json`, verificar límite WIP global y por responsable con `board_crud.py`, y revisar `onStatusChange`, `autoCommit`, `remoteOperations`, `bypassGitHooks`. En caso de datos incompletos o saturación, no iniciar.
-3. Registrar progresos con `backlog task edit <id> --append-notes "..."` o comentarios para preguntas; nunca sobreescribir notas existentes con `--notes` por rutina.
-4. Al editar un contrato público o una invariante, revisar comentarios/docstrings/documentación adyacente contra el código **actual**. Eliminar historia de implementación y referencias administrativas del producto; registrar IDs y decisiones en Backlog.md/trailers Git. Aplicar [code-documentation](code-documentation.md) al stack detectado sin abrir tarea documental por rutina.
-5. Trabajo de aplicación real pertenece al agente consumidor y sus herramientas; esta skill sólo ordena el flujo y mantiene los metadatos de Backlog.md. No instalar, pushear ni ejecutar software desde el router.
-6. Al detectar bloqueo, describir evidencia y el siguiente requisito; no marcar como completado por persistencia o por fatiga.
+1. Leer `backlog task view <id> --json` y las instrucciones de ejecución. Confirmar resultado esperado y dependencias **técnicas/funcionales reales**. No exigir un snapshot global del tablero para empezar a construir.
+2. Implementar el slice más pequeño que aporte valor verificable. Si hay demasiado WIP, recomendar cerrar o pausar otras tareas, **no bloquear** por cupos ni preflights administrativos.
+3. Registrar progreso relevante en la propia tarea con `--append-notes` cuando sea útil. No crear diarios, ROADMAP, CHANGELOG, recibos o ficheros adicionales de seguimiento.
+4. Modificar implementación, tests focalizados y contratos públicos afectados. Evitar IDs administrativos o notas históricas en comentarios de código.
+5. Si surge un bloqueo técnico, describirlo en Backlog.md y trabajar en su desbloqueo o continuar con una tarea independiente de valor. La ausencia de un gate, un ADR o una herramienta optativa **no es bloqueo**.
+6. Usar especialistas cuando estén disponibles y aporten garantías/eficiencia, sin introducir ceremonias. Las herramientas de aplicación pertenecen al agente anfitrión.
 
-**Salida:** `estado observado | progreso | pruebas reales o NOT_RUN | próximos pasos | bloqueos`.
+**Salida:** comportamiento entregado, comprobaciones reales o `NOT_RUN`, riesgos técnicos y estado reflejado en Backlog.md. El commit puede vincular el ID de tarea, sin trailers documentales obligatorios.
 
-**Handoffs según disponibilidad:** `pure-functional-design` cuando hay una transformación arquitectónica; `pipelinek-local-ci` para pipelines locales existentes; `agent-secretless` para operaciones con credenciales; `delivery-first-testing` para garantías y tests mínimos. No se presumen herramientas instaladas. El commit del slice debe enlazar los IDs existentes de Backlog.md/roadmap/ADR/SPEC, describir implementación y verificación y pasar el [guard de Git](../repository-hygiene.md) para evitar anexar documentación privada/ZIP de planificación.
-
-**Seguimiento Groma opcional:** cuando el CLI real esté instalado, antes de un cambio consultar `groma view <archivo>`; después de **cada archivo modificado**, conservar la lista completa de `--modified-file` en Backlog.md (no solo el último). Usar [groma-task-linking](groma-task-linking.md) para mover referencias tras combine/rename y no reescanear/curar todo el mapa por cada edición rutinaria. Los comentarios de código no llevan IDs de roadmap/tareas; esos metadatos se conservan en Backlog.md y trailers del commit.
-
-**Hook contextual opt-in:** las ediciones que observa `backlog-context` no implican que la tarea haya terminado. Antes de modificar `modifiedFiles`, seguir [work-alignment](work-alignment.md) con snapshot fresco; para trabajo fuera de alcance [unplanned-work](unplanned-work.md).
+**Groma y hooks:** solo si aclaran ownership o progreso. No exigir `groma view` ni actualización de `modifiedFiles` después de cada edición. Ningún hook de lectura ordena bloquear trabajo ni crea un Done automático.
