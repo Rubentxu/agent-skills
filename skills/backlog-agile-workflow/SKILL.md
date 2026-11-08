@@ -1,11 +1,22 @@
 ---
 name: backlog-agile-workflow
-description: "Gestiona trabajo ágil local-first con Backlog.md CLI: captura y refina tareas, elige trabajo listo por dependencias, planifica justo a tiempo, verifica AC/DoD, cierra con evidencia y descubre playbooks bajo demanda. Úsala para backlog, kanban, prioridades, roadmap, sprints ligeros y seguimiento de trabajo; no manipula archivos Backlog.md directamente."
+description: "Flujo value-first con Backlog.md como única autoridad de tareas. Prioriza incrementos verificados y desbloquear dependencias reales, sin ROADMAP/CHANGELOG paralelos, gates burocráticos ni WIP como freno. Pruebas y documentación de producto proporcionadas al riesgo."
 ---
 
 # Backlog Agile Workflow — navegación contextual, no otro gestor de tareas
 
 **Propósito:** ayudar a agentes y humanos a entregar valor en incrementos pequeños usando la CLI de [Backlog.md](https://github.com/MrLesk/Backlog.md); Backlog.md es el sistema de registro y su CLI la autoridad sobre tareas, identificadores, estados, dependencias y configuración. Esta skill es **portable** entre aplicaciones, repositorios y agentes. No añade servidor, daemon, motor de scheduling, base de datos, ni API de tareas alternativa.
+
+## Principios obligatorios: valor antes que burocracia
+
+1. **Entregar valor es la máxima prioridad:** completar incrementos funcionales pequeños y verificables. Minimizar el coste administrativo y no introducir ceremonias que retrasen el producto.
+2. **Backlog.md es la única fuente de seguimiento:** tareas, planes, hitos, estados, decisiones, prioridades, dependencias, criterios de aceptación, progreso y evidencias se gestionan mediante su CLI/MCP oficial. **No promover, crear ni exigir** ROADMAP.md, CHANGELOG.md de progreso, otros Markdown de tareas, ADR/SPEC administrativos, recibos o informes de gates como tracking paralelo.
+3. **Prohibidos los gates burocráticos:** no impedir iniciar, avanzar o cerrar una tarea por cupos WIP, snapshots globales, sincronizaciones documentales, comités o certificaciones administrativas. Si Backlog.md está temporalmente inaccesible, se puede continuar el trabajo técnico autorizado y registrar después el estado pendiente.
+4. **Calidad demostrada en el producto:** comprobar AC, comportamiento observable, pruebas proporcionales al riesgo, seguridad, contratos y compatibilidad afectados. No declarar PASS sin ejecutar pruebas ni ignorar fallos relevantes. Permisos reales y requisitos técnicos/regulatorios de publicación se siguen respetando.
+5. **Bloqueos solo por dependencias técnicas/funcionales reales:** eliminar aristas de orden, burocracia, gates o documentos. Si falta una capacidad necesaria, registrar el hecho en Backlog.md y desbloquearla o continuar con otra tarea independiente.
+6. **Cierre ligero:** documentar en la propia tarea resultado, verificaciones reales y límites, marcar Done cuando se entregue el valor comprometido. No exigir ficheros ni recibos externos.
+7. **Legado solo a petición:** las lentes de ROADMAP/ADR/SPEC sirven únicamente para migrar fuentes ya existentes si se solicita. Tras importar, no mantener doble seguimiento.
+8. **Documentación técnica sí:** contratos de API, guías de usuario, decisiones técnicas y conocimiento duradero son producto cuando aportan valor propio. Para conocimiento de tareas, preferir decisiones y documentos nativos de Backlog.md.
 
 ## Contrato de arranque y descubrimiento
 
@@ -36,29 +47,25 @@ description: "Gestiona trabajo ágil local-first con Backlog.md CLI: captura y r
 
 ## Flujo ágil: valor, límites de WIP y evidencia
 
-- **Desde especificaciones:** ROADMAP, ADR, SPEC, gates y receipts son autoridades diferentes: convertir objetivos en propuestas de tareas con referencia estable, reconstruir dependencias y comparar con el backlog existente antes de escribir. Ver [contrato spec-packet](references/spec-contract.md) y [proyección](references/lenses/spec-reconciliation.md). Nunca transformar cada sección histórica en una tarea.
-- **Operar Kanban (CRUD real):** activar `create-task` para crear, `move-task` para cambiar columnas, `archive-task` para retirar del board y `restore-task` para recuperarla; `delete-task` obliga a mantenimiento humano independiente. Cargar solo la lente aplicable desde el [catálogo](references/lens-registry.json). El helper `scripts/board_crud.py` prepara comandos estructurados con configuración, permisos y gates, pero **nunca ejecuta ni modifica Backlog.md**. Done y Archive son conceptos distintos; una archivada inacabada continúa bloqueando sus dependientes.
+- **Desde la necesidad y Backlog.md:** elegir un incremento útil y administrarlo en el backlog nativo. Solo para **migración de legado solicitada** consultar [spec-packet](references/spec-contract.md) y [proyección](references/lenses/spec-reconciliation.md). Ninguna fuente externa conserva autoridad de seguimiento tras la importación.
+- **Operar Kanban (CRUD real):** activar `create-task` para crear, `move-task` para cambiar columnas, `archive-task` para retirar del board y `restore-task` para recuperarla; `delete-task` obliga a mantenimiento humano independiente. Cargar solo la lente aplicable desde el [catálogo](references/lens-registry.json). El helper `scripts/board_crud.py` es optativo y prepara comandos, pero no crea gates administrativos obligatorios ni ejecuta Backlog.md. Done y Archive son conceptos distintos; una archivada inacabada continúa bloqueando sus dependientes.
 - **Capturar:** buscar duplicados antes de crear. Ambigüedades → borrador (`backlog draft create`) o tarea con incertidumbre explícita, según aceptación; no convertir una idea vaga en veinte tareas especulativas.
 - **Refinar:** una capacidad observable por tarea, criterios de aceptación verificables y pequeños, Definition of Done del proyecto; dependencias solamente si son bloqueantes reales. Si el cambio afecta a contratos de código, añadir aceptación documental proporcionada al impacto, sin crear tareas cosméticas por cada comentario. Registrar decisiones arquitectónicas como decisiones, no como pseudo-tareas.
-- **Priorizar:** seleccionar trabajo listo (`isReady` derivado de JSON, o `backlog task list --ready`) y alto valor con bajo riesgo; no inventar estimaciones, sprint commitments, ni prioridades. Una tarea bloqueada o identidad de dependencia ambigua no es lista.
-- **Planificar justo antes de construir:** plan acotado en `backlog task edit <id> --plan ...`; revisar seams y contratos actuales. El plan puede modificarse, pero no escribir código de producción desde esta skill.
+- **Priorizar:** terminar entregas valiosas y desbloquear dependencias funcionales auténticas; `isReady` informa del grafo, no añade autorizaciones WIP o documentales. No inventar prioridades ni estimaciones.
+- **Planificar justo antes de construir:** usar `backlog task edit <id> --plan ...` cuando reduzca incertidumbre real; no exigir plan para un cambio trivial. La implementación pertenece al agente anfitrión.
 - **Eventos contextuales (Claude Code opt-in):** `plugins/backlog-context` observa lecturas/ediciones y recomienda el comando oportuno. Consulta **únicamente** propietarios con `groma view <file>` sin escanear ni escribir; una lectura no es modificación. Lentes portables: [work-alignment](references/lenses/work-alignment.md), [unplanned-work](references/lenses/unplanned-work.md), [dependency-management](references/lenses/dependency-management.md) y [epic-management](references/lenses/epic-management.md); ver [contrato de eventos](references/lenses/contextual-events.md). Hooks no autorizan automáticamente comandos ni deducen Done.
 - **Groma.md opcional:** cuando el proyecto dispone de Groma, consultar `groma plugin list`, `groma agent-instructions backlog` y `groma view <archivo>` para mapear tareas a componentes C4 conocidos. Referencias `--add-ref` = alcance planificado; `--modified-file` = cambios realmente efectuados y **reemplaza toda la lista**. Conservar entradas previas y reconciliar IDs `replaced: A -> B` tras operaciones estructurales. El proyector puro [groma_task_links.py](scripts/groma_task_links.py) solo prepara argv revisables. Ver [integración](references/groma-integration.md). No hacer `scan`, `plugin add`, `web` ni edición OKF por una simple lectura.
 - **Ejecutar:** actualizar junto al cambio las explicaciones de contratos públicos, invariantes y ejemplos afectados; evitar notas históricas, IDs administrativos o autoría personal en comentarios de producto. **Una tarea por flujo** por defecto; registrar notas con `--append-notes` (no reemplazar progreso existente), observar cambios y verificar el contrato mediante las herramientas autorizadas.
 - **Verificar:** si cambia una API, comprobar la documentación frente a comportamiento real; no interpretar un generador sin errores como prueba de veracidad, ni añadir E2E a cambios solo documentales sin riesgo observable. Comprobar criterios de aceptación y DoD de **forma individual**, marcándolos solo tras evidencia real; tests `NOT_RUN` no equivalen a `PASS`. Delegar selección de pruebas a `delivery-first-testing` solo si disponible.
-- **Cerrar:** escribir `--final-summary` con resultado y riesgos, marcar estado final configurado solo con evidencias; archivar después durante mantenimiento explícito, no al completar.
+- **Cerrar sin ceremonias:** comprobar el producto y garantías pertinentes, resumir el resultado en `--final-summary` y marcar el estado final. No exigir recibos, gates administrativos ni documentos paralelos; archivar es independiente.
 - **Revisar:** analizar bloqueos, exceso de WIP y tareas abandonadas; ajustar primero políticas y descomposición, no multiplicar reuniones ni burocracia.
 
 
-## Política de WIP (Work In Progress)
+## WIP: recomendación de enfoque, nunca bloqueo
 
-**Norma operativa:** terminar antes de empezar. El **valor inicial recomendado**, configurable por equipo y por proyecto, es **máximo 1 tarea activa por responsable y 3 en total**; no imponer los valores como regla global inmutable. Definir explícitamente qué columnas son activas (puede haber `In Progress` y `Review`), cuáles son espera/bloqueo y cuál es el estado final. Los límites abarcan todas las tareas visibles en el ámbito declarado y se aplican a todos los agentes que compartan el mismo tablero. Una tarea con varios responsables cuenta para cada uno; las no asignadas comparten un único cupo.
+Terminar antes de empezar es una buena práctica, **no un requisito de autorización**. La orientación de 1 tarea activa por responsable y 3 globales es ajustable y no crea un gate. No detener implementación ni declarar BLOCKED por cupo, falta de snapshot completo o ausencia de `wipPolicy`.
 
-**Antes de entrar en WIP:** leer `backlog config get statuses`, `backlog task list --json` **sin filtros ni paginación**, `backlog task view <id> --json` y comprobar `isReady=true`. El planificador `scripts/board_crud.py` requiere `wipPolicy`, `boardSnapshot` (envoltura nativa `task-list`) y confirmación `boardComplete=true` de ámbito completo. Si faltan datos, están desactualizados, no hay cupo o cambia la tarea, debe devolver `INSPECT_MORE` o `BLOCKED` **sin proponer argv**. Crear una tarea no la inicia: primero se crea en la columna inicial. Restaurar una tarea archivada que vuelve activa también consume cupo.
-
-**Ante saturación:** elegir una tarea activa para **terminar**, o **pausar explícitamente** una tarea verdaderamente bloqueada en una columna de espera configurada, preservando notas, dependencias y causa. No marcar falsamente `Done`, archivar para ocultarla, desasignar artificialmente, trocear tickets para saltarse el límite ni aprobar excepciones automáticas. Una incidencia urgente puede justificar una excepción **humana documentada** a la política o una preempción explícita; no es un bypass silencioso en el router. Volver de `In Progress` a pendiente, pasar de columna activa a activa o cerrar trabajo no requiere cupo adicional.
-
-**Importante:** el control es un **preflight del agente**, no una restricción atómica implementada por la CLI de Backlog.md. Releer inmediatamente antes de ejecutar; dos agentes concurrentes aún podrían competir por el último hueco. El universo visible de ramas/worktrees puede variar; `boardComplete` nunca se infiere de un listado filtrado. Ver [contrato y ejemplo](references/wip-policy.md).
+El control estricto de `scripts/board_crud.py` solo se usa si el equipo lo solicita expresamente; sus resultados describen ese modo opcional y no una prohibición nativa de Backlog.md. No falsear estados para mejorar métricas. Ver [WIP optativo](references/wip-policy.md).
 
 ## Contrato transversal de documentación de código (cualquier lenguaje)
 
@@ -69,13 +76,14 @@ description: "Gestiona trabajo ágil local-first con Backlog.md CLI: captura y r
 - **Herramientas por stack:** KDoc/Dokka, Javadoc, Python docstrings, Rust rustdoc, Go doc, TSDoc/JSDoc, XML Docs y otras según archivos y build observados. Preferir checks/generadores existentes y minimizar coste y falsos positivos. La documentación pública de producto sí puede versionarse si el proyecto lo requiere: la política de gestión privada solo cubre documentos **de planificación**.
 - **Cómo usarlo:** intención `document-code` → [lente de documentación](references/lenses/code-documentation.md) → [recetas por lenguaje](references/code-documentation-languages.md). Funciona sin Backlog.md instalado en modo guía. Esta skill no reescribe código ni archivos de tareas; cualquier edición requiere autorización del agente anfitrión. En refinamiento, ejecución, verificación y mantenimiento aplicar el mismo criterio al alcance real, sin imponer una limpieza global.
 
-## Política obligatoria de documentos privados y trazabilidad de commits
+## Trazabilidad ligera, sin archivos paralelos
 
-- **Workflow completo:** descubrir y configurar Backlog.md → interpretar ROADMAP/ADR/SPEC → reconciliar tasks/drafts y prioridades → planificar una tarea lista → implementar con skills especialistas → verificar AC/DoD/gates → registrar SHA y evidencia → cerrar y revisar. Backlog.md sigue siendo la autoridad de tareas.
-- **Documentos privados fuera de Git:** los ficheros de planificación, ADR/SPEC/roadmaps, documentación de Backlog.md, arquitectura OKF de Groma (`groma/`, `.groma/`), exports y ZIP de estos materiales de una **aplicación consumidora** no se rastrean en Git. Detectar en índice y staging con [git-artifact-hygiene](references/lenses/git-artifact-hygiene.md); proponer `.gitignore` y `git rm --cached` (requiere autorización), **no borrar archivos locales ni reescribir historial**. Las referencias y documentos de esta skill distribuida SÍ son código del paquete.
-- **Compatibilidad upstream:** Groma y Backlog están diseñados para versionar sus Markdown; nuestra política privada reduce diffs históricos C4, PR-actions y sincronización entre clones. No prometer esas capacidades al ignorar OKF. Backlog.md usa Git por defecto para parte de su historia y colaboración; sin tareas versionadas, inspeccionar `autoCommit`, `remoteOperations`, `checkActiveBranches`, callbacks y backups/sincronización privada. No afirmar equivalencia con el modo Git.
-- **Trazabilidad:** en commits de implementación citar IDs existentes de tarea, bloque roadmap, ADR/SPEC cuando procedan, junto con qué se cambió y qué se verificó (`NOT_RUN` cuando corresponda). Consultar historial por IDs antes de crear trabajo; un commit previo no certifica DONE. Ver [contrato de commit](references/commit-traceability.md).
-- **Handoffs condicionados:** recomendar `delivery-first-testing`, `pipelinek-local-ci`, `pure-functional-design`, `agent-secretless` según tipo de trabajo y **solo si están disponibles**; ninguna colaboración instala por sí sola otra skill.
+- **Flujo ordinario:** leer la tarea Backlog.md → implementar el slice → probar comportamiento y calidad pertinentes → registrar evidencia breve en la tarea → cerrar. No generar ROADMAP.md, CHANGELOG.md, ADR/SPEC de seguimiento, informes ni recibos administrativos.
+- **Backlog.md es dueño de tareas y decisiones:** utilizar sus capacidades nativas. El almacenamiento/versionado Git o privado es elección del proyecto, no una política impuesta por esta skill.
+- **Git conserva el código:** mensaje claro y enlace opcional al ID Backlog-Task, sin trailers obligatorios de roadmap, ADR, SPEC o Verification. Ver [trazabilidad mínima](references/commit-traceability.md).
+- **Higiene no bloqueante:** el detector `git_artifact_guard.py` es optativo; ningún Markdown ni artefacto Backlog.md bloquea un commit por su nombre. Los riesgos de exposición de secretos sí merecen tratamiento real. Ver [higiene](references/repository-hygiene.md).
+- **Especialistas optativos:** `delivery-first-testing`, `pipelinek-local-ci`, `pure-functional-design` y `agent-secretless` cuando ayuden, no como gates de gestión.
+- **Protecciones reales:** mantener permisos del host, callbacks peligrosos, seguridad y comprobaciones regulatorias/técnicas obligatorias; no confundirlas con burocracia inventada.
 
 ## Políticas de seguridad, Git y concurrencia
 
@@ -105,10 +113,10 @@ Backlog.md conserva tareas, documentos y decisiones como autoridad. Los glosario
 |---|---|
 | ¿Hay Backlog.md y qué configuración es segura? | [discovery](references/lenses/discovery.md) |
 | ¿Están los documentos o ZIP de gestión versionados? | [git-artifact-hygiene](references/lenses/git-artifact-hygiene.md) |
-| ¿Cómo vincular TASK/roadmap/ADR/SPEC/commits? | [commit-traceability](references/lenses/commit-traceability.md) |
+| ¿Cómo enlazar una tarea con su commit sin tracking paralelo? | [commit-traceability](references/lenses/commit-traceability.md) |
 | ¿Qué componente posee el código y cómo afecta al mapa C4? | [groma-architecture](references/lenses/groma-architecture.md) |
 | ¿Cómo mantener referencias y archivos de tareas en Groma? | [groma-task-linking](references/lenses/groma-task-linking.md) |
-| ¿Cómo interpretar ROADMAP, ADR, SPEC y gates sin reabrir historia? | [specification-intake](references/lenses/specification-intake.md) |
+| ¿Cómo migrar planificación heredada si se solicita? | [specification-intake](references/lenses/specification-intake.md) |
 | ¿Cómo priorizar hitos y descomponerlos en tareas útiles? | [spec-decomposition](references/lenses/spec-decomposition.md) |
 | ¿Cómo conciliar especificaciones y tareas ya existentes? | [spec-reconciliation](references/lenses/spec-reconciliation.md) |
 | ¿Cómo registrar ideas y evitar duplicados? | [capture](references/lenses/capture.md) |
@@ -122,7 +130,7 @@ Backlog.md conserva tareas, documentos y decisiones como autoridad. Los glosario
 | ¿Cuándo marcar AC/DoD y finalizar? | [verification](references/lenses/verification.md) |
 | ¿Qué mejorar del flujo y cómo limpiar? | [review-maintenance](references/lenses/review-maintenance.md) |
 
-[Backlog.md + Groma.md](references/groma-integration.md) · [Política de documentos privados](references/repository-hygiene.md) · [Trazabilidad de commits](references/commit-traceability.md) · Navegación [HATEOAS-like](references/navigation.md) · [Comandos comprobados](references/cli-reference.md) · [Configuración avanzada y riesgos](references/configuration.md) · [integración con otras skills](references/skill-registry.json) · [fuentes](references/sources.md). El router nunca certifica una ejecución ni presume capacidades instaladas.
+[Backlog.md + Groma.md, optativo](references/groma-integration.md) · [Higiene no bloqueante](references/repository-hygiene.md) · [Trazabilidad mínima](references/commit-traceability.md) · Navegación [HATEOAS-like](references/navigation.md) · [Comandos comprobados](references/cli-reference.md) · [Configuración avanzada y riesgos](references/configuration.md) · [integración con otras skills](references/skill-registry.json) · [fuentes](references/sources.md). El router nunca certifica una ejecución ni presume capacidades instaladas.
 
 ## Trazabilidad oportunista y seguridad de hooks
 
