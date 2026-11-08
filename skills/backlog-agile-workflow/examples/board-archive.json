@@ -11,8 +11,7 @@
   "task": {
     "id": "TASK-8",
     "status": "To Do",
-    "archived": false,
-    "finalSummaryRecorded": true
+    "archived": false
   },
   "archiveReason": "duplicate",
   "dependencyImpact": "reviewed",
