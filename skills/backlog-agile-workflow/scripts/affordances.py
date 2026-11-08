@@ -162,8 +162,10 @@ def affordances(state: dict[str, Any]) -> dict[str, Any]:
             result["suggested_reads"].append(["groma", "view", "--plain"])
     elif groma == "available" and intent in {"refine", "plan", "execute", "verify", "review", "decompose"}:
         result["_links"].append(_notice("inspect-architecture", "Groma es opcional: inspeccionar dueño de archivos por groma view <file> y referencias Backlog verificadas", href=_local("references/groma-integration.md")))
-    if intent in {"specify", "decompose"}:
-        result["_links"].append(_notice("inspect-specifications", "Inspeccionar ROADMAP, ADR, SPEC, gates y estado de la fuente canónica"))
+    if intent == "specify":
+        result["_links"].append(_notice("inspect-specifications", "Solo para migración solicitada: examinar fuentes heredadas sin crear tracking paralelo"))
+    elif intent == "decompose":
+        result["_links"].append(_notice("inspect-backlog-milestones", "Descomponer tareas/hitos nativos de Backlog.md en incrementos útiles"))
     if intent == "document-code":
         result["_links"].append(_notice("review-code-docs", "Inspeccionar contrato de API, código, comentarios y guías del lenguaje; no escribir automáticamente", href=_local("references/code-documentation-languages.md")))
     if intent in {"independent-review", "review-resolution", "context-drift"}:
@@ -185,7 +187,7 @@ def affordances(state: dict[str, Any]) -> dict[str, Any]:
     if intent == "review-resolution":
         result["_links"].append(_notice("resolve-findings", "Contrastar y deduplicar; persistir solo mediante Backlog CLI con autorización"))
     if intent == "trace":
-        result["_links"].append(_notice("inspect-commit-trailers", "Buscar IDs de tarea, bloque y ADR/SPEC en commits observados"))
+        result["_links"].append(_notice("inspect-commit-trailers", "Buscar ID nativo de tarea en commits cuando facilite la navegación"))
     if intent in {"decide", "authority-check", "recall", "handoff", "memory-feedback"} and cli == "available" and project == "initialized":
         result["suggested_reads"].append(["backlog", "decision", "list", "--json"])
     if intent in {"capture", "triage", "review", "maintain", "sync-specs", "create-task", "align-work", "unplanned-work", "manage-epic"}:
@@ -198,9 +200,6 @@ def affordances(state: dict[str, Any]) -> dict[str, Any]:
             result["_links"].append(_notice("select-task", "Elegir el ID observado de una tarea"))
             return result
 
-    if intent == "move-task":
-        result["suggested_reads"].append(["backlog", "task", "list", "--json"])
-        result["_links"].append(_notice("inspect-wip", "Antes de entrar en WIP, comparar snapshot completo y límites de la política", href=_local("references/wip-policy.md")))
     if intent in BOARD_INTENTS:
         result["_links"].append(_notice(
             "plan-board-operation",
@@ -230,9 +229,9 @@ def affordances(state: dict[str, Any]) -> dict[str, Any]:
         result["decision"] = "BLOCKED"
         result["_links"].append(_notice("inspect-archived", "La tarea archivada es de solo lectura; restaurar requiere autorización"))
         return result
-    if intent in {"execute", "plan"} and task.get("isReady") is not True:
+    if intent in {"execute", "plan"} and task.get("isReady") is False:
         result["decision"] = "INSPECT_MORE"
-        result["_links"].append(_notice("inspect-dependencies", "No se ha confirmado isReady=true para esta tarea"))
+        result["_links"].append(_notice("inspect-dependencies", "Hay dependencias declaradas sin resolver: comprobar cuáles son bloqueos funcionales reales"))
         return result
     if intent == "close":
         for prefix in ("acceptanceCriteria", "definitionOfDone"):
@@ -246,9 +245,9 @@ def affordances(state: dict[str, Any]) -> dict[str, Any]:
                 result["_links"].append(_notice("complete-checklist", f"Hay {count-done} pendientes en {prefix}; no cerrar"))
                 return result
 
-    if intent == "triage" and task and task.get("isReady") is not True:
+    if intent == "triage" and task and task.get("isReady") is False:
         result["decision"] = "INSPECT_MORE"
-        result["_links"].append(_notice("inspect-dependencies", "El candidato no está confirmado como listo"))
+        result["_links"].append(_notice("inspect-dependencies", "Comprobar si la dependencia declarada es técnica y realmente bloqueante"))
         return result
 
     if intent == "align-work":
@@ -259,8 +258,10 @@ def affordances(state: dict[str, Any]) -> dict[str, Any]:
         result["_links"].append(_notice("inspect-dependency-graph", "Verificar bloqueo real, ausencia de ciclo e isReady en corpus completo"))
     if intent == "manage-epic":
         result["_links"].append(_notice("inspect-hierarchy", "Elegir milestone, parent o tareas independientes, sin jerarquía ficticia"))
-    if intent in {"specify", "decompose", "sync-specs"}:
-        result["_links"].append(_notice("plan-spec-projection", "Derivar propuestas trazables; nunca escribir tareas sin reconciliar corpus"))
+    if intent in {"specify", "sync-specs"}:
+        result["_links"].append(_notice("plan-spec-projection", "Solo migración explícita de legado: propuestas sin escritura ni seguimiento dual"))
+    elif intent == "decompose":
+        result["_links"].append(_notice("plan-backlog-tasks", "Crear slices de valor sobre hitos nativos de Backlog.md"))
     if intent == "map-task":
         result["_links"].append(_notice("plan-groma-task-links", "Leer task view actual y proponer --modified-file completo y --add-ref/--remove-ref; no ejecuta CLI"))
     if intent == "curate-architecture":
