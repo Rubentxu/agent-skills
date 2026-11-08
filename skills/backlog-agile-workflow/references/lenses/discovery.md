@@ -1,9 +1,9 @@
-# Discovery — CLI, proyecto y configuración
+# Discovery — localizar Backlog.md sin frenar la entrega
 
-1. Verificar `backlog --version`/`backlog --help` solo si CLI disponible. Sin instalación: describir `npm i -g backlog.md` o `npx backlog.md` (solicitar autorización).
-2. Localizar el proyecto mediante comando CLI actual, sin suponer `backlog/`; si ausente proponer `backlog init` y revisar banderas `--defaults`, `--backlog-dir`, `--config-location`, `--agent-instructions` o `--no-git` según contexto. No iniciar wizard en sandbox sin TTY.
-3. Consultar `backlog instructions overview` **antes de trabajar con tareas**. Inspeccionar configuración avanzada y riesgos de Git (`references/configuration.md`) antes de escrituras.
-4. Si existe un `ROADMAP.md` o un `BACKLOG.md` heredado, **no importarlo ni borrarlo automáticamente**: contrastar objetivos actuales, buscar duplicados y proponer migración incremental aprobada.
-5. Terminar con `CLI/version | raíz/corpus | git/no-git | estados | efectos colaterales | disponible/bloqueado`; sin inventar resultados.
+1. Comprobar `backlog --version`/`backlog --help` al operar el tablero; sin CLI, proponer instalación solo con autorización y no instalarla automáticamente.
+2. Localizar el proyecto y leer `backlog instructions overview` si está disponible. No ejecutar `init` por encontrar carpetas parecidas.
+3. Consultar permisos, estados y callbacks **si afectan a la operación actual**, no como preflight administrativo general.
+4. Si existen ROADMAP.md, CHANGELOG.md de seguimiento o BACKLOG.md heredados, **no adoptarlos ni sincronizarlos**. Proponer migración puntual a Backlog.md solo cuando el usuario la pida.
+5. Si falta la CLI, continuar investigación, implementación y verificación autorizadas; comunicar que la actualización del tablero queda pendiente, sin generar otra base de tareas.
 
-**Contraejemplo:** ejecutar `backlog init` sobre una carpeta existente por ver un nombre familiar. Eso podría introducir configuración, no es descubrimiento puro.
+**Salida:** disponibilidad real y siguiente acción de valor; nunca bloqueo documental.
