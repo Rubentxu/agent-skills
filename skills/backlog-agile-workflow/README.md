@@ -2,10 +2,12 @@
 
 Skill portable para **trabajo ágil ligero** con [Backlog.md](https://github.com/MrLesk/Backlog.md). En vez de reimplementar tareas en scripts, usa la CLI oficial y selecciona una guía por problema. No requiere Scrum, sprints, servicio remoto ni integración MCP.
 
+**Política principal:** entregar capacidades funcionales verificadas y desbloquear dependencias reales. **Backlog.md es la única fuente de seguimiento:** no exigir ROADMAP.md, CHANGELOG.md de progreso, tareas Markdown, ADR/SPEC administrativos ni recibos de gates. WIP es asesoramiento, nunca permiso. Calidad significa implementación, pruebas pertinentes, seguridad y contratos reales.
+
 ## Activaciones
 
-- «Convierte mi ROADMAP, ADR, SPEC, hitos y gates en tareas priorizadas y trazables, sin duplicar trabajo»
-- «Reconcilia cambios del roadmap con el tablero y respeta cierres ya certificados»
+- «Convierte esta necesidad en tareas pequeñas de alto valor directamente en Backlog.md»
+- «Desbloquea tareas pendientes de dependencias técnicas reales sin ceremonias»
 - «Convierte esta idea en tareas pequeñas y criterios de aceptación»
 - «Prioriza lo que puedo implementar ahora, respetando dependencias»
 - «Prepara un plan para la tarea actual, sin tocar código»
@@ -19,7 +21,7 @@ Skill portable para **trabajo ágil ligero** con [Backlog.md](https://github.com
 2. **Ruta bajo demanda:** seleccionar una o dos lentes; no cargar todos los documentos.
 3. **Sugerir antes de escribir:** la skill distingue exploración, propuestas y ejecución autorizada.
 4. **Un único propietario:** tareas/estados/IDs solo los escribe Backlog.md. Esta skill nunca toca archivos de trabajo ni crea su propio estado.
-5. **Entrega verificable:** criterios de aceptación y DoD demostrados, no checkboxes optimistas. No modificar aplicaciones por el mero uso de la skill.
+5. **Entrega verificable:** criterios de aceptación y pruebas proporcionales al riesgo, sin gates de gestión. La implementación corresponde al agente anfitrión.
 
 ## Documentación de código en cualquier lenguaje
 
@@ -32,9 +34,9 @@ python3 skills/backlog-agile-workflow/scripts/affordances.py \\
 
 Funciona sin Backlog.md instalado para orientar la revisión. Si la aplicación ya dispone de tareas, los cambios de API se reflejan en los AC/DoD vigentes y la procedencia queda en Backlog.md y trailers Git, **no** en los comentarios del producto. Los identificadores semánticos de protocolos y del dominio siguen documentándose cuando son parte del contrato.
 
-## Proyección de especificaciones (sin escribir backlog)
+## Migración opcional de planificación heredada
 
-[Contrato y reglas de trazabilidad](references/spec-contract.md) · [lente de documentación](references/lenses/specification-intake.md) · [descomposición](references/lenses/spec-decomposition.md) · [reconciliación](references/lenses/spec-reconciliation.md).
+Solo si se pide importar un roadmap, spec o ADR **ya existente** se puede usar la [ingesta](references/lenses/specification-intake.md), [descomposición](references/lenses/spec-decomposition.md), [reconciliación](references/lenses/spec-reconciliation.md) y el [proyector](references/spec-contract.md). No crear ni sincronizar esos archivos en el workflow habitual. **Backlog.md es el destino único**.
 
 ```bash
 python3 skills/backlog-agile-workflow/scripts/spec_projection.py \
@@ -42,7 +44,7 @@ python3 skills/backlog-agile-workflow/scripts/spec_projection.py \
   skills/backlog-agile-workflow/examples/spec-existing-tasks.json
 ```
 
-El JSON resultante es solo un **plan revisable**; los comandos `backlog` se ejecutan después, con aprobación y a partir de la configuración real. Los documentos canónicos no se reescriben.
+El ejemplo es opcional, no un requisito para implementar o cerrar.
 
 ## Uso local (tests del router, sin Backlog.md instalado)
 
@@ -66,21 +68,15 @@ La herramienta **Backlog.md** es un requisito separado para usar tareas reales. 
 - Integraciones opcionales: `delivery-first-testing` (garantías), `pure-functional-design` (diseño/refactor), `cognicode-diagrams` (observaciones con sus restricciones). Sin acoplamiento de archivos.
 - En backlog sin inicializar, la recomendación es preparación, no una ejecución de `init` en segundo plano.
 
-## Gestión privada fuera de Git y trazabilidad
+## Trazabilidad sin burocracia
 
-Por política del consumidor, ROADMAP, ADR, SPEC, documentos de Backlog.md y ZIP de gestión **no** se rastrean en el índice Git. Detectar primero con el [guard](references/repository-hygiene.md); `git rm --cached` preserva bytes pero requiere respaldo privado, sincronización colaborativa y consentimiento. Las fuentes de esta skill son artefactos distribuibles y **sí** se versionan.
+Las tareas, decisiones, verificaciones y progreso viven en Backlog.md. Git conserva implementación e historia. `Backlog-Task: ID` puede facilitar navegación, pero no se exigen trailers de ROADMAP, ADR, SPEC, receipts o documentos de seguimiento. El proyecto decide cómo versionar sus propios archivos Backlog.md.
 
-```bash
-python3 skills/backlog-agile-workflow/scripts/git_artifact_guard.py --repo . --check
-python3 skills/backlog-agile-workflow/scripts/commit_trace.py commit-messages.json spec-packet.json
-python3 skills/backlog-agile-workflow/scripts/spec_projection.py spec-packet.json task-list.json implementation-references.json
-```
-
-Los JSON son efímeros, se mantienen fuera del índice y no son una nueva base de datos. El índice de commits solo identifica trabajo posiblemente implementado; no confirma cierre. Ver [contrato de commit](references/commit-traceability.md).
+[Commits ligeros](references/commit-traceability.md) · [higiene opcional](references/repository-hygiene.md). El detector documental no es un gate de commit.
 
 ## Especialistas recomendados cuando estén instalados
 
-`delivery-first-testing` selecciona pruebas; `pipelinek-local-ci` gobierna gates locales si PipelineK es la CI del proyecto; `pure-functional-design` diagnostica arquitectura y refactors; `agent-secretless` ejecuta operaciones protegidas sin exponer credenciales. `backlog-agile-workflow` es dueño de las tareas, no de esos dominios.
+`delivery-first-testing` selecciona pruebas; `pipelinek-local-ci` ayuda con pruebas y ejecución locales si PipelineK es la CI del proyecto; `pure-functional-design` diagnostica arquitectura y refactors; `agent-secretless` ejecuta operaciones protegidas sin exponer credenciales. `backlog-agile-workflow` es dueño de las tareas, no de esos dominios.
 
 ## Integración opcional con Groma.md
 
@@ -153,9 +149,9 @@ Exportación opt-in a directorio nuevo: python3 scripts/knowledge_graph.py examp
 
 El [contrato de datos](references/knowledge-contract.md) explica cómo normalizar lecturas CLI sin introducir una segunda autoridad.
 
-## Límites de trabajo en curso (WIP)
+## WIP orientativo, no freno
 
-[Política configurable](references/wip-policy.md) y verificación previa en `scripts/board_crud.py`. Valor inicial recomendado: **1 tarea activa por responsable y 3 en total** (incluidas coasignaciones, las no asignadas como cupo compartido); la política y las columnas se ajustan por proyecto. Ejecutar `python3 scripts/board_crud.py examples/board-wip-start.json` para consultar un ejemplo sin escribir tareas. El control necesita foto completa de `backlog task list --json`; **no** ofrece exclusión mutua transaccional entre agentes.
+[Guía](references/wip-policy.md): terminar antes de empezar reduce dispersión; 1 tarea activa por responsable y 3 globales es un ejemplo **no exigible**. El preflight estricto de `scripts/board_crud.py` se ejecuta únicamente si el equipo opta por él. Su `BLOCKED` no impide una tarea ordinaria; solo bloquean dependencias técnicas reales.
 
 ## Revisión Goldfish propia
 
