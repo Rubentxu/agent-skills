@@ -27,6 +27,10 @@ Resultados: `DISCOVER`, `INSPECT_MORE`, `READY`, `PROPOSE_ONLY`, `AUTHORIZED_ACT
 
 `specify` y `sync-specs` solo se usan ante una migración expresamente solicitada de fuentes antiguas; `decompose` puede organizar hitos nativos de Backlog.md sin roadmap externo. El proyector de legado solo emite propuestas, nunca sustituye la autoridad de Backlog.md ni impide entregas ordinarias. Ver [contrato](spec-contract.md).
 
+## Recuperación del flujo cuando una tarea deja de avanzar
+
+La intención `stalled-work` abre [flow-recovery](lenses/flow-recovery.md) y sugiere recuperar el incremento de valor antes de seguir investigando. **No requiere un snapshot global, WIP, gate ni documento externo**. Se puede consultar sin CLI instalada: el agente sigue autorizado solo para las herramientas que el anfitrión permita. La salida es recomendación de estrategia, no mutación ni declaración automática de cierre. El router no vigila sesiones de forma asíncrona: el agente debe invocarlo cuando observe intentos repetidos sin resultado o el usuario detecte estancamiento.
+
 ## Documentación de código transversal (sin CLI)
 
 `document-code` selecciona [code-documentation](lenses/code-documentation.md) sin requerir Backlog.md, Groma ni conexión de red. El router devuelve **orientaciones**, nunca edita un archivo, no ejecuta linters ni crea tareas. Distinguir documentación de producto versionable de ADR/roadmaps y material privado de gestión. Si hay Backlog.md, el agente puede vincular esta revisión a AC/DoD **reales** mediante la CLI autorizada; no abrir tickets por cada KDoc o comentario. La [tabla por lenguaje](code-documentation-languages.md) es opt-in y solo se consulta tras detectar el stack.
