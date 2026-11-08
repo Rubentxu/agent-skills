@@ -16,9 +16,7 @@
       "El estado muestra el último resultado observado",
       "Un error se comunica sin ocultar el estado anterior"
     ],
-    "references": [
-      "docs/ROADMAP.md#R2.W1"
-    ]
+    "references": []
   },
   "config": {
     "autoCommit": false,
