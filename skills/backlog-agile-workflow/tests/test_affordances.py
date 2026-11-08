@@ -190,7 +190,7 @@ class RouterTests(unittest.TestCase):
                 self.assertTrue(path.is_relative_to(ROOT.resolve()))
 
     def test_all_session_examples_parse(self):
-        for name in ("triage.json", "close-blocked.json", "config-risk.json", "uninitialized.json"):
+        for name in ("triage.json", "close-blocked.json", "config-risk.json", "uninitialized.json", "stalled-work.json"):
             with self.subTest(name=name):
                 o=router.affordances(json.loads((ROOT/"examples"/name).read_text()))
                 self.assertEqual(o['status'], 'NAVIGATION_ONLY')
