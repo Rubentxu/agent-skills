@@ -1,9 +1,9 @@
-# Dependencias reales y desbloqueo
+# Dependencias reales y desbloqueo continuo
 
-1. Consultar `backlog task view <id> --json` y `dependencyGraph`; comprobar identidades, estados, archivo y `isReady` desde corpus completo. Una tarea archivada sin completarse **sigue bloqueando**.
-2. Distinguir bloqueo genuino de orden deseado, etiqueta, milestone y relación padre-hijo. No encadenar vertical slices sin dependencia de producto.
-3. Validar ausencia de ciclos, autodependencia, ID desconocido y conflicto de rama. Inspeccionar `backlog task edit --help` antes de usar flags `--dep`/quitar dependencias: no asumir semántica de reemplazo.
-4. Proponer cambio y efecto sobre tareas dependientes; ejecutar mediante CLI únicamente con permiso y reconsultar el grafo/ready.
-5. Nunca marcar Done de una tarea para desbloquear otra sin pruebas ni convertir archivo en completado.
+1. Leer `backlog task view <id> --json` y el grafo cuando haya dependencias; determinar qué capacidad concreta falta.
+2. **Dependencia válida:** sin el resultado de otra tarea no se puede implementar o comprobar el comportamiento. Orden deseado, WIP, ADR, ROADMAP, recibos o gates burocráticos **no son dependencias**.
+3. Retirar por CLI, con permiso, aristas ficticias; conservar las que realmente protegen contratos, integraciones o seguridad.
+4. Evitar ciclos e IDs ambiguos. Una tarea archivada sin completar no satisface una dependencia técnica auténtica.
+5. Si el trabajo está bloqueado de verdad, ejecutar el desbloqueante o elegir tarea independiente valiosa, sin simular Done.
 
-**Salida:** aristas observadas, cambio propuesto, readiness afectado, resultado CLI o `PROPOSE_ONLY`.
+**Salida:** desbloqueo técnico o eliminación de dependencia artificial registrada solo en Backlog.md.
