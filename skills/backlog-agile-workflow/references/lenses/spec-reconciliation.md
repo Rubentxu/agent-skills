@@ -1,15 +1,12 @@
-# Lente: proyectar especificaciones sin duplicar tareas
+# Reconciliación excepcional de planificación legada
 
-**Pregunta:** ¿Qué cambiaría en Backlog.md al reconciliar esta versión del roadmap con las tareas existentes?
+**Uso solo por solicitud expresa** para migrar/contrastar ROADMAP/SPEC/ADR heredados. No se invoca en creación, ejecución, verificación o cierre habitual.
 
-1. Obtener panorama sin editar: `backlog instructions overview`, `backlog task list --json` **sin filtros/ventanas**, `backlog milestone list --plain`, consultas de configuración y, para candidatos existentes, `backlog task view <id> --json`. Inspeccionar diferencias entre ramas/worktrees; un task-list solo representa el corpus visible, no una transacción global.
-2. Crear un `spec-packet.json` **temporal y curado por el agente**, con claves y referencias estables a documentos originales; reutilizar el mismo `sourceRef` como referencia `--ref` de Backlog.md si la CLI y el proyecto lo permiten. ADR, SPEC, receipts, no-alcance y gates solo alimentan criterios/documentRefs, no son tareas automáticamente.
-3. Ejecutar `python3 scripts/spec_projection.py spec-packet.json task-list.json`. La utilidad **solo lee esos dos archivos** y produce un plan JSON `PROPOSAL_ONLY`. No ejecuta Backlog.md ni escribe archivos. Comprobar ruta/versión y diferencia de corpus antes de usar el resultado. Con `snapshotScope=unfiltered-visible-corpus` se manifiesta intención del llamante, no se certifica que sea cierto.
-4. Revisar `PROPOSE_CREATE`, `REVIEW_EXISTING`, `REVIEW_POSSIBLE_DUPLICATE`, `WAIT_FOR_DEPENDENCY_IDS`, `PRESERVE_HISTORICAL`, `NEEDS_CORPUS`, `INSPECT_STATUS`. Una coincidencia de título sin `sourceRef` no es identidad; exige inspección manual. Una referencia repetida en varias tareas bloquea; una tarea archivada no se edita sin restauración explícita.
-5. Solo tras permiso, usar CLI oficial (`backlog milestone add`, `backlog task create`, `backlog task edit`) paso a paso. Cualquier propuesta `--dep` se resuelve con **IDs reales devueltos** por Backlog.md, nunca con `R1.W2` como si fuera `TASK-2`. Conservar `--ref`, contenido y AC/DoD; confirmar flags y prioridades con `--help` local. Nunca editar frontmatter directamente. No ejecutar side-effects sin inspeccionar `autoCommit`, `remoteOperations`, `onStatusChange`, hooks.
-6. Releer task-list después de cada batch y comparar la referencia original para evitar duplicaciones. No correr el importador sobre un snapshot viejo; si la tarea ya existe, **actualizar solo tras revisar diferencia del `task view`**, no reemplazar notas/progreso/historial.
-7. Cerrar un hito/gate solo según su autoridad externa y recibos; el estado Done de Backlog.md es una proyección, no certificación del build o release.
+1. Leer tareas, borradores, hitos y decisiones **nativos** de Backlog.md, evitando duplicados.
+2. Si se aportaron documentos heredados, crear `spec-packet.json` **efímero** y utilizar `scripts/spec_projection.py` solo si el volumen lo justifica. No almacenarlo como tracking.
+3. `NEEDS_CORPUS`, `INSPECT_STATUS` y otras salidas del proyector describen únicamente **esa migración**, no bloquean implementación técnica independiente.
+4. Crear/actualizar tareas con la CLI autorizada, preservando AC, notas y estado. No convertir párrafos, recibos ni gates en tickets por rutina.
+5. Tras migrar, Backlog.md se convierte en **fuente única**. No sincronizar permanentemente los documentos de origen ni exigirlos para cerrar tareas.
+6. Si falta la CLI, informar de que el tablero no puede actualizarse; se puede seguir desarrollando o verificando código con permiso.
 
-**Ausencia de Backlog.md:** preparar paquete/plan `NEEDS_CORPUS`, sin instalar ni inicializar automáticamente. **Problema en la CLI:** declarar BLOCKED, no escribir la tarea Markdown.
-
-**Antes de proponer `PROPOSE_CREATE`:** inspeccionar documentos privados, tareas archivadas, drafts, IDs exactos y trailers de los commits disponibles. El tercer índice opcional de `spec_projection.py` permite detectar trabajo posiblemente ya implementado y producir `REVIEW_IMPLEMENTATION`; un SHA nunca certifica equivalente funcional, ni sustituye AC/DoD. Antes del siguiente commit ejecutar [guard del índice](../repository-hygiene.md).
+**Salida:** backlog nativo reconciliado, sin doble mantenimiento.
