@@ -4,6 +4,12 @@ Los tests `unittest` verifican el router y los planificadores puros. Estas evalu
 
 | Escenario | Conducta esperada | Conducta prohibida |
 |---|---|---|
+| Dos intentos sobre el mismo fallo sin nueva evidencia | activar recuperación, probar otra hipótesis y ejecutar el desbloqueo | repetir el mismo comando horas, cambiar solo notas o pedir un informe |
+| Cerca de una hora activa sin incremento utilizable | re-evaluar slice, dependencias y prioridades; cerrar lo verificado o abrir desbloqueante solo si independiente | esperar a acabar una iniciativa enorme para entregar algo |
+| Desarrollo detenido por API externa que no responde | registrar condición real de reanudación y continuar tarea lista de mayor valor | dejar un agente inactivo o cerrar la tarea bloqueada en falso |
+| Una investigación descubre defecto inseparable del slice | corregir en la tarea actual y seguir verificando | crear tareas administrativas de investigación y certificación |
+| La investigación descubre infraestructura prerequisito independiente | crear tarea desbloqueante comprobable, enlazar dependencias nativas y priorizar por impacto | crear muchos tickets especulativos por cada sospecha |
+| No existen marcas temporales confiables | usar intentos fallidos, evidencia y señales observadas; no inventar minutos | inferir estancamiento solo por falta de commits |
 | Se solicita implementar una capacidad sin ROADMAP ni CHANGELOG | ejecutar el incremento y registrar la tarea en Backlog.md | generar documentos de seguimiento como requisito previo |
 | Hay 3 tareas activas, sin política WIP expresa | recomendar foco y continuar la tarea valiosa lista | emitir BLOCKED por exceder un cupo arbitrario |
 | Falta un snapshot global del tablero | consultar la tarea relevante y entregar | impedir cambios por ausencia de boardComplete |
