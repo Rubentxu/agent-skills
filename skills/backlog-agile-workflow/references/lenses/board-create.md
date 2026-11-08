@@ -1,9 +1,9 @@
-# Kanban: crear tarjeta con CLI real
+# Kanban — crear tareas útiles con Backlog.md
 
-1. Descubrir proyecto y configuraciones: `backlog instructions overview`, `backlog instructions task-creation`, `backlog config get statuses`, `defaultStatus`, `priorities`, `projects`, `definition_of_done`, `autoCommit`, `remoteOperations`, `onStatusChange` y `bypassGitHooks`.
-2. Buscar antes de crear: `backlog search "consulta" --json`, `backlog task list --json`, y revisar coincidencias, borradores, archivados y las referencias de ROADMAP/ADR/SPEC/commits. La lista activa **no** es un inventario de archivados o ramas: no concluir unicidad sin inspección. Una idea vaga → `backlog draft create "Título"`; una tarea lista → `backlog task create "Resultado" -d "Problema y por qué" --ac "Resultado verificable"`.
-3. Añadir cada criterio por `--ac` repetido. `--ref` para IDs existentes de documentos de gestión o componentes Groma y `--doc` para documentos existentes. `--priority`, `-s`, `--project`, `--dep` solo con valores e IDs observados; los defaults configurados de DoD se aplican solos. No inventar due dates ni asignación. **No crear directamente en una columna activa:** siempre crear en el estado inicial, revisar dependencias y solicitar transición con control WIP. Crear no implica empezar; el plan se redacta **justo antes de ejecutar** (salvo trabajo que ya estaba iniciado).
-4. Si se pide acción no interactiva, `scripts/board_crud.py` proporciona argumentos estructurados, nunca los ejecuta. Controlar permiso y efectos Git/callbacks antes de pasar de propuesta a escritura.
-5. Tras ejecutar, capturar ID real devuelto por la CLI y consultar `backlog task view <ID> --json`, confirmar `status`, AC y refs, y constatar presencia en el board. No deducir IDs por ordinal.
+1. Consultar `backlog instructions task-creation` y la configuración **relevante**. No convertir la creación en una auditoría global de ramas, documentos o commits.
+2. Buscar duplicados razonables con `backlog search ... --json`; usar borrador para una idea incierta o `backlog task create` para un resultado observable.
+3. Escribir criterios de aceptación verificables. Asignar prioridad, `--project`, referencias o `--dep` solo con valores/IDs reales y cuando aporten valor.
+4. Crear en el estado inicial configurado y mover a activo al comenzar. **WIP no puede impedirlo** por falta de cupo o snapshot. Nunca exigir archivos ROADMAP, ADR, SPEC ni un Markdown paralelo.
+5. Confirmar el ID devuelto y el resultado por CLI. No editar archivos gestionados por Backlog.md directamente, inventar IDs o activar efectos sin permiso.
 
-**No:** abrir duplicados por cambios de título, rellenar plan prematuro, tocar Markdown Backlog.md directamente. **Salida:** ID real, estado/configuración, criterios, bloque roadmap, evidencia de creación. 
+**Salida:** tarea nativa y accionable, no un paquete documental.
