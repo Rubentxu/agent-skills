@@ -1,4 +1,6 @@
-# Contrato de conversión de especificaciones a Backlog.md
+# Contrato optativo de importación de especificaciones heredadas a Backlog.md
+
+**Excepcional y no bloqueante:** usar solo si se pide migrar planificación antigua. Backlog.md es la única autoridad de seguimiento tras la conversión; no crear ni mantener ROADMAP/ADR/SPEC paralelos ni convertir la proyección en gate de entrega.
 
 El paquete intermedio `spec-packet` es **efímero** y no pretende sustituir los documentos de proyecto ni Backlog.md. El agente lo produce tras inspeccionar documentos canónicos, no con un parser de encabezados. No se instala nada ni se escribe un estado persistente de importación.
 
