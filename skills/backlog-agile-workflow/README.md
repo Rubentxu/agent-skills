@@ -2,12 +2,13 @@
 
 Skill portable para **trabajo ágil ligero** con [Backlog.md](https://github.com/MrLesk/Backlog.md). En vez de reimplementar tareas en scripts, usa la CLI oficial y selecciona una guía por problema. No requiere Scrum, sprints, servicio remoto ni integración MCP.
 
-**Política principal:** entregar capacidades funcionales verificadas y desbloquear dependencias reales. **Backlog.md es la única fuente de seguimiento:** no exigir ROADMAP.md, CHANGELOG.md de progreso, tareas Markdown, ADR/SPEC administrativos ni recibos de gates. WIP es asesoramiento, nunca permiso. Calidad significa implementación, pruebas pertinentes, seguridad y contratos reales.
+**Política principal:** **entrega de valor continuo, sin horas de trabajo estéril**. Terminar capacidades funcionales verificadas, cerrar tareas pequeñas y reaccionar pronto ante el estancamiento investigando y decidiendo cómo desbloquearlo. **Backlog.md es la única fuente de seguimiento:** no exigir ROADMAP.md, CHANGELOG.md de progreso, tareas Markdown, ADR/SPEC administrativos ni recibos de gates. WIP es asesoramiento, nunca permiso. Calidad significa implementación, pruebas pertinentes, seguridad y contratos reales.
 
 ## Activaciones
 
 - «Convierte esta necesidad en tareas pequeñas de alto valor directamente en Backlog.md»
 - «Desbloquea tareas pendientes de dependencias técnicas reales sin ceremonias»
+- «Llevo 30 minutos sin avanzar: investiga, decide y cambia de enfoque para volver a entregar»
 - «Convierte esta idea en tareas pequeñas y criterios de aceptación»
 - «Prioriza lo que puedo implementar ahora, respetando dependencias»
 - «Prepara un plan para la tarea actual, sin tocar código»
@@ -22,6 +23,12 @@ Skill portable para **trabajo ágil ligero** con [Backlog.md](https://github.com
 3. **Sugerir antes de escribir:** la skill distingue exploración, propuestas y ejecución autorizada.
 4. **Un único propietario:** tareas/estados/IDs solo los escribe Backlog.md. Esta skill nunca toca archivos de trabajo ni crea su propio estado.
 5. **Entrega verificable:** criterios de aceptación y pruebas proporcionales al riesgo, sin gates de gestión. La implementación corresponde al agente anfitrión.
+
+## Recuperación inmediata ante estancamientos
+
+El agente observa **resultado verificable**, no actividad o número de commits. Tras **dos intentos sin nueva evidencia** o unos **20–30 minutos de trabajo activo sin progreso** (si hay medición fiable), debe investigar de manera acotada y **tomar una decisión efectiva en la misma sesión**: terminar el slice, reducir alcance sin bajar calidad, corregir bloqueo técnico, crear una tarea desbloqueante solo si es independiente, repriorizar otra tarea lista o escalar una dependencia real. **No consumir horas repitiendo el mismo enfoque ni inventar tareas Done.**
+
+[Guía operativa de recuperación](references/lenses/flow-recovery.md). Esta regla se aplica durante la ejecución; no requiere daemon ni documentos o nuevos gates.
 
 ## Documentación de código en cualquier lenguaje
 
