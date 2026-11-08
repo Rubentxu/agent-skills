@@ -1,0 +1,17 @@
+{
+  "intent": "stalled-work",
+  "basis": "observed",
+  "cli": "available",
+  "project": "initialized",
+  "mode": "read",
+  "task": {
+    "id": "TASK-7",
+    "archived": false
+  },
+  "config": {
+    "autoCommit": false,
+    "remoteOperations": false,
+    "bypassGitHooks": false,
+    "onStatusChange": false
+  }
+}
