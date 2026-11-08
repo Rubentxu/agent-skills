@@ -23,9 +23,9 @@ Orden de decisión: validar entrada → resolver capacidades/proyecto → escoge
 
 Resultados: `DISCOVER`, `INSPECT_MORE`, `READY`, `PROPOSE_ONLY`, `AUTHORIZED_ACTION`, `KEEP_AS_IS`, `BLOCKED`. Ninguno significa `PASS` de tests ni que se haya escrito una tarea. Los cambios de fase y objetivo se reevalúan; no se conserva un estado de conversación en archivos.
 
-## Proyección de roadmaps y especificaciones
+## Importación excepcional de planificación heredada
 
-`specify` abre la lente para descubrir autoridad documental; `decompose` elige hitos/AC/DoD y prioridades; `sync-specs` reconcilia con el corpus CLI. Los tres producen `plan-spec-projection` pero ninguna escritura. Ver [contrato](spec-contract.md).
+`specify` y `sync-specs` solo se usan ante una migración expresamente solicitada de fuentes antiguas; `decompose` puede organizar hitos nativos de Backlog.md sin roadmap externo. El proyector de legado solo emite propuestas, nunca sustituye la autoridad de Backlog.md ni impide entregas ordinarias. Ver [contrato](spec-contract.md).
 
 ## Documentación de código transversal (sin CLI)
 
@@ -51,9 +51,9 @@ Los intents `create-task`, `move-task`, `archive-task`, `restore-task` y `delete
 
 Las intenciones ubiquitous-language, semantic-tagging, okf-documentation, semantic-consistency, research-orchestration y emergent-architecture consultan el contrato knowledge-contract.md y una lente propia. Solo ubiquitous-language y semantic-tagging se consideran candidatas a escrituras CLI autorizadas. El resto analiza o proyecta archivos fuera de Backlog. No se exige Groma para el glosario; las lecturas doc list se sugieren solo si la CLI está presente.
 
-## Control de trabajo en curso (WIP)
+## WIP opcional
 
-Para `move-task` el router recomienda leer `task list --json` además de `task view --json`. El planificador `board_crud.py` evalúa límites antes de toda entrada a estados activos, usando [WIP](wip-policy.md); si faltan la política o la foto completa, no propone una operación ejecutable. El router solo guía y no debe prometer atomicidad o automatizar excepciones.
+Para una transición ordinaria, basta observar la tarea, estado válido, permisos y dependencias técnicas reales. No exigir snapshot completo ni un control de cupo. Solo si el equipo **solicita explícitamente** el modo estricto, `board_crud.py` evalúa [WIP](wip-policy.md) y puede devolver BLOCKED/INSPECT_MORE sobre **esa simulación optativa**; jamás se convierte en gate general de implementación.
 
 ## Intenciones de revisión independiente
 
