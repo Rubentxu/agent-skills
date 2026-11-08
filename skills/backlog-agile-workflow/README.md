@@ -95,7 +95,7 @@ python3 skills/backlog-agile-workflow/scripts/groma_task_links.py \
 
 El helper solo propone argumentos, sin ejecutar comandos. El mapa inicial es evidencia de scanner, no diseño certificado. `groma scan` escribe OKF y `groma web` puede iniciar un servidor. Groma es opcional y Backlog.md continúa funcionando sin él.
 
-**Privacidad:** OKF `groma/`/`.groma/` y exports fuera del índice Git del consumidor, con backup privado. Se pierden garantías de historia, action en PR y colaboración basada en OKF versionado. `groma export` puede incluir código fuente: nunca publicar por defecto. Rust dispone de scanner; Kotlin es experimental, sin fingerprints para detección de duplicaciones.
+**Privacidad y versionado:** el proyecto decide si Groma OKF `groma/`/`.groma/` se versiona o permanece privado; no imponer cambios al índice Git. Si se excluye, se pierden capacidades de historial, action en PR y colaboración basada en OKF versionado. `groma export` puede incluir código fuente: nunca publicar por defecto. Rust dispone de scanner; Kotlin es experimental, sin fingerprints para detección de duplicaciones.
 
 ## Kanban CRUD — CLI completa, no solo planificación
 
@@ -127,7 +127,7 @@ python3 skills/backlog-agile-workflow/scripts/board_crud.py \
   skills/backlog-agile-workflow/examples/board-archive.json
 ```
 
-Los estados terminales, nombres de columnas, opciones de Git y callbacks deben observarse localmente. Los ejemplos son sintéticos. Los permisos no proceden del script: el agente debe confirmarlos antes de ejecutar la CLI real; después vuelve a leer la tarea y el board. La operación `delete` se bloquea por defecto, no es equivalente al archivo.
+Los estados terminales, nombres de columnas, opciones de Git y callbacks deben observarse localmente. Los ejemplos son sintéticos. Los permisos no proceden del script: el agente debe confirmarlos antes de ejecutar la CLI real; después verifica la tarea. El control WIP estricto del helper no forma parte del flujo predeterminado. La operación `delete` se bloquea por defecto, no es equivalente al archivo.
 
 ## Plugin contextual Claude Code opcional
 
