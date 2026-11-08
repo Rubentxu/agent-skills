@@ -56,8 +56,12 @@ class RouterTests(unittest.TestCase):
         o = router.affordances(state(task={"id": "TASK-2", "isReady": False}))
         self.assertEqual(o["decision"], "INSPECT_MORE")
 
-    def test_execute_requires_ready_dependency_verdict(self):
+    def test_execute_missing_readiness_metadata_is_not_a_gate(self):
         o = router.affordances(state(intent="execute", task={"id": "TASK-2"}))
+        self.assertEqual(o["decision"], "READY")
+
+    def test_execute_known_dependency_requires_real_inspection(self):
+        o = router.affordances(state(intent="execute", task={"id": "TASK-2", "isReady": False}))
         self.assertEqual(o["decision"], "INSPECT_MORE")
         self.assertEqual(o["_links"][-1]["rel"], "inspect-dependencies")
 
