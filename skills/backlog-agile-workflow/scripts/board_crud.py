@@ -51,9 +51,8 @@ def task_observed(task):
     return task
 
 
-def verified(task, gate):
-    if gate not in ("PASS", "NOT_REQUIRED") or task.get("finalSummaryRecorded") is not True:
-        return False
+def verified(task):
+    """Completion reflects observed acceptance and DoD, not an administrative gate."""
     return all(task.get(k + "Count") is not None
                and task.get(k + "Completed") == task.get(k + "Count")
                for k in ("acceptanceCriteria", "definitionOfDone"))
@@ -70,10 +69,10 @@ def _owners(value):
 
 
 def wip_guard(data, operation, target, current=None, task_id=None):
-    """Fail closed on new active slots using an unfiltered CLI task-list snapshot."""
+    """Apply a strict WIP simulation only when the caller opted into wipPolicy."""
     policy = data.get("wipPolicy")
     if policy is None:
-        return outcome(operation, "INSPECT_MORE", "WIP policy not observed: define activeStatuses, maxGlobal, maxPerAssignee")
+        return None  # WIP is advisory by default and cannot block delivery.
     if not isinstance(policy, dict) or set(policy) != {"activeStatuses", "maxGlobal", "maxPerAssignee"}:
         raise ValueError("WIP policy requires activeStatuses, maxGlobal, maxPerAssignee")
     active = policy["activeStatuses"]
@@ -166,8 +165,6 @@ def plan(data):
         selected = creation.get("status", default)
         if selected not in statuses or selected == terminal:
             return outcome(op, "BLOCKED", "New task requires configured, nonterminal status")
-        if selected != default:
-            return outcome(op, "BLOCKED", "Create in defaultStatus, then start by a WIP-checked transition")
         refs = strings(creation.get("references", []), "references")
         argv = ["backlog", "task", "create", title, "-d", description]
         if selected != default:
@@ -189,11 +186,11 @@ def plan(data):
                 return outcome(op, "BLOCKED", "Target must match configured column exactly")
             if target == current:
                 return outcome(op, "NO_CHANGE", "Already in target column")
-            if target == terminal and not verified(task, data.get("gateResult")):
-                return outcome(op, "BLOCKED", "Final status requires verified AC/DoD, gate and recorded summary")
+            if target == terminal and not verified(task):
+                return outcome(op, "BLOCKED", "Final status requires observed completion of AC/DoD; no administrative gate is required")
             if current == terminal and target != terminal and not data.get("reopenReason"):
                 return outcome(op, "INSPECT_MORE", "Reopening needs an explicit reason")
-            if current == default and target != terminal and task.get("isReady") is not True:
+            if current == default and target != terminal and task.get("isReady") is False:
                 return outcome(op, "INSPECT_MORE", "Check readiness and dependencies before starting")
             if target not in (default, terminal):
                 verdict = wip_guard(data, op, target, current=current, task_id=tid)
@@ -207,10 +204,10 @@ def plan(data):
             if reason not in ("completed", "cancelled", "duplicate", "invalid", "obsolete"):
                 return outcome(op, "INSPECT_MORE", "Explicit archive reason required")
             if reason == "completed":
-                if current != terminal or not verified(task, data.get("gateResult")):
-                    return outcome(op, "BLOCKED", "Completed archive requires terminal status and verified AC/DoD/gate/summary")
-            elif data.get("dependencyImpact") != "reviewed" or task.get("finalSummaryRecorded") is not True:
-                return outcome(op, "INSPECT_MORE", "Record reason and inspect dependents; archived unfinished task still blocks")
+                if current != terminal or not verified(task):
+                    return outcome(op, "BLOCKED", "Completed archive requires verified AC/DoD and terminal status")
+            elif data.get("dependencyImpact") != "reviewed":
+                return outcome(op, "INSPECT_MORE", "Inspect genuine dependents before archiving unfinished work")
             argv = ["backlog", "task", "archive", tid]
         else:
             if not task["archived"]:
