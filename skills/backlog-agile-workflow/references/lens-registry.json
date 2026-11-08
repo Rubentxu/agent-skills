@@ -27,6 +27,14 @@
       "playbook": "references/lenses/triage.md"
     },
     {
+      "id": "flow-recovery",
+      "status": "ready",
+      "intents": [
+        "stalled-work"
+      ],
+      "playbook": "references/lenses/flow-recovery.md"
+    },
+    {
       "id": "refinement",
       "status": "ready",
       "intents": [
