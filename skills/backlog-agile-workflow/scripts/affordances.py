@@ -10,7 +10,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 INTENTS = frozenset({"discover", "capture", "triage", "refine", "plan", "execute",
-                     "verify", "close", "review", "maintain", "specify", "decompose", "sync-specs", "document-code", "git-hygiene", "trace", "architecture", "curate-architecture", "map-task", "create-task", "move-task", "archive-task", "restore-task", "delete-task", "align-work", "unplanned-work", "manage-dependencies", "manage-epic", "catalog", "decide", "authority-check", "recall", "handoff", "memory-feedback", "context-exchange", "ubiquitous-language", "semantic-tagging", "okf-documentation", "semantic-consistency", "research-orchestration", "emergent-architecture", "independent-review", "review-resolution", "context-drift"})
+                     "verify", "close", "review", "maintain", "specify", "decompose", "sync-specs", "document-code", "git-hygiene", "trace", "architecture", "curate-architecture", "map-task", "create-task", "move-task", "archive-task", "restore-task", "delete-task", "align-work", "unplanned-work", "manage-dependencies", "manage-epic", "catalog", "decide", "authority-check", "recall", "handoff", "memory-feedback", "context-exchange", "ubiquitous-language", "semantic-tagging", "okf-documentation", "semantic-consistency", "research-orchestration", "emergent-architecture", "independent-review", "review-resolution", "context-drift", "stalled-work"})
 BASIS = frozenset({"observed", "unknown", "stale"})
 CLI = frozenset({"available", "missing", "unknown"})
 PROJECT = frozenset({"initialized", "absent", "unknown"})
@@ -130,7 +130,7 @@ def affordances(state: dict[str, Any]) -> dict[str, Any]:
         if groma == "missing":
             result["warnings"].append("Groma opcional y ausente; Backlog.md puede seguir funcionando sin mapa")
         return result
-    offline_spec = intent in {"specify", "decompose", "git-hygiene", "trace", "architecture", "curate-architecture", "authority-check", "handoff", "memory-feedback", "context-exchange", "document-code", "okf-documentation", "semantic-consistency", "research-orchestration", "emergent-architecture", "independent-review", "review-resolution", "context-drift"}
+    offline_spec = intent in {"specify", "decompose", "git-hygiene", "trace", "architecture", "curate-architecture", "authority-check", "handoff", "memory-feedback", "context-exchange", "document-code", "okf-documentation", "semantic-consistency", "research-orchestration", "emergent-architecture", "independent-review", "review-resolution", "context-drift", "stalled-work"}
     if cli != "available" and not offline_spec:
         result["decision"] = "DISCOVER"
         result["_links"].append(_notice("inspect-cli", "Verificar backlog --version y backlog --help, sin instalar automáticamente"))
@@ -166,6 +166,17 @@ def affordances(state: dict[str, Any]) -> dict[str, Any]:
         result["_links"].append(_notice("inspect-specifications", "Solo para migración solicitada: examinar fuentes heredadas sin crear tracking paralelo"))
     elif intent == "decompose":
         result["_links"].append(_notice("inspect-backlog-milestones", "Descomponer tareas/hitos nativos de Backlog.md en incrementos útiles"))
+    if intent == "stalled-work":
+        if cli == "available" and project == "initialized" and task.get("id"):
+            result["suggested_reads"].append(["backlog", "task", "view", task["id"], "--json"])
+        result["_links"].append(_notice(
+            "recover-delivery",
+            "Investigar una hipótesis falsable y decidir inmediatamente entre cerrar, reducir, desbloquear o repriorizar",
+            href=_local("references/lenses/flow-recovery.md")))
+        result["decision"] = "READY" if mode == "read" else "PROPOSE_ONLY"
+        result["warnings"].append(
+            "La recuperación no requiere WIP, gate documental ni temporizador; este router no ejecuta cambios")
+        return result
     if intent == "document-code":
         result["_links"].append(_notice("review-code-docs", "Inspeccionar contrato de API, código, comentarios y guías del lenguaje; no escribir automáticamente", href=_local("references/code-documentation-languages.md")))
     if intent in {"independent-review", "review-resolution", "context-drift"}:
