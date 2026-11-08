@@ -1,12 +1,10 @@
-# Lente: detectar y retirar documentación de gestión del índice Git
+# Git-artifact hygiene — revisión optativa de riesgos reales
 
-**Cuándo:** antes de iniciar Backlog.md, antes de generar documentación de proyecto, al preparar commits o al revisar un repositorio con ADR/ROADMAP/SPEC/ZIP rastreados.
+**Usar solo** cuando se pide inspección de higiene o existe indicio de secretos, datos sensibles o problemas concretos en artefactos publicados. No es un preflight de cada tarea ni un gate de commit.
 
-**Navegación:**
-1. Consultar [política completa](../repository-hygiene.md) y configuración local de Backlog.md.
-2. Ejecutar **solo la auditoría de lectura** `scripts/git_artifact_guard.py --repo . --check` en la aplicación consumidora. Clasificar ZIP y documentos por función, sin asumir que todos los Markdown son privados.
-3. Presentar inventario, copias de seguridad/colaboración y cambios de `.gitignore` propuestos; `git rm --cached` nunca se ejecuta sin consentimiento específico.
-4. Verificar `git status`, `git diff --cached`, `git ls-files`; bloquear publicación/commit si quedan artefactos sin resolver.
-5. Si el origen estuvo rastreado antes, indicar exposición histórica. Ningún script de la skill borra bytes ni reescribe historia.
+1. Si se necesita, ejecutar en modo lectura `scripts/git_artifact_guard.py --repo . --check`.
+2. Los patrones pueden dar falsos positivos: un ROADMAP, ADR, documento Backlog.md o ZIP no justifican por sí mismos bloquear un commit.
+3. Respetar el versionado elegido por el proyecto; no imponer `git rm --cached`, `.gitignore` o almacenamiento privado.
+4. Solo una exposición técnica real requiere detener la publicación afectada y aplicar la remediación segura con permisos apropiados.
 
-**Salida:** `CLEAN | REVIEW_REQUIRED | BLOCKED`, rutas, tipo, acción propuesta, aprobación necesaria y riesgos de historial/sincronización.
+**Salida:** riesgos demostrables y correcciones proporcionadas; no burocracia documental.
