@@ -2,7 +2,7 @@
 
 **Fuentes upstream:** [ADVANCED-CONFIG.md](https://github.com/MrLesk/Backlog.md/blob/main/ADVANCED-CONFIG.md) y [CLI-INSTRUCTIONS.md](https://github.com/MrLesk/Backlog.md/blob/main/CLI-INSTRUCTIONS.md). El agente debe **inspeccionar** el proyecto concreto y la versión de CLI; no imponer estos valores a otros repositorios.
 
-## Comprobaciones antes de la primera escritura
+## Riesgos concretos que revisar según la operación (no gate global)
 
 | Clave | Valor por defecto documentado | Riesgo/acción |
 |---|---|---|
@@ -27,12 +27,10 @@ Si la CLI fue inicializada con `--no-git`, no trasladar automáticamente políti
 
 **Regla de privacidad:** el backlog puede almacenar información confidencial. No exportar tablero ni compartir contenido a servicios de terceros por defecto. No instalar Backlog.md globalmente sin petición.
 
-## Política de documentos de gestión privados
+## Fuente única de seguimiento y Git
 
-Si el proyecto consumidor requiere no versionar ROADMAP/ADR/SPEC/Backlog.md, revisar [procedimiento Git](repository-hygiene.md) antes de configurar. `autoCommit=false` **no impide** un `git add` manual ni hace que Git deje de rastrear documentos existentes. `remoteOperations` y `checkActiveBranches` pueden perder semántica habitual con el backlog ignorado; documentar explícitamente esa limitación. No ejecutar `backlog init --no-git` sin confirmar la versión y el tipo de repositorio. Pactar ubicación persistente y sincronización privada, no confiar solo en `.gitignore`.
+Backlog.md es el sistema único para tareas y decisiones; no añadir ROADMAP/CHANGELOG/ADR de seguimiento. Respetar la configuración de Git/privacidad elegida por el proyecto para Backlog.md. No imponer `--no-git` ni ignorar su directorio; podría romper colaboración e historial. `autoCommit`, `remoteOperations` y `onStatusChange` se inspeccionan si afectan a una operación con efectos reales. Ver [higiene no bloqueante](repository-hygiene.md).
 
-## Límite de trabajo activo (WIP)
+## WIP como observación, nunca requisito
 
-Backlog.md no expone en la CLI consultada un límite atómico `maxInProgress`. La skill propone un **preflight configurable**, no altera el modelo de estados. Recomendación inicial para un equipo pequeño: **1 activo por responsable y 3 activos globales**, después ajustar según capacidad y throughput observado. Registrar la política aceptada en un documento de proyecto gestionado por la CLI si es necesario; nunca reescribir por rutina las columnas del backlog. Consultar [wip-policy](wip-policy.md).
-
-`wipPolicy.activeStatuses` es un subconjunto explícito de `statuses` que incluye las columnas que consumen capacidad (por ejemplo `In Progress` y `Review`); `maxGlobal` y `maxPerAssignee` son enteros positivos. El snapshot `task-list` se obtiene sin filtrar, se verifica que esté completo y no se usa `--watch` para una consulta puntual. La política de responsabilidad multiagente cuenta cada coasignación y considera todas las tareas no asignadas un cupo compartido.
+Backlog.md no incorpora límites atómicos WIP. **1 activo por responsable y 3 globales** es solo una orientación. No solicitar preflight completo del board ni documento de política para iniciar trabajo. Si el equipo opta expresamente por el modo estricto del helper, consultar [ejemplo de `wipPolicy`](wip-policy.md). La ausencia de cupo no crea una dependencia técnica ni impide una entrega con permisos reales.
