@@ -1,37 +1,20 @@
-# Política de repositorio: gestión de proyecto fuera del índice Git
+# Higiene del repositorio sin gates documentales
 
-**Regla para aplicaciones consumidoras:** ROADMAP, BACKLOG, ADR, SPEC, paquetes de hitos, tasks/drafts/docs/decisions/milestones de Backlog.md, y ZIP de estos materiales son **datos privados de gestión**, no entregables de código. No añadirlos ni mantenerlos en el índice Git. Los documentos que son **fuentes de una skill distribuida** (p. ej. `skills/<skill>/SKILL.md`, sus referencias y fixtures) son parte del producto skill y no entran en esta clasificación.
+**Regla:** Backlog.md es el único sistema de seguimiento de tareas, hitos, estados, planes, dependencias, decisiones y trabajo pendiente. No generar ni solicitar `ROADMAP.md`, `CHANGELOG.md` de progreso, tareas en Markdown, informes de gates ni recibos como soporte del workflow. Una aplicación sí puede tener guías de producto, documentación de API y diseños técnicos que aporten valor propio.
 
-## Inventario seguro (sin cambios)
+El almacenamiento y versionado **nativos de Backlog.md** siguen la configuración del proyecto. No imponer `--no-git`, `.gitignore` ni retirar sus tareas de Git: Backlog.md admite colaboración basada en Git. Esta skill no crea una segunda fuente de tracking.
 
-Desde la raíz de **la aplicación consumidora**, ejecutar:
+## Detector heredado, solo diagnóstico solicitado
 
-```bash
-python3 <ruta-a-la-skill>/scripts/git_artifact_guard.py --repo . --check
-git status --short
-git ls-files --cached
-```
+`scripts/git_artifact_guard.py --repo . --check` clasifica patrones heredados; **no es un gate de commit o publicación**. La coincidencia por nombre/ruta no prueba un defecto. No ejecutar automáticamente `git rm --cached`, modificar `.gitignore` ni bloquear commits por contener ADR, ROADMAP o documentos nativos de Backlog.md.
 
-El guard produce JSON con archivos ya rastreados, clasificaciones, patrones `.gitignore` sugeridos y argv de **propuestas**. No borra ni altera el índice. Clasifica por rutas y patrones explícitos; un ZIP distribuible de software o documentación técnica de API no debe confundirse con el archivo ZIP de un roadmap. La documentación técnica de API, referencias publicadas y ejemplos de uso **son producto y pueden rastrearse en Git** si así lo decide el proyecto; no aplicar la prohibición de ROADMAP/ADR privados por la extensión `.md` o por estar bajo `docs/`. La lista no es exhaustiva: inspeccionar nombres custom, exportaciones, ficheros grandes e historial.
+Solo frenar operaciones por un riesgo técnico real (secretos expuestos, información sensible publicada sin permiso o artefactos inseguros). Las limpiezas de índice y políticas de Git requieren autorización y preservar colaboración y recuperación.
 
-## Procedimiento de limpieza autorizado
+## Responsabilidades
 
-1. Clasificar cada hallazgo según **propósito real**, no solo extensión: planificación/gestión vs código, contratos generados para consumidores, tests, documentación de API y assets distribuibles. No borrar contenido de código o documentación pública de producto.
-2. Identificar ubicación persistente **privada y con backup** para documentos y Backlog.md. Si varias personas colaboran, acordar almacenamiento/sincronización externo con control de acceso antes de sacar del repositorio compartido. Un `.gitignore` no crea una copia de seguridad.
-3. Revisar configuración `backlog config get autoCommit`, `remoteOperations`, `checkActiveBranches`, `onStatusChange` y `bypassGitHooks`. Proponer `backlog config set autoCommit false` y `... remoteOperations false` si conviene, **solo con aprobación**. Sin archivos en Git, funcionalidades de reconstrucción de tareas entre ramas y auto-commits dejan de ser equivalentes a la modalidad Git de Backlog.md.
-4. Añadir entradas precisas a `.gitignore` (incluido directorio de Backlog.md real, sea `backlog/`, `.backlog/` o custom, config y exportaciones). Nunca sobrescribir el ignore existente; evitar patrones globales `*.md` o `*.zip` que ocultan código/productos.
-5. Sobre cada archivo rastreado y **tras autorización**, `git rm --cached -- <ruta>`, conservando contenido local. Para un directorio completo, usar `git rm -r --cached -- <ruta>` cuando sea seguro. Verificar backup, `git diff --cached --name-status`, `git status --short` y nuevo audit. Hacer commit del cambio de índice y `.gitignore` siguiendo la plantilla de trazabilidad.
-6. No confundir esta limpieza con borrado del historial remoto. Los documentos siguen presentes en commits anteriores. Si contienen secretos o información que deba purgarse, tratarlo como incidente separado con aprobación explícita y procedimiento de reescritura de historial/rotación; este guard no lo hace.
-7. **Gate previo a commit:** escanear archivos rastreados y staged. Si hay artefactos de gestión, detenerse, resolver o documentar una excepción explícita, y nunca ignorar silenciosamente el fallo.
+- **Backlog.md:** tracking, planes, decisiones, aceptación, evidencia y vínculos con commits.
+- **Git:** código e historia de cambios; no exige trailers por cada documento.
+- **Documentación de producto:** contratos y guías técnicas útiles para consumidores.
+- **Groma (opcional):** mapa arquitectónico; no es un gestor adicional de tareas ni requisito para implementar.
 
-El guard **no** debe ejecutarse sobre el repositorio fuente de las skills para tratar sus `ROADMAP.md`, `ADR-*.md` y referencias internas como datos de una aplicación consumidora.
-
-## Consecuencia importante
-
-La trazabilidad **no** se obtiene publicando documentos de gestión en Git. Se obtiene conservando sus **IDs lógicos** en Backlog.md y en trailers de commits, y manteniendo los documentos originales en almacenamiento privado duradero. El commit no publica su contenido: refiere identidades y evidencia mínima no sensible.
-
-## Groma.md: arquitectura privada, no código versionado
-
-Ampliar el inventario a `groma/`, `.groma/`, `groma/config.json`, exportaciones estáticas y ZIP de arquitectura. El guard reconoce ubicaciones estándar; para ubicaciones personalizadas debe inspeccionarse la configuración real. Preservar backup privado y colaboración antes de retirar OKF del índice.
-
-La integración oficial de Groma presupone Markdown C4/OKF en Git. Si queda ignorado, la vista local puede seguir siendo útil, pero **no** asumir comparaciones históricas, action de PR, reconstrucción en clones o reviews colaborativas equivalentes. Los exports estáticos pueden incluir **código fuente** y no deben publicarse automáticamente. No confundir ZIP de producto con ZIP de documentos de gestión.
+Las referencias de esta skill distribuida son parte de su propio producto, no una recomendación de crear archivos administrativos en aplicaciones consumidoras.
