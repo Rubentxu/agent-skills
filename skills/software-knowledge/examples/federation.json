@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "kind": "knowledge-federation",
+  "projects": [
+    "example-runtime",
+    "example-consumer"
+  ],
+  "links": [
+    {
+      "from": {
+        "project": "example-runtime",
+        "node": "execution.terminal"
+      },
+      "to": {
+        "project": "example-consumer",
+        "node": "consumer.contract"
+      },
+      "relation": "references"
+    }
+  ]
+}
