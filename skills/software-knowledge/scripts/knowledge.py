@@ -33,7 +33,7 @@ def parser():
     sub = p.add_subparsers(dest="command", required=True)
     for command in ("validate", "overview", "tracks", "snapshot", "map-candidates", "index-status"):
         sub.add_parser(command)
-    for command in ("architecture-review", "checkpoint"):
+    for command in ("architecture-review", "checkpoint", "context-pack"):
         rp = sub.add_parser(command)
         rp.add_argument("input", type=Path)
     cp = sub.add_parser("constitution")
@@ -133,6 +133,9 @@ def navigate(args, nav):
     paths, cut = None, False
     detail = args.detail
     command = args.command
+    if command == "context-pack":
+        from adaptive import context_pack
+        return context_pack(nav, load_json(args.input), profile=args.profile, budget=budget)
     if command == "constitution":
         from discovery import constitution
         return constitution(nav, args.anchor, context=args.context, limit=limit, budget=budget)
