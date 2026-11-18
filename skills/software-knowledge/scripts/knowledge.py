@@ -11,6 +11,7 @@ from model import load_json, v1_to_v2, include_backlog, validate, require, make_
 from providers import markdown_corpus
 from retrieval import Navigator, PROFILES, INTENTS
 from projection import compare, export_markdown
+from reconcile import reconcile, map_candidates
 
 
 def parser():
@@ -27,8 +28,10 @@ def parser():
     p.add_argument("--detail", choices=["identity", "summary", "full", "evidence"], default="summary")
     p.add_argument("--known", action="append", default=[], help="Previously observed node fingerprints in this project")
     sub = p.add_subparsers(dest="command", required=True)
-    for command in ("validate", "overview", "tracks", "snapshot"):
+    for command in ("validate", "overview", "tracks", "snapshot", "map-candidates"):
         sub.add_parser(command)
+    rec = sub.add_parser("reconcile")
+    rec.add_argument("proposal", type=Path)
     e = sub.add_parser("export")
     e.add_argument("output", type=Path)
     d = sub.add_parser("diff")
@@ -73,6 +76,10 @@ def load(args):
 
 def run(args):
     c = load(args)
+    if args.command == "reconcile":
+        return reconcile(c, load_json(args.proposal))
+    if args.command == "map-candidates":
+        return map_candidates(c)
     if args.command == "export":
         return export_markdown(c, args.output)
     if args.command == "diff":

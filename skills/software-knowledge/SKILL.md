@@ -24,7 +24,7 @@ description: "Recupera, relaciona y destila conocimiento de software con navegac
 ## Aprendizaje incremental
 
 - En checkpoints naturales, recupera una afirmación existente y sus fuentes antes de proponer STORE, REFINE, LINK, CONFLICT, SUPERSEDE o SKIP. Busca valor durable, no cantidad de notas.
-- Usa diff para identificar cambios de nodos/aristas y mapas superiores que requieren revisión. La ausencia en un corpus parcial no prueba borrado. No conviertas cambio de hash en contradicción.
+- Usa reconcile con un corpus de una sola nota L1 para detectar identidad, posibles duplicados y conocimiento relacionado. map-candidates devuelve átomos sin track y contextos explícitos; el agente compone síntesis con enlaces y procedencia, no las inventa Python. Usa diff para identificar cambios de nodos/aristas y mapas superiores que requieren revisión. La ausencia en un corpus parcial no prueba borrado. No conviertas cambio de hash en contradicción.
 - Conserva los documentos en su proveedor autorizado. Export solo sobre petición explícita, carpeta nueva, sin publicar. No escribir decisiones, cambiar permisos o crear tareas por cada observación. En proyectos con Backlog.md aplicar únicamente su CLI/MCP autorizada.
 
 Consulta [README](README.md) para uso y límites.

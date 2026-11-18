@@ -46,3 +46,10 @@ No usar search como sustituto del contenido completo; para documentos leer doc v
     python3 scripts/evaluate.py examples/corpus.json examples/questions.json
 
 Compara BM25, ranking con intención y expansión activa usando las mismas preguntas/anclas y presupuesto de salida. Devuelve precision@k, recall@k, MRR, nDCG, abstenciones y bytes. El ejemplo es sintético; para calibrar usar preguntas preetiquetadas de un proyecto real, separadas de las usadas para diseñar heurísticas. No entrenar modelos, no declarar éxito de tareas a partir de métricas de recuperación. La CI existente incluye un smoke real con Backlog.md en un workspace desechable.
+
+## Destilación y mantenimiento
+
+    python3 scripts/knowledge.py --corpus examples/corpus.json reconcile /tmp/proposed-atom.json
+    python3 scripts/knowledge.py --corpus examples/corpus.json map-candidates
+
+El primer comando compara un corpus v2 de una única nota L1 del mismo proyecto: identidad, afirmación normalizada, ámbito y vecinos léxicos. Solo emite propuestas; el responsable compara evidencias y elige conservar, refinar, enlazar, registrar conflicto o descartar. El segundo descubre contextos etiquetados y átomos aún sin track; no inventa arquitectura ni sintetiza afirmaciones automáticamente. Estas son operaciones de mantenimiento explícitas, no consultas sujetas al presupuesto de navegación.
