@@ -15,6 +15,10 @@ description: "Recupera, relaciona y destila conocimiento de software con navegac
 4. Separa estado de una afirmación, estado de una tarea, procedencia y autoridad humana. No eleves un hallazgo o resumen a norma obligatoria.
 5. Conserva únicamente conocimiento reusable: busca antes de crear, refina, enlaza, contrasta con evidencia. No convertir cada evento o ticket en una nota.
 
+## Captura nativa opcional
+
+Si Backlog.md está instalado y la lectura de su proyecto y configuración está autorizada, usa [captura nativa](references/backlog-capture.md). Prioriza la tarea y sus documentos, o una consulta acotada, sobre una captura global. Reutiliza el corpus dentro de la sesión; no invoques la CLI para cada navegación. No modificar configuración, instalar ni ejecutar hooks de escritura. Si el proveedor rechaza la lectura, usar snapshots observados o declarar la limitación.
+
 ## Navegación activa
 
 - Consulta [política de navegación](references/navigation.md). Para trabajo concreto, empieza por referencias directas, no por todo el ADN. Usa nivel y detalle mínimos; sigue _links solo si resuelve una incertidumbre.

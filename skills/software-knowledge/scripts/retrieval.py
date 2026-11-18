@@ -170,19 +170,26 @@ class Navigator:
             item = {k: n[k] for k in ("id", "level", "kind", "title")}
             item["fingerprint"] = fingerprint
             item["claim_state"] = n.get("claim_state", "unknown")
+            if "content_state" in n:
+                item["content_state"] = n["content_state"]
             if detail != "identity":
                 item["summary"] = n["summary"]
                 item["contexts"] = n.get("contexts", [])
-            if detail == "full":
+            if detail == "full" and n.get("content_state") != "metadata-only":
                 item["body"] = n.get("body", "")
             if detail in {"full", "evidence"}:
                 item["sources"] = n.get("sources", [])
             if paths and i in paths:
                 item["path"] = paths[i][1]
             # Structured affordances are data, not executable shell.
-            item["_links"] = [{"action": "get", "id": i, "detail": "full"},
-                              {"action": "trace", "id": i},
-                              {"action": "expand", "id": i}]
+            item["_links"] = [{"action": "trace", "id": i}, {"action": "expand", "id": i}]
+            if n.get("content_state") == "metadata-only":
+                for source in n.get("sources", []):
+                    if source["provider"] == "backlog" and i == "doc:" + source["locator"]:
+                        item["_links"].insert(0, {"action": "capture-doc", "id": source["locator"]})
+                        break
+            else:
+                item["_links"].insert(0, {"action": "get", "id": i, "detail": "full"})
             if any(e["predicate"] == "contains" for e in self.out[i]):
                 item["_links"].append({"action": "zoom-in", "id": i})
             if any(e["predicate"] == "contains" for e in self.inc[i]):
