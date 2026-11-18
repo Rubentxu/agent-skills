@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
 from knowledge_home import (plan, initialize, resolve, recommend, save_snapshot, read_snapshot,
-                            data_root,binding_path,snapshot_path)
+                            data_root,binding_path,snapshot_path,locate)
 from model import make_corpus,node
 
 class HomeTests(unittest.TestCase):
@@ -85,3 +85,16 @@ class HomeTests(unittest.TestCase):
         (root/"existing.md").write_text("existing")
         b=plan("p",[self.repo],"user-local","markdown")
         with self.assertRaises(ValueError): initialize(b,True)
+
+
+    def test_managed_markdown_navigation(self):
+        from knowledge import parser,run
+        b=plan("p",[self.repo],"user-local","markdown")
+        initialize(b,True)
+        self.assertEqual(locate(self.repo)["binding"],b)
+        self.assertEqual(locate(self.root)["status"],"unbound")
+        result=run(parser().parse_args(["--home","p","overview"]))
+        self.assertEqual(result["project"],"p")
+        self.assertEqual(result["results"],[])
+        with self.assertRaises(ValueError):
+            run(parser().parse_args(["--home","p","--project","foreign","overview"]))

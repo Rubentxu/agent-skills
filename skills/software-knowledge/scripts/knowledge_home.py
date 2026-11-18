@@ -31,7 +31,7 @@ def checkout(p):
 def xdg(var, fallback):
     raw=os.environ.get(var)
     p=Path(raw) if raw and Path(raw).is_absolute() else Path.home()/fallback
-    p=absolute(p)/"software-knowledge"
+    p=absolute(absolute(p)/"software-knowledge")
     require(not checkout(p), "User storage must be outside any Git checkout")
     return p
 
@@ -42,15 +42,15 @@ def key(project):
 
 
 def binding_path(project):
-    return xdg("XDG_CONFIG_HOME",".config")/"bindings-v1"/(key(project)+".json")
+    return absolute(xdg("XDG_CONFIG_HOME",".config")/"bindings-v1"/(key(project)+".json"))
 
 
 def snapshot_path(project):
-    return xdg("XDG_STATE_HOME",".local/state")/"snapshots-v1"/(key(project)+".json")
+    return absolute(xdg("XDG_STATE_HOME",".local/state")/"snapshots-v1"/(key(project)+".json"))
 
 
 def data_root(project):
-    return xdg("XDG_DATA_HOME",".local/share")/"projects"/key(project)
+    return absolute(xdg("XDG_DATA_HOME",".local/share")/"projects"/key(project))
 
 
 def private_dir(path):
@@ -117,13 +117,13 @@ def ignored(repo, root):
     git_root(repo)
     rel=root.relative_to(repo).as_posix()
     require(not git(repo,"ls-files","-z","--",rel),"Knowledge destination has tracked entries")
-    probes=[root,root/".knowledge-home.json",root/"probe.md",root/"backlog"/"docs"/"probe.md"]
+    probes=[root/".knowledge-home.json",root/"probe.md",root/"backlog"/"docs"/"probe.md"]
     if root.exists():
         for i,p in enumerate(root.rglob("*")):
             require(i<10000,"Ignored destination too large to verify")
             require(not p.is_symlink() and p.name!=".git","Nested Git or symlink refused")
             probes.append(p)
-    data=b"".join(os.fsencode(x.relative_to(repo).as_posix())+b"\0" for x in probes)
+    data=os.fsencode(rel+"/")+b"\0"+b"".join(os.fsencode(x.relative_to(repo).as_posix())+b"\0" for x in probes)
     out=git(repo,"check-ignore","--no-index","-z","--stdin",input=data,ok=(0,1))
     require(set(out.split(b"\0"))==set(data.split(b"\0")),
             "Destination must already be ignored; inspect local Git exclusions")
@@ -210,6 +210,17 @@ def initialize(b,confirm=False):
     require(confirm,"Explicit confirmation required")
     root=verify(b)
     bp=binding_path(b["project"])
+    private_dir(bp.parent)
+    lock=bp.parent/".init-lock"
+    fd=os.open(lock,os.O_CREAT|os.O_EXCL|os.O_WRONLY,0o600)
+    os.close(fd)
+    try:
+        return _initialize_locked(b,root,bp)
+    finally:
+        lock.unlink(missing_ok=True)
+
+
+def _initialize_locked(b,root,bp):
     require(not bp.exists() and not bp.is_symlink(),"Project already initialized; no implicit relocation")
     if bp.parent.exists():
         private_dir(bp.parent)
@@ -242,22 +253,40 @@ def resolve(project):
     return b
 
 
+def locate(repo):
+    root=str(absolute(repo))
+    directory=binding_path("lookup").parent
+    if not directory.exists():
+        return {"status":"unbound","placement_required":True}
+    private_dir(directory)
+    matches=[]
+    for i,p in enumerate(sorted(directory.glob("*.json"))):
+        require(i<10000,"Binding inventory too large")
+        b=read_private(p)
+        if root in b["repos"] or root==b["home"]:
+            matches.append(b["project"])
+    require(len(matches)<=1,"Ambiguous knowledge home; review bindings")
+    if not matches:
+        return {"status":"unbound","placement_required":True}
+    return {"status":"bound","binding":resolve(matches[0])}
+
+
 def save_snapshot(project,corpus):
     b=resolve(project)
     require(b["provider"]=="backlog","Snapshots are derived from managed Backlog root")
     validate(corpus)
     require(corpus["project"]==project,"Snapshot identity mismatch")
     path=snapshot_path(project)
-    write_private(path,{"binding_digest":digest(b),"corpus":corpus},replace=True,maximum=MAX_BYTES+1024)
+    write_private(path,{**corpus,"home_binding_digest":digest(b)},replace=True,maximum=MAX_BYTES)
     return path
 
 
 def read_snapshot(project):
     b=resolve(project)
     require(b["provider"]=="backlog","No managed Backlog snapshot for Markdown")
-    data=read_private(snapshot_path(project),MAX_BYTES+1024)
-    require(data["binding_digest"]==digest(b),"Snapshot binding changed; recapture")
-    c=validate(data["corpus"])
+    data=read_private(snapshot_path(project),MAX_BYTES)
+    require(data.pop("home_binding_digest",None)==digest(b),"Snapshot binding changed; recapture")
+    c=validate(data)
     require(c["project"]==project,"Snapshot project mismatch")
     return c
 
@@ -278,12 +307,16 @@ def main():
         s.add_argument("--confirm-private-home",action="store_true")
         if name=="init":
             s.add_argument("--confirm",action="store_true")
+    l=sub.add_parser("locate")
+    l.add_argument("--repo",type=Path,required=True)
     s=sub.add_parser("resolve")
     s.add_argument("--project",required=True)
     a=p.parse_args()
     try:
         if a.command=="recommend":
             result=recommend(a.home_repo)
+        elif a.command=="locate":
+            result=locate(a.repo)
         elif a.command=="resolve":
             result=resolve(a.project)
         else:
