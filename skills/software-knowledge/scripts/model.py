@@ -180,7 +180,7 @@ def include_backlog(corpus: dict, snapshot: dict) -> dict:
                 and isinstance(item.get("title"), str) and item["title"].strip(), "Malformed Backlog record")
         i = types[typ] + ":" + item["id"]
         keys = ("path", "status", "archived", "description", "finalSummary", "decision", "context",
-                "consequences", "acceptanceCriteria", "definitionOfDone", "documentation",
+                "consequences", "content", "implementationNotes", "implementationPlan", "acceptanceCriteria", "definitionOfDone", "documentation",
                 "references", "dependencies", "supersededBy", "modifiedFiles", "labels", "tags",
                 "type", "priority", "isReady", "parentTaskId", "milestone",
                 "acceptanceCriteriaCount", "acceptanceCriteriaCompleted", "updatedAt", "date")
@@ -207,8 +207,9 @@ def include_backlog(corpus: dict, snapshot: dict) -> dict:
         if "status" in detail:
             n["native_status"] = detail["status"]
         if typ != "document":
-            n["body"] = json.dumps(detail, ensure_ascii=False, sort_keys=True)
-            if isinstance(detail.get("description"), str) and detail["description"].strip():
+            n["body"] = (detail["content"] if typ == "decision" and isinstance(detail.get("content"), str)
+                         else json.dumps(detail, ensure_ascii=False, sort_keys=True))
+            if isinstance(detail.get("description"), str) and 0 < len(detail["description"].strip()) <= 400:
                 n["summary"] = detail["description"]
 
     # Only exact, unambiguous paths from observed document metadata.
