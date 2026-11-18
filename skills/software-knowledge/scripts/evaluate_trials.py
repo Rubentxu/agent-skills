@@ -93,6 +93,7 @@ def compare(plan, observations):
         group[row["variant"]]=row
     paired=[]
     unmatched=[]
+    completion_pairs=[]
     for (case,pair), group in sorted(groups.items()):
         if set(group)!=set(VARIANTS):
             unmatched.append({"case":case,"pair":pair,"reason":"missing-variant"})
@@ -101,6 +102,8 @@ def compare(plan, observations):
         if a["environment"]!=b["environment"]:
             unmatched.append({"case":case,"pair":pair,"reason":"different-environment"})
             continue
+        if all(x["status"]!="not-run" for x in (a,b)):
+            completion_pairs.append({"case":case,"pair":pair,"baseline":a["status"],"knowledge":b["status"]})
         if any(x["status"]!="completed" for x in (a,b)):
             unmatched.append({"case":case,"pair":pair,"reason":"incomplete-run",
                               "baseline":a["status"],"knowledge":b["status"]})
@@ -124,6 +127,10 @@ def compare(plan, observations):
         aggregate[k]={"pairs":len(values),"median_delta":statistics.median(v["delta"] for v in values) if values else None}
     return {"status":"measured-pairs" if paired else "not-evaluated","plan_digest":digest(plan),
             "planned_cases":len(cases),"observed_runs":len(raw),"comparable_pairs":len(paired),
+            "completion_pairs":len(completion_pairs),
+            "completion_by_variant":{v:{status:sum(x[v]==status for x in completion_pairs)
+                                         for status in ("completed","failed","blocked")} for v in VARIANTS},
+            "completion_regressions":sum(x["baseline"]=="completed" and x["knowledge"]!="completed" for x in completion_pairs),
             "quality_pairs":len(quality_pairs),"quality_passes":{v:sum(p["quality"][v] for p in quality_pairs) for v in VARIANTS},
             "quality_regressions":sum(p["quality"]["baseline"] and not p["quality"]["knowledge"] for p in quality_pairs),
             "aggregate":aggregate,"pairs":paired,"unmatched":unmatched,

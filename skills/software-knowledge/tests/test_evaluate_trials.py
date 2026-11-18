@@ -55,3 +55,13 @@ class TrialTests(unittest.TestCase):
         self.obs["plan_digest"]="0"*64
         with self.assertRaises(ValueError):
             compare(self.plan,self.obs)
+
+
+    def test_failed_matched_trial_remains_visible_in_completion_statistics(self):
+        self.obs["trials"]=[self.row("baseline"),self.row("knowledge")]
+        self.obs["trials"][1]["status"]="failed"
+        r=compare(self.plan,self.obs)
+        self.assertEqual(r["completion_pairs"],1)
+        self.assertEqual(r["completion_regressions"],1)
+        self.assertEqual(r["completion_by_variant"]["knowledge"]["failed"],1)
+        self.assertEqual(r["comparable_pairs"],0)

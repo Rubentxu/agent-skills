@@ -43,4 +43,6 @@ Para consultar otros proyectos, usa [federación explícita](references/federati
 - Usa reconcile con un corpus de una sola nota L1 para detectar identidad, posibles duplicados y conocimiento relacionado. map-candidates devuelve átomos sin track y contextos explícitos; el agente compone síntesis con enlaces y procedencia, no las inventa Python. Usa diff para identificar cambios de nodos/aristas y mapas superiores que requieren revisión. La ausencia en un corpus parcial no prueba borrado. No conviertas cambio de hash en contradicción.
 - Conserva los documentos en su proveedor autorizado. Export solo sobre petición explícita, carpeta nueva, sin publicar. No escribir decisiones, cambiar permisos o crear tareas por cada observación. En proyectos con Backlog.md aplicar únicamente su CLI/MCP autorizada.
 
+Cuando se evalúe utilidad real, usa [evaluación operativa](references/operational-evaluation.md): distinguir relevancia documental, rendimiento de índice y resultados pareados de agente. No cargar métricas en el contexto habitual ni emitir una certificación de agente a partir de tests Python.
+
 Consulta [README](README.md) para uso y límites.

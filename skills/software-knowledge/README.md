@@ -65,3 +65,7 @@ El índice opcional SQLite/FTS5 vive exclusivamente en la caché del usuario, fu
 ## Conocimiento arquitectónico acumulativo
 
 [Revisión arquitectónica, descubrimiento y context packs](references/architecture-discovery.md): referencias externas a evidencia, impacto candidato, constitución contextual y aprendizaje negativo bajo presupuesto. [Federación](references/federation.md): referencias calificadas entre snapshots sin compartir autoridades.
+
+## Validación en proyectos reales
+
+[Protocolo operativo](references/operational-evaluation.md): selección de documentos públicos fijados por revisión, comparación de recuperación FTS5/memoria, ensayos de agente pareados y límites de evidencia. Los ensayos reales se ejecutan por un host autorizado y el evaluador consume únicamente observaciones explícitas; no se lanza ningún modelo desde CI.
