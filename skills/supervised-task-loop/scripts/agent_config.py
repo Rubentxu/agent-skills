@@ -323,9 +323,13 @@ def init_runtime() -> Runtime:
 
 
 def anunciar(rt: Runtime) -> None:
-    """Que se use esto es un dato: se dice una vez, en una linea, y con que fichero."""
-    print(f"config: {rt.config_file or 'sin fichero (todo deducido)'}")
-    print(f"config: pipeline={rt.pipeline_file}")
+    """Que se use esto es un dato: se dice una vez, en una linea, y con que fichero.
+
+    Con flush: el anuncio va a un log desacoplado, y sin el se queda en el buffer de Python
+    mientras los hijos escriben directo al fichero — sale en medio del log o al final.
+    """
+    print(f"config: {rt.config_file or 'sin fichero (todo deducido)'}", flush=True)
+    print(f"config: pipeline={rt.pipeline_file}", flush=True)
     print(f"config: run={rt.run_dir}")
     print(f"config: workspace agentico={rt.workspace}")
     print(f"config: home repo={rt.home_repo}")
@@ -333,7 +337,8 @@ def anunciar(rt: Runtime) -> None:
     print(f"config: estado={rt.state}")
     print(
         f"config: perfil={rt.profile} | tareas={rt.max_tasks} | "
-        f"techo={rt.task_timeout_min} min | slice={rt.slice}"
+        f"techo={rt.task_timeout_min} min | slice={rt.slice}",
+        flush=True,
     )
 
 

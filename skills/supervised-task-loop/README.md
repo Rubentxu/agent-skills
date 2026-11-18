@@ -31,10 +31,16 @@ cp <skill>/assets/pipeline.agent.kts <proyecto>/pipeline.agent.kts
 # el runtime en la skill instalada: el proyecto solo lleva la configuracion
 cp <skill>/assets/agent-loop.env <proyecto>/agent-loop.env   # rellenalo una vez
 
-python3 <proyecto>/scripts/agent_run.py     # o <skill>/scripts/agent_run.py
+# el run, dentro de su slice y desacoplado del shell
+systemd-run --user --unit=<nombre> --slice=dev-jvm.slice \
+  --working-directory=<proyecto> --setenv=PATH="$PATH" \
+  bash -c 'python3 <proyecto>/scripts/agent_run.py'   # o <skill>/scripts/agent_run.py
 ```
 
 Requiere `pipelinek`, la CLI de `backlog`, `gh` autenticado y un perfil de sesión del host.
+Si la máquina vigila recursos por slices (`AGENT_SLICE` en el `.env`), el lanzador se niega
+a arrancar fuera de ella: el supervisor es trabajo largo y un vigilante lo mata como build
+sin sitio.
 
 Instalación selectiva desde la colección pública:
 
