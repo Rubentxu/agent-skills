@@ -21,7 +21,7 @@ description: "Entrega continua value-first con Backlog.md como única autoridad.
 
 ## Backlog privado y Home Repo
 
-Cuando el Home Repo ya contiene Backlog.md, esa raíz es la autoridad para tareas, decisiones y documentos de todos los repos de código asociados. Ejecutar la CLI/MCP en esa raíz; no crear otro Backlog ni copiar conocimiento al proyecto. Si software-knowledge está disponible, delegar descubrimiento de binding con locate-home e inicialización explícita con initialize-home; no asumir instalación. Sin Home Repo, elegir un área externa privada (XDG) o raíz previamente Git-ignorada antes de inicializar conocimiento. No confundir cwd de código y raíz del tablero. No ejecutar el auditor de artefactos del producto sobre un Home Repo autorizado para conservar Backlog.
+Cuando el Home Repo ya contiene Backlog.md, esa raíz es la autoridad para tareas, decisiones y documentos de todos los repos de código asociados. Ejecutar la CLI/MCP en esa raíz; no crear otro Backlog ni copiar conocimiento al proyecto. Si software-knowledge está disponible, delegar descubrimiento de binding con locate-home e inicialización explícita con initialize-home; no asumir instalación. Sin Home Repo, elegir un área externa privada (XDG) o raíz previamente Git-ignorada antes de inicializar conocimiento. No confundir cwd de código y raíz del tablero. Al router aportar home_backlog=present y authority_location=home-repo solo cuando se haya seleccionado la raíz real; con Home Repo observado no seguir otro tablero. No ejecutar el auditor de artefactos del producto sobre un Home Repo autorizado para conservar Backlog.
 
 ## Contrato de arranque y descubrimiento
 

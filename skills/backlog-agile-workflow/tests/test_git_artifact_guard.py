@@ -15,6 +15,10 @@ spec.loader.exec_module(guard)
 
 
 class ClassificationTests(unittest.TestCase):
+    def test_ignored_knowledge_accidental_tracking(self):
+        self.assertEqual(guard.classify('.knowledge/invariants/run.md'),'private-knowledge')
+        self.assertIn('/.knowledge/',guard.audit([])['suggestedIgnorePatterns'])
+
     def test_managed_backlog_and_roadmap(self):
         for path in ("backlog/tasks/task-1 - Example.md", ".backlog/config.yml",
                      "backlog.config.yml", "ROADMAP.md", "docs/adr/ADR-31.md",

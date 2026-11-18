@@ -99,7 +99,7 @@ def affordances(state: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(state, dict):
         raise ValueError("Session must be object")
     allowed = {"intent", "basis", "cli", "project", "mode", "task", "config",
-               "available_skills", "effects_acknowledged", "groma"}
+               "available_skills", "effects_acknowledged", "groma", "home_backlog", "authority_location"}
     if set(state) - allowed:
         raise ValueError("Unknown session fields")
     intent, basis = state.get("intent", "catalog"), state.get("basis", "unknown")
@@ -107,6 +107,10 @@ def affordances(state: dict[str, Any]) -> dict[str, Any]:
     mode = state.get("mode", "read")
     acknowledged = state.get("effects_acknowledged", False)
     groma = state.get("groma", "unknown")
+    home_backlog = state.get("home_backlog", "unknown")
+    authority_location = state.get("authority_location", "unknown")
+    if home_backlog not in {"unknown", "present", "absent"} or authority_location not in {"unknown", "home-repo", "user-local", "git-ignored", "legacy"}:
+        raise ValueError("Invalid Backlog authority location")
     if (intent not in INTENTS or basis not in BASIS or cli not in CLI
             or project not in PROJECT or mode not in MODES or groma not in GROMA
             or type(acknowledged) is not bool):
@@ -124,6 +128,15 @@ def affordances(state: dict[str, Any]) -> dict[str, Any]:
         result["decision"] = "INSPECT_MORE"
         result["_links"].append(_notice("refresh-basis", "Reexaminar un proyecto que pudo cambiar"))
         return result
+    if home_backlog == "present" and authority_location != "home-repo":
+        result["decision"] = "DISCOVER"
+        result["_links"].append(_notice("reuse-home-backlog", "Seleccionar el Backlog existente en Home Repo; no inicializar ni consultar otro tablero del checkout de código"))
+        if "software-knowledge" in available:
+            result["_links"].append(_notice("delegate-skill", "Resolver Knowledge Home antes de trabajar con los IDs", skill_id="software-knowledge"))
+        return result
+    if authority_location in {"home-repo", "user-local", "git-ignored"}:
+        result["execution_root"] = "selected-backlog-authority"
+        result["warnings"].append("Ejecutar Backlog desde su raíz privada seleccionada, no desde el checkout de código; Groma conserva su propia raíz.")
     if intent in GROMA_INTENTS and groma != "available":
         result["decision"] = "DISCOVER"
         result["_links"].append(_notice("inspect-groma", "Comprobar groma --version, groma plugin list y mapa local; no instalar ni escanear de oficio"))
@@ -139,7 +152,7 @@ def affordances(state: dict[str, Any]) -> dict[str, Any]:
         return result
     if project != "initialized" and not offline_spec:
         result["decision"] = "DISCOVER"
-        result["_links"].append(_notice("inspect-project", "Comprobar raíz y config; inicializar solo con permiso explícito"))
+        result["_links"].append(_notice("inspect-project", "Comprobar Home Repo existente y raíz privada elegida antes de inicializar; solo con permiso explícito"))
         return result
     if basis != "observed":
         result["decision"] = "INSPECT_MORE"
