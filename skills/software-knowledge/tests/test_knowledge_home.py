@@ -47,6 +47,7 @@ class HomeTests(unittest.TestCase):
         other=self.root/"other"
         other.mkdir()
         self.assertEqual(recommend(home)["provider"],"backlog")
+        with self.assertRaises(ValueError): plan("p",[self.repo],"home-repo","markdown",home,private_home=True)
         with self.assertRaises(ValueError): plan("p",[self.repo],"home-repo","backlog",home)
         b=plan("ecosystem",[self.repo,other],"home-repo","backlog",home,private_home=True)
         initialize(b,True)
@@ -98,3 +99,11 @@ class HomeTests(unittest.TestCase):
         self.assertEqual(result["results"],[])
         with self.assertRaises(ValueError):
             run(parser().parse_args(["--home","p","--project","foreign","overview"]))
+
+
+    def test_managed_export_refuses_any_git_checkout(self):
+        from knowledge import parser,run
+        initialize(plan("p",[self.repo],"user-local","markdown"),True)
+        with self.assertRaises(ValueError):
+            run(parser().parse_args(["--home","p","export",str(self.repo/"bundle")]))
+        self.assertFalse((self.repo/"bundle").exists())

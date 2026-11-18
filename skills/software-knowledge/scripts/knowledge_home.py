@@ -36,21 +36,27 @@ def xdg(var, fallback):
     return p
 
 
+def outside_git(path):
+    p=absolute(path)
+    require(not checkout(p),"Private data location must be outside every Git checkout")
+    return p
+
+
 def key(project):
     require(identifier(project), "Explicit stable knowledge project ID required")
     return digest(["knowledge-home-v1",project])
 
 
 def binding_path(project):
-    return absolute(xdg("XDG_CONFIG_HOME",".config")/"bindings-v1"/(key(project)+".json"))
+    return outside_git(xdg("XDG_CONFIG_HOME",".config")/"bindings-v1"/(key(project)+".json"))
 
 
 def snapshot_path(project):
-    return absolute(xdg("XDG_STATE_HOME",".local/state")/"snapshots-v1"/(key(project)+".json"))
+    return outside_git(xdg("XDG_STATE_HOME",".local/state")/"snapshots-v1"/(key(project)+".json"))
 
 
 def data_root(project):
-    return absolute(xdg("XDG_DATA_HOME",".local/share")/"projects"/key(project))
+    return outside_git(xdg("XDG_DATA_HOME",".local/share")/"projects"/key(project))
 
 
 def private_dir(path):
@@ -100,9 +106,12 @@ def write_private(path, data, *, replace=False, maximum=MAX_DESCRIPTOR):
 
 def git(repo,*args,input=None,ok=(0,)):
     env={k:v for k,v in os.environ.items() if not k.startswith("GIT_")}
-    env.update(GIT_OPTIONAL_LOCKS="0",GIT_TERMINAL_PROMPT="0")
-    out=subprocess.run(["git","-C",str(repo),*args],input=input,stdout=subprocess.PIPE,
-                       stderr=subprocess.PIPE,env=env,timeout=10)
+    env.update(GIT_OPTIONAL_LOCKS="0",GIT_TERMINAL_PROMPT="0",GIT_LITERAL_PATHSPECS="1")
+    try:
+        out=subprocess.run(["git","-C",str(repo),*args],input=input,stdout=subprocess.PIPE,
+                           stderr=subprocess.PIPE,env=env,timeout=10)
+    except subprocess.TimeoutExpired:
+        raise ValueError("Local Git policy check timed out") from None
     require(out.returncode in ok and len(out.stdout)<=MAX_BYTES,"Local Git inspection failed")
     return out.stdout
 
@@ -116,6 +125,7 @@ def git_root(repo):
 def ignored(repo, root):
     git_root(repo)
     rel=root.relative_to(repo).as_posix()
+    require(not rel.startswith(":"),"Invalid Git knowledge path")
     require(not git(repo,"ls-files","-z","--",rel),"Knowledge destination has tracked entries")
     probes=[root/".knowledge-home.json",root/"probe.md",root/"backlog"/"docs"/"probe.md"]
     if root.exists():
@@ -153,6 +163,9 @@ def plan(project,repos,mode,provider,home=None,location=None,private_home=False)
     h=absolute(home) if home else None
     if mode=="home-repo":
         require(h is not None and private_home,"Confirm Home Repo private or local-only")
+        if backlog_ready(h):
+            require(provider=="backlog" and (location is None or absolute(location)==h),
+                    "Reuse the existing Home Repo Backlog as sole authority")
         root=absolute(location) if location else (h if provider=="backlog" else h/"knowledge"/"projects"/key(project))
     elif mode=="git-ignored":
         require(len(roots)==1 and h is None and not private_home,"Ignored mode requires one code checkout")
@@ -181,6 +194,8 @@ def verify(b):
         require(b["private_home_attested"] is True and b["home"],"Private Home Repo attestation required")
         home=absolute(b["home"])
         git_root(home)
+        if backlog_ready(home):
+            require(b["provider"]=="backlog" and root==home,"Existing Home Repo Backlog must remain authority")
         require(root.is_relative_to(home) and (root!=home or b["provider"]=="backlog")
                 and ".git" not in root.relative_to(home).parts,"Knowledge must be within selected Home Repo")
         require(all(not root.is_relative_to(x) and not home.is_relative_to(x) for x in repos),

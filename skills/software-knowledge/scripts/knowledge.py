@@ -130,6 +130,11 @@ def run(args):
     if args.command == "map-candidates":
         return map_candidates(c)
     if args.command == "export":
+        if args.home:
+            from knowledge_home import outside_git, private_dir
+            destination = outside_git(args.output)
+            private_dir(destination.parent)
+            return export_markdown(c, destination)
         return export_markdown(c, args.output)
     if args.command == "diff":
         return compare(load_json(args.before), c)

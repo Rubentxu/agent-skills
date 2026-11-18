@@ -67,8 +67,8 @@ def export_markdown(corpus: dict, target: Path) -> dict:
         incoming[e["to"]].append(e)
     with tempfile.TemporaryDirectory(prefix=".knowledge-", dir=target.parent) as temp:
         root = Path(temp) / "bundle"
-        root.mkdir()
-        (root / "notes").mkdir()
+        root.mkdir(mode=0o700)
+        (root / "notes").mkdir(mode=0o700)
         index = ["# Knowledge snapshot", "", "Read-only derived view. Coverage: " + corpus["coverage"],
                  "", "Canonical snapshot: [corpus.json](corpus.json)", ""]
         for level in ("L3", "L2", "L1", "L0"):

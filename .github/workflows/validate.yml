@@ -48,6 +48,20 @@ jobs:
           python3 skills/goldfish-review/scripts/review_contract.py drift skills/goldfish-review/examples/baseline.json skills/goldfish-review/examples/current.json
       - name: Run software-knowledge unit tests
         run: python3 -m unittest discover -s skills/software-knowledge/tests -p 'test_*.py' -v
+      - name: Initialize private user-local home outside consumer repository
+        run: |
+          set -euo pipefail
+          export XDG_DATA_HOME="$RUNNER_TEMP/private-data"
+          export XDG_CONFIG_HOME="$RUNNER_TEMP/private-config"
+          export XDG_STATE_HOME="$RUNNER_TEMP/private-state"
+          export XDG_CACHE_HOME="$RUNNER_TEMP/private-cache"
+          mkdir "$RUNNER_TEMP/consumer-repo"
+          git -C "$RUNNER_TEMP/consumer-repo" init -q
+          k=skills/software-knowledge
+          python3 "$k/scripts/knowledge_home.py" init --project demo --repo "$RUNNER_TEMP/consumer-repo" --mode user-local --provider markdown --confirm > /tmp/private-home.json
+          python3 "$k/scripts/knowledge.py" --home demo --cache overview > /tmp/private-home-overview.json
+          test -z "$(git -C "$RUNNER_TEMP/consumer-repo" status --porcelain --untracked-files=all)"
+          test -z "$(find "$RUNNER_TEMP/consumer-repo" -name '*.sqlite3' -print -quit)"
       - name: Check active knowledge navigation smoke
         run: python3 skills/software-knowledge/scripts/knowledge.py --corpus skills/software-knowledge/examples/corpus.json context --anchor execution.terminal
       - name: Evaluate retrieval on labeled synthetic questions
