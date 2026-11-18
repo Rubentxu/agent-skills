@@ -113,6 +113,30 @@ sea culpa de la sesión.
 el veredicto es `FAIL` con el motivo, no una explicación. Y los recursos que la sesión dejó
 vivos se sueltan al terminar, antes de que se acumulen.
 
+## 11. El vigilante de la máquina mata al supervisor
+
+**Síntoma**: el log de la pipeline se corta en mitad de una etapa, sin mensaje de error ni
+`finished`; la sesión de agente sigue viva y **termina el trabajo igualmente**. En el
+journal queda la firma: `build-guard: TERMINADO (build fuera de slice, Ns): pid=… java …`.
+Medido el 18-nov-2026: el JVM de la pipeline muerto a los 828 s con 454 M de RSS; la sesión
+huérfana cerró su tarea, y el re-run (`--rerun`) midió la que había en vez de abrir otra.
+
+**Causa**: el supervisor ES trabajo largo — un proceso Java de minutos — y la máquina que
+vigila recursos por slices lo mata como un build fuera de su sitio.
+
+**Arreglo**: lanzar el supervisor dentro de su slice, desacoplado del shell:
+
+```bash
+systemd-run --user --unit=<nombre> --slice=dev-jvm.slice \
+  --working-directory=<home repo> --setenv=PATH="$PATH" \
+  bash -c 'python3 <runtime>/agent_run.py'
+```
+
+El `--working-directory` y el `--setenv=PATH` no son opcionales: una unidad de usuario no
+hereda ni el directorio actual ni el PATH del shell, y sin ellos el runtime no encuentra la
+config o el binario `pipelinek`. Además `agent_run.py` **se niega a arrancar** si la
+configuración declara `AGENT_SLICE` y su propio cgroup no cuelga de ella.
+
 ## Cómo se escribe esto en el código
 
 Cada eventualidad de arriba tiene su sitio: el runtime la resuelve, y el **test** la

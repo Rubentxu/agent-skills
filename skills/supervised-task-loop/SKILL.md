@@ -86,16 +86,25 @@ cp <skill>/assets/pipeline.agent.kts <proyecto>/pipeline.agent.kts
 cp <skill>/assets/agent-loop.env <proyecto>/agent-loop.env
 $EDITOR <proyecto>/agent-loop.env
 
-# 3. el run
-python3 <proyecto>/scripts/agent_run.py
+# 3. el run, dentro de su slice y desacoplado del shell
+systemd-run --user --unit=<nombre> --slice=dev-jvm.slice \
+  --working-directory=<proyecto> --setenv=PATH="$PATH" \
+  bash -c 'python3 <proyecto>/scripts/agent_run.py'
 ```
+
+Si la máquina no vigila recursos por slices, el `python3 … agent_run.py` a secas también
+vale. Si la declara (`AGENT_SLICE` en el `.env`), el lanzador **se niega** a arrancar fuera
+de ella: el supervisor es trabajo largo y un vigilante lo mata como build sin sitio —
+medido: un JVM de pipeline muerto a los 828 s, con la sesión huérfana detrás.
 
 ### B. El runtime en la skill instalada (el proyecto solo lleva la configuracion)
 
 ```bash
 cp <skill>/assets/agent-loop.env <proyecto>/agent-loop.env
 $EDITOR <proyecto>/agent-loop.env   # AGENT_RUNTIME=<ruta>/scripts
-python3 <skill>/scripts/agent_run.py
+systemd-run --user --unit=<nombre> --slice=dev-jvm.slice \
+  --working-directory=<proyecto> --setenv=PATH="$PATH" \
+  bash -c 'python3 <skill>/scripts/agent_run.py'
 ```
 
 En la forma B el proyecto no lleva ni scripts ni pipeline: la pipeline es la de la skill, los
