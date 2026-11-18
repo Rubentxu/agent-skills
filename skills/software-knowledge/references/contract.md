@@ -10,7 +10,7 @@ Edges contienen from, to, predicate y reason opcional. Contains desciende de niv
 
 ## Backlog
 
-El adaptador acepta knowledge-corpus v1 normalizado (contrato anterior) y envelopes task-list/decision-list schemaVersion 1 observados. Documentos se obtienen por CLI/MCP autorizado y se normalizan; doc list/view no se presupone JSON. Nunca editar Markdown nativo. Las proyecciones son parciales, no se infiere ausencia. IDs de documentos se conservan como doc:ID y términos como term:ID. Los datos nativos no se convierten en aprobación. Los campos y relaciones no soportados requieren reconciliación explícita.
+El adaptador acepta knowledge-corpus v1 normalizado (contrato anterior) y envelopes task-list, decision-list, task-view, decision-view y search schemaVersion 1 observados. Documentos se obtienen por CLI/MCP autorizado y se normalizan; doc list/view no se presupone JSON. Nunca editar Markdown nativo. Las proyecciones son parciales, no se infiere ausencia. Search aporta metadatos, no cuerpo de documentos. Las vistas enriquecen snapshots compatibles; conflictos de título/campos se rechazan y requieren recaptura. Se enlazan rutas documentation exactamente iguales a path de un documento observado y dependencias directas resueltas. Las referencias sin resolver permanecen como datos nativos, no aristas inventadas. IDs de documentos se conservan como doc:ID y términos como term:ID. Los datos nativos no se convierten en aprobación. Los campos y relaciones no soportados requieren reconciliación explícita.
 
 ## Markdown autónomo
 

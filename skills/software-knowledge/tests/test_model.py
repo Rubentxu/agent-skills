@@ -63,3 +63,21 @@ class ContractTests(unittest.TestCase):
             (root / "note.md").symlink_to(outside)
             with self.assertRaises(ValueError):
                 markdown_corpus(root, "demo")
+
+    def test_native_document_links_and_task_view_enrichment(self):
+        c = make_corpus("demo", [], [])
+        c = include_backlog(c, {"schemaVersion": 1, "kind": "task-list",
+                                "tasks": [{"id": "TASK-1", "title": "Recovery", "status": "To Do",
+                                           "dependencies": []}]})
+        c = include_backlog(c, {"schemaVersion": 1, "kind": "search", "results": [
+            {"type": "document", "data": {"id": "doc-1", "title": "Invariant", "type": "other",
+                                          "path": "backlog/docs/doc-1.md", "tags": ["kind:invariant"]}}]})
+        c = include_backlog(c, {"schemaVersion": 1, "kind": "task-view", "task": {
+            "id": "TASK-1", "title": "Recovery", "status": "To Do",
+            "description": "Implement safe recovery", "documentation": ["backlog/docs/doc-1.md"]}})
+        self.assertEqual(c["edges"], [{"from": "task:TASK-1", "predicate": "about", "to": "doc:doc-1"}])
+        self.assertEqual(c["nodes"][0]["summary"], "Implement safe recovery")
+        self.assertEqual(c["nodes"][1]["kind"], "invariant")
+        with self.assertRaises(ValueError):
+            include_backlog(c, {"schemaVersion": 1, "kind": "task-view",
+                                "task": {"id": "TASK-1", "title": "Recovery", "status": "Done"}})

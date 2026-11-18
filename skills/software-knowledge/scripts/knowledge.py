@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 import sys
 
-from model import load_json, v1_to_v2, include_backlog, validate, require
+from model import load_json, v1_to_v2, include_backlog, validate, require, make_corpus
 from providers import markdown_corpus
 from retrieval import Navigator, PROFILES, INTENTS
 from projection import compare, export_markdown
@@ -18,8 +18,9 @@ def parser():
     src = p.add_mutually_exclusive_group(required=True)
     src.add_argument("--corpus", type=Path)
     src.add_argument("--markdown", type=Path)
+    src.add_argument("--backlog-only", action="store_true", help="Build a partial corpus from explicit snapshots")
     p.add_argument("--project", help="Explicit ID for Markdown or v1; check identity for v2")
-    p.add_argument("--backlog", type=Path, action="append", default=[], help="Observed JSON list envelope")
+    p.add_argument("--backlog", type=Path, action="append", default=[], help="Observed v1 JSON list/view/search envelope")
     p.add_argument("--profile", choices=PROFILES, default="normal")
     p.add_argument("--limit", type=int)
     p.add_argument("--budget-bytes", type=int)
@@ -53,7 +54,10 @@ def parser():
 
 
 def load(args):
-    if args.markdown:
+    if args.backlog_only:
+        require(bool(args.backlog), "At least one Backlog snapshot required")
+        c = make_corpus(args.project, [], [])
+    elif args.markdown:
         c = markdown_corpus(args.markdown, args.project)
     else:
         c = load_json(args.corpus)

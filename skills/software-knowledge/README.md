@@ -29,3 +29,14 @@ Usar --markdown ROOT --project ID para notas autónomas; --corpus V1 --project I
     python3 scripts/knowledge.py --corpus examples/corpus.json diff /tmp/previous-corpus.json
 
 Export crea una carpeta nueva, index por nivel, notas Markdown con enlaces y backlinks, y corpus.json íntegro. El bundle es una vista de solo lectura respecto de la autoridad: para navegarlo con Python, reutilizar corpus.json, no importar sus notas como una nueva autoridad editable. Diff compara snapshots del mismo proyecto y devuelve candidatos de revisión, no elimina notas ni marca STALE automáticamente. No publicar ni exportar datos privados sin permiso.
+
+## Capturar datos nativos Backlog
+
+El anfitrión, tras comprobar versión, proyecto, configuración y permisos, obtiene snapshots con CLI/MCP oficial. Ejemplo (sustituir ID por uno observado):
+
+    backlog task list --json > /tmp/tasks.json
+    backlog search "execution" --json > /tmp/search.json
+    backlog task view TASK-1 --json > /tmp/task.json
+    python3 scripts/knowledge.py --backlog-only --project my-project --backlog /tmp/tasks.json --backlog /tmp/search.json --backlog /tmp/task.json context --anchor task:TASK-1
+
+No usar search como sustituto del contenido completo; para documentos leer doc view por CLI y normalizar el conocimiento v1 explícito. Los archivos indicados pueden contener información privada: no copiarlos a un repositorio o compartirlos sin autorización. Los snapshots con valores contradictorios se rehúsan; repetir lectura, no elegir arbitrariamente. La herramienta no arranca Backlog ni presupone que todos los registros sean visibles.
