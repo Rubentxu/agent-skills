@@ -62,6 +62,8 @@ jobs:
           assert r['questions']==10 and len(r['dataset']['documents'])==8,r
           for name,stats in r['aggregate'].items():
               assert stats['correct_abstention']==1,(name,stats)
+              assert stats['recall_at_k']>=0.95,(name,stats)
+              assert stats['ndcg_at_k']>=0.95,(name,stats)
               print(name,json.dumps(stats,sort_keys=True))
           print('index',json.dumps(r['index'],sort_keys=True))
           for q in r['rows']:

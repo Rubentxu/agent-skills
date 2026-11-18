@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "related_skills": [
+    {
+      "id": "backlog-agile-workflow",
+      "intents": [
+        "capture",
+        "checkpoint",
+        "maintain"
+      ],
+      "reason": "Usar la autoridad nativa de tareas, decisiones y documentos si está disponible."
+    },
+    {
+      "id": "cognicode-diagrams",
+      "intents": [
+        "architecture-review",
+        "verify",
+        "architecture",
+        "security"
+      ],
+      "reason": "Consultar evidencias estructurales con sus propias restricciones; no abrir código por fallback."
+    },
+    {
+      "id": "agent-context-audit",
+      "intents": [
+        "evaluate"
+      ],
+      "reason": "Medir inventario de contexto estático sin confundirlo con telemetría de agentes."
+    }
+  ]
+}

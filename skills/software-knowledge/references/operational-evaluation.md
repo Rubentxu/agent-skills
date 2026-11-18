@@ -47,3 +47,7 @@ El informe distingue pares comparables con ambas sesiones completas, pares de fi
 ## Fase 16 — Consolidar según evidencia
 
 No introducir RAG/vector DB, servicio o nueva skill hasta tener un beneficio concreto. Mantener el modo puro como predeterminado; usar índice externo si hay reutilización. Priorizar errores de recuperación, abstención incorrecta, regresiones de calidad y duplicados observados; ajustar una variable a la vez y repetir un conjunto separado. Las decisiones sobre expansión del grafo y búsqueda directa se miden por las preguntas que cada una resuelve. No utilizar el conjunto de calibración como prueba independiente de generalización.
+
+### Primera calibración observada
+
+CI sobre los 20 casos fijados: recall@5 de 1.0 y abstención correcta en ambos motores; nDCG@5 PipelineK de 1.0 en ambos, CogniCode 0.991 en memoria y 0.983 en FTS5. La latencia in-process de consulta de estos corpus pequeños favorece memoria (0.392 frente a 0.475 ms; 0.957 frente a 1.161 ms). Mantener modo puro predeterminado y caché para reutilización de corpus mayores; son calibraciones, no generalización. Se fijan suelos de regresión de 0.95 para recall y nDCG únicamente en estos datasets.

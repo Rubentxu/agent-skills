@@ -125,7 +125,8 @@ def compare(plan, observations):
     for k in METRICS:
         values=[p["metrics"][k] for p in paired if k in p["metrics"]]
         aggregate[k]={"pairs":len(values),"median_delta":statistics.median(v["delta"] for v in values) if values else None}
-    return {"status":"measured-pairs" if paired else "not-evaluated","plan_digest":digest(plan),
+    status = "measured-pairs" if paired else "measured-completion-only" if completion_pairs else "not-evaluated"
+    return {"status":status,"plan_digest":digest(plan),
             "planned_cases":len(cases),"observed_runs":len(raw),"comparable_pairs":len(paired),
             "completion_pairs":len(completion_pairs),
             "completion_by_variant":{v:{status:sum(x[v]==status for x in completion_pairs)

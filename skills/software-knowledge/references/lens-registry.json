@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "lenses": [
+    {
+      "id": "discovery",
+      "status": "ready",
+      "intents": [
+        "discover",
+        "capture"
+      ],
+      "playbook": "references/backlog-capture.md"
+    },
+    {
+      "id": "active-navigation",
+      "status": "ready",
+      "intents": [
+        "understand",
+        "implement",
+        "refactor",
+        "verify",
+        "debug",
+        "security",
+        "architecture",
+        "follow"
+      ],
+      "playbook": "references/navigation.md"
+    },
+    {
+      "id": "semantic-contract",
+      "status": "ready",
+      "intents": [
+        "discover",
+        "capture",
+        "maintain"
+      ],
+      "playbook": "references/contract.md"
+    },
+    {
+      "id": "index-and-sections",
+      "status": "ready",
+      "intents": [
+        "index",
+        "follow"
+      ],
+      "playbook": "references/index-cache.md"
+    },
+    {
+      "id": "architecture-discovery",
+      "status": "ready",
+      "intents": [
+        "architecture-review",
+        "constitution",
+        "checkpoint",
+        "maintain",
+        "context-pack"
+      ],
+      "playbook": "references/architecture-discovery.md"
+    },
+    {
+      "id": "federation",
+      "status": "ready",
+      "intents": [
+        "federate"
+      ],
+      "playbook": "references/federation.md"
+    },
+    {
+      "id": "operational-evaluation",
+      "status": "ready",
+      "intents": [
+        "evaluate"
+      ],
+      "playbook": "references/operational-evaluation.md"
+    }
+  ]
+}

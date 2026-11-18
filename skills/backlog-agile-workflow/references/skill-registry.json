@@ -102,7 +102,7 @@
         "emergent-architecture",
         "context-drift"
       ],
-      "reason": "Navegar conocimiento por identidad, pirámide, grafo y procedencia con presupuesto acotado; opcional, sin asumir instalación ni duplicar autoridad"
+      "reason": "Delegar al router de software-knowledge por intención y estado observado; navegar identidad, pirámide, grafo y procedencia con presupuesto, sin duplicar autoridad ni asumir instalación."
     }
   ]
 }

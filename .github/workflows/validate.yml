@@ -134,6 +134,18 @@ jobs:
           assert r['planned_cases']==4 and r['observed_runs']==0 and r['status']=='not-evaluated',r
           assert r['aggregate']['input_tokens']['median_delta'] is None,r
           PY
+      - name: Verify software knowledge HATEOAS first entrypoint
+        run: |
+          set -euo pipefail
+          k=skills/software-knowledge
+          python3 "$k/scripts/affordances.py" "$k/examples/session-verify.json" > /tmp/knowledge-route.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('/tmp/knowledge-route.json').read_bytes())
+          assert r['decision']=='READY' and len(r['lenses'])<=2,r
+          assert any(l.get('operation',{}).get('command')=='context' for l in r['_links']),r
+          PY
       - name: Run backlog-agile-workflow unit tests
         run: python3 -m unittest discover -s skills/backlog-agile-workflow/tests -p 'test_*.py' -v
       - name: Check backlog-agile-workflow navigation smoke

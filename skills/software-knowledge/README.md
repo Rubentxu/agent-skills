@@ -69,3 +69,7 @@ El índice opcional SQLite/FTS5 vive exclusivamente en la caché del usuario, fu
 ## Validación en proyectos reales
 
 [Protocolo operativo](references/operational-evaluation.md): selección de documentos públicos fijados por revisión, comparación de recuperación FTS5/memoria, ensayos de agente pareados y límites de evidencia. Los ensayos reales se ejecutan por un host autorizado y el evaluador consume únicamente observaciones explícitas; no se lanza ningún modelo desde CI.
+
+## Entrada por affordances
+
+[Router HATEOAS](references/workflow-navigation.md): `python3 scripts/affordances.py examples/session-verify.json`. Selecciona lentes y siguientes operaciones a partir del estado observado. El navegador y sus resultados siguen siendo compatibles.
