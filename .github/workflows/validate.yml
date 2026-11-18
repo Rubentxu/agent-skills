@@ -52,6 +52,11 @@ jobs:
         run: python3 skills/software-knowledge/scripts/knowledge.py --corpus skills/software-knowledge/examples/corpus.json context --anchor execution.terminal
       - name: Evaluate retrieval on labeled synthetic questions
         run: python3 skills/software-knowledge/scripts/evaluate.py skills/software-knowledge/examples/corpus.json skills/software-knowledge/examples/questions.json
+      - name: Measure incremental knowledge indexing outside checkout
+        run: |
+          export XDG_CACHE_HOME="$RUNNER_TEMP/knowledge-index-cache"
+          python3 skills/software-knowledge/scripts/benchmark_index.py --size 1000 --repeat 3
+          test -z "$(find skills -name '*.sqlite3' -print -quit)"
       - name: Run backlog-agile-workflow unit tests
         run: python3 -m unittest discover -s skills/backlog-agile-workflow/tests -p 'test_*.py' -v
       - name: Check backlog-agile-workflow navigation smoke

@@ -25,6 +25,10 @@ Si Backlog.md está instalado y la lectura de su proyecto y configuración está
 - Ejecuta el navegador local con corpus/raíz explícitos; devuelve JSON acotado. Reutiliza fingerprints ya leídos dentro de la misma sesión/proyecto. Si hay contradicción, verifica fuentes; si no hay resultado, devuelve UNKNOWN o recupera evidencia adicional.
 - Presupuesto normal: cuatro consultas, cinco resultados, dos saltos. El host controla llamadas acumuladas. Sin suficientes evidencias, declara limitación y no bloquees trabajo técnicamente independiente.
 
+## Índice local y recuperación por secciones
+
+Cuando haya consultas repetidas sobre el mismo corpus o raíz Markdown, usa [índice externo](references/index-cache.md): opt-in mediante --cache y --project explícito, fuera de Git. No persistir por defecto ni sincronizar a remoto. Para notas largas usa sections y section, no copies el cuerpo entero. Los fingerprints de secciones no certifican vigencia ni aprobación; comprueba las fuentes cuando importe. Si faltan cuerpos, sigue capture-doc solo con lectura autorizada y refresca el snapshot bajo presupuesto. El índice no hidrata fuentes por sí solo.
+
 ## Aprendizaje incremental
 
 - En checkpoints naturales, recupera una afirmación existente y sus fuentes antes de proponer STORE, REFINE, LINK, CONFLICT, SUPERSEDE o SKIP. Busca valor durable, no cantidad de notas.

@@ -57,3 +57,7 @@ El primer comando compara un corpus v2 de una única nota L1 del mismo proyecto:
 ## Captura de contenido real
 
 Ver [captura nativa](references/backlog-capture.md): captura focalizada por tarea, consulta o documento, y corpus completo activo bajo presupuesto. Reutiliza el JSON derivado localmente con knowledge.py.
+
+## Índice externo y secciones
+
+El índice opcional SQLite/FTS5 vive exclusivamente en la caché del usuario, fuera de Git. Ver [contrato operativo](references/index-cache.md) para uso, privacidad, rutas, recuperación de secciones y benchmark reproducible. Sin --cache, el navegador permanece sin persistencia.

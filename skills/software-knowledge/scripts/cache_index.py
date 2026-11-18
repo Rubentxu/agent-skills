@@ -126,16 +126,23 @@ def metadata(conn):
     return dict(conn.execute("SELECT key,value FROM meta"))
 
 
+def delete_node(conn, identity):
+    row = conn.execute("SELECT rowid FROM nodes WHERE id=?", (identity,)).fetchone()
+    if row is not None:
+        conn.execute("DELETE FROM lexical WHERE rowid=?", (row[0],))
+        conn.execute("DELETE FROM nodes WHERE id=?", (identity,))
+
+
 def replace_node(conn, n, h):
     i = n["id"]
-    conn.execute("DELETE FROM lexical WHERE node=?", (i,))
-    conn.execute("DELETE FROM nodes WHERE id=?", (i,))
-    conn.execute("INSERT INTO nodes VALUES (?,?,?,?,?)", (i, h, n["level"], n["kind"], encode(n)))
+    delete_node(conn, i)
+    rowid = conn.execute("INSERT INTO nodes VALUES (?,?,?,?,?)",
+                         (i, h, n["level"], n["kind"], encode(n))).lastrowid
     aliases = {normalize(x) for x in [i, n["title"], *n.get("aliases", [])]}
     conn.executemany("INSERT INTO aliases VALUES (?,?)", ((a, i) for a in sorted(aliases)))
     conn.executemany("INSERT INTO contexts VALUES (?,?)", ((c, i) for c in sorted(set(n.get("contexts", [])))))
-    conn.execute("INSERT INTO lexical VALUES (?,?,?,?,?,?,?)",
-                 (i, normalize(i), normalize(n["title"]), normalize(" ".join(n.get("aliases", []))),
+    conn.execute("INSERT INTO lexical(rowid,node,identity,title,aliases,scope,summary,body) VALUES (?,?,?,?,?,?,?,?)",
+                 (rowid, i, normalize(i), normalize(n["title"]), normalize(" ".join(n.get("aliases", []))),
                   normalize(" ".join(n.get("tags", []) + n.get("contexts", []))),
                   normalize(n["summary"]), normalize(n.get("body", ""))))
     conn.executemany("INSERT INTO sections VALUES (?,?,?)",
@@ -153,8 +160,7 @@ def sync(conn, corpus, fingerprint):
     edge_removed = old_edges.keys() - edges.keys()
     edge_changed = {k for k, (_, h) in edges.items() if old_edges.get(k) != h}
     for i in sorted(removed):
-        conn.execute("DELETE FROM lexical WHERE node=?", (i,))
-        conn.execute("DELETE FROM nodes WHERE id=?", (i,))
+        delete_node(conn, i)
     for i in sorted(changed):
         replace_node(conn, *nodes[i])
     for k in sorted(edge_removed):
@@ -253,12 +259,10 @@ class CachedNavigator(Navigator):
         lexical = [i for i, _ in rows]
         preferred = [i for i, k in rows if k in INTENTS[intent]]
         ranked = fusion([lexical, preferred])
-        result = exact + [i for i in ranked if i not in set(exact)]
+        exact_ids = set(exact)
+        result = exact + [i for i in ranked if i not in exact_ids]
         self.search_cut = self.search_cut or len(result) > CANDIDATES
         return result[:CANDIDATES]
-
-    def render(self, *args, **kwargs):
-        return super().render(*args, **kwargs)
 
 
 @contextmanager
