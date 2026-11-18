@@ -33,6 +33,12 @@ def parser():
     sub = p.add_subparsers(dest="command", required=True)
     for command in ("validate", "overview", "tracks", "snapshot", "map-candidates", "index-status"):
         sub.add_parser(command)
+    for command in ("architecture-review", "checkpoint", "context-pack"):
+        rp = sub.add_parser(command)
+        rp.add_argument("input", type=Path)
+    cp = sub.add_parser("constitution")
+    cp.add_argument("--anchor", action="append", default=[])
+    cp.add_argument("--context")
     rec = sub.add_parser("reconcile")
     rec.add_argument("proposal", type=Path)
     e = sub.add_parser("export")
@@ -88,7 +94,7 @@ def run(args):
         from cache_index import indexed
         require(bool(args.project) and not args.backlog and not args.backlog_only,
                 "--cache requires --project and explicit corpus or Markdown without overlays")
-        require(args.command not in {"validate", "snapshot", "export", "diff", "reconcile", "map-candidates"},
+        require(args.command not in {"validate", "snapshot", "export", "diff", "reconcile", "map-candidates", "architecture-review", "checkpoint"},
                 "Use uncached source for maintenance or full snapshots")
         source = args.corpus or args.markdown
         with indexed(source, "snapshot" if args.corpus else "markdown", args.project) as (nav, stats):
@@ -97,6 +103,13 @@ def run(args):
             return navigate(args, nav)
     require(args.command != "index-status", "index-status requires --cache")
     c = load(args)
+    if args.command == "architecture-review":
+        from architecture import review
+        return review(c, load_json(args.input), limit=20 if args.limit is None else args.limit,
+                      budget=12000 if args.budget_bytes is None else args.budget_bytes)
+    if args.command == "checkpoint":
+        from discovery import checkpoint
+        return checkpoint(c, load_json(args.input), budget=12000 if args.budget_bytes is None else args.budget_bytes)
     if args.command == "reconcile":
         return reconcile(c, load_json(args.proposal))
     if args.command == "map-candidates":
@@ -121,6 +134,12 @@ def navigate(args, nav):
     paths, cut = None, False
     detail = args.detail
     command = args.command
+    if command == "context-pack":
+        from adaptive import context_pack
+        return context_pack(nav, load_json(args.input), profile=args.profile, budget=budget, max_results=limit)
+    if command == "constitution":
+        from discovery import constitution
+        return constitution(nav, args.anchor, context=args.context, limit=limit, budget=budget)
     if command in {"sections", "section"}:
         return section_response(nav, args.id, query=getattr(args, "query", ""),
                                 section_id=getattr(args, "section_id", None), limit=limit, budget=budget)

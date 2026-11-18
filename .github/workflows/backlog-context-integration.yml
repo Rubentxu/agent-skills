@@ -223,3 +223,32 @@ jobs:
           PY
           find backlog -type f -print0 | sort -z | xargs -0 sha256sum > /tmp/capture-after.txt
           diff -u /tmp/capture-before.txt /tmp/capture-after.txt
+
+      - name: Review and navigate native knowledge with external index
+        run: |
+          set -euo pipefail
+          cd "$FIXTURE"
+          export XDG_CACHE_HOME="$RUNNER_TEMP/software-knowledge-retrieval"
+          k="$GITHUB_WORKSPACE/skills/software-knowledge"
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          c=json.loads(Path('/tmp/live-corpus.json').read_bytes())
+          review={'schemaVersion':1,'kind':'architecture-review-input','project':c['project'],'anchors':['doc:doc-1'],'changedPaths':[],'intent':'verify'}
+          pack={'schemaVersion':1,'kind':'context-pack-input','project':c['project'],'steps':[{'intent':'verify','anchors':['task:TASK-1']},{'mode':'sections','anchors':['doc:doc-1'],'query':'stable identity'}]}
+          Path('/tmp/live-review.json').write_text(json.dumps(review))
+          Path('/tmp/live-pack.json').write_text(json.dumps(pack))
+          PY
+          python3 "$k/scripts/knowledge.py" --corpus /tmp/live-corpus.json architecture-review /tmp/live-review.json > /tmp/live-architectural-review.json
+          python3 "$k/scripts/knowledge.py" --corpus /tmp/live-corpus.json --project context-smoke --cache context-pack /tmp/live-pack.json > /tmp/live-adaptive.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('/tmp/live-architectural-review.json').read_bytes())
+          assert r['results'][0]['id']=='doc:doc-1',r
+          p=json.loads(Path('/tmp/live-adaptive.json').read_bytes())
+          assert p['calls']==2,p
+          assert p['steps'][1]['response']['results'],p
+          assert len(Path('/tmp/live-adaptive.json').read_bytes())<=12000,p
+          PY
+          test -z "$(find "$FIXTURE" -name '*.sqlite3' -print -quit)"

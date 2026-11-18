@@ -24,4 +24,4 @@ class EvaluationTests(unittest.TestCase):
         self.assertEqual(report, evaluate(corpus, questions))
         self.assertEqual(report["questions"], 4)
         self.assertEqual(report["aggregate"]["active"]["correct_abstention"], 1)
-        self.assertEqual(set(report["aggregate"]), {"bm25", "ranked", "active"})
+        self.assertEqual(set(report["aggregate"]), {"bm25", "ranked", "active", "adaptive"})
