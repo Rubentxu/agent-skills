@@ -50,6 +50,8 @@ jobs:
         run: python3 -m unittest discover -s skills/software-knowledge/tests -p 'test_*.py' -v
       - name: Check active knowledge navigation smoke
         run: python3 skills/software-knowledge/scripts/knowledge.py --corpus skills/software-knowledge/examples/corpus.json context --anchor execution.terminal
+      - name: Evaluate retrieval on labeled synthetic questions
+        run: python3 skills/software-knowledge/scripts/evaluate.py skills/software-knowledge/examples/corpus.json skills/software-knowledge/examples/questions.json
       - name: Run backlog-agile-workflow unit tests
         run: python3 -m unittest discover -s skills/backlog-agile-workflow/tests -p 'test_*.py' -v
       - name: Check backlog-agile-workflow navigation smoke

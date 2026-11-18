@@ -7,6 +7,7 @@ on:
       - '.claude-plugin/marketplace.json'
       - 'plugins/backlog-context/**'
       - 'skills/backlog-agile-workflow/**'
+      - 'skills/software-knowledge/**'
   workflow_dispatch:
 
 permissions:
@@ -151,3 +152,40 @@ jobs:
             "$GITHUB_WORKSPACE/skills/backlog-agile-workflow/examples/knowledge-corpus.json" --mode export --output "$FIXTURE/knowledge-okf"
           test -f "$FIXTURE/knowledge-okf/index.md"
           test -f "$FIXTURE/knowledge-okf/glossary/execution.run.md"
+
+      - name: Navigate native Backlog snapshots with software-knowledge
+        run: |
+          set -euo pipefail
+          cd "$FIXTURE"
+          backlog search "Run term" --json > /tmp/knowledge-search.json
+          backlog task list --json > /tmp/knowledge-tasks.json
+          backlog decision list --json > /tmp/knowledge-decisions.json
+          python3 "$GITHUB_WORKSPACE/skills/software-knowledge/scripts/knowledge.py" \
+            --backlog-only --project context-smoke \
+            --backlog /tmp/knowledge-tasks.json --backlog /tmp/knowledge-decisions.json \
+            --backlog /tmp/knowledge-search.json --backlog /tmp/term-task-view.json \
+            snapshot > /tmp/knowledge-corpus.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          corpus = json.loads(Path('/tmp/knowledge-corpus.json').read_text())
+          ids = {n['id']: n for n in corpus['nodes']}
+          assert 'task:TASK-1' in ids, ids
+          assert any(n['kind'] == 'decision' for n in ids.values()), ids
+          assert any(n['kind'] == 'term' for n in ids.values()), ids
+          assert any(e['from'] == 'task:TASK-1' and e['predicate'] == 'about' and
+                     ids[e['to']]['kind'] == 'term' for e in corpus['edges']), corpus
+          PY
+          python3 "$GITHUB_WORKSPACE/skills/software-knowledge/scripts/knowledge.py" \
+            --corpus /tmp/knowledge-corpus.json context --anchor task:TASK-1 > /tmp/knowledge-context.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          raw = Path('/tmp/knowledge-context.json').read_bytes()
+          result = json.loads(raw)
+          assert len(raw) <= 12000, len(raw)
+          assert result['results'][0]['id'] == 'task:TASK-1', result
+          assert any(n['kind'] == 'term' for n in result['results']), result
+          PY
+          backlog task list --json > /tmp/knowledge-tasks-after.json
+          diff -u /tmp/knowledge-tasks.json /tmp/knowledge-tasks-after.json

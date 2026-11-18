@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "project": "example-runtime",
+  "questions": [
+    {
+      "id": "known",
+      "query": "estado terminal",
+      "relevant": [
+        "execution.terminal"
+      ],
+      "intent": "verify"
+    },
+    {
+      "id": "evidence",
+      "query": "terminal",
+      "anchors": [
+        "execution.terminal"
+      ],
+      "relevant": [
+        "execution.terminal",
+        "execution.test"
+      ],
+      "intent": "verify"
+    },
+    {
+      "id": "orientation",
+      "query": "runtime",
+      "relevant": [
+        "project",
+        "execution"
+      ],
+      "intent": "understand"
+    },
+    {
+      "id": "abstain",
+      "query": "zebrasharkunrelated",
+      "relevant": [],
+      "intent": "debug"
+    }
+  ]
+}

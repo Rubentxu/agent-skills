@@ -40,3 +40,9 @@ El anfitrión, tras comprobar versión, proyecto, configuración y permisos, obt
     python3 scripts/knowledge.py --backlog-only --project my-project --backlog /tmp/tasks.json --backlog /tmp/search.json --backlog /tmp/task.json context --anchor task:TASK-1
 
 No usar search como sustituto del contenido completo; para documentos leer doc view por CLI y normalizar el conocimiento v1 explícito. Los archivos indicados pueden contener información privada: no copiarlos a un repositorio o compartirlos sin autorización. Los snapshots con valores contradictorios se rehúsan; repetir lectura, no elegir arbitrariamente. La herramienta no arranca Backlog ni presupone que todos los registros sean visibles.
+
+## Evaluación reproducible
+
+    python3 scripts/evaluate.py examples/corpus.json examples/questions.json
+
+Compara BM25, ranking con intención y expansión activa usando las mismas preguntas/anclas y presupuesto de salida. Devuelve precision@k, recall@k, MRR, nDCG, abstenciones y bytes. El ejemplo es sintético; para calibrar usar preguntas preetiquetadas de un proyecto real, separadas de las usadas para diseñar heurísticas. No entrenar modelos, no declarar éxito de tareas a partir de métricas de recuperación. La CI existente incluye un smoke real con Backlog.md en un workspace desechable.
