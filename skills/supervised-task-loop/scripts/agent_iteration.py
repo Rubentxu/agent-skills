@@ -353,8 +353,8 @@ def ejecutar(rt: Runtime, iteracion: str) -> int:
     informe = construir_informe(rt, dir_iter, handoff, inicio)
 
     # Una copia donde la pipeline la archiva como artefacto del run (build/ es gitignored). La
-    # pipeline archiva desde su workspace, que es el directorio del run.
-    destino = rt.run_dir / "build/reports/agent-loop"
+    # pipeline archiva desde su workspace, que es el proyecto (el home repo).
+    destino = rt.home_repo / "build/reports/agent-loop"
     destino.mkdir(parents=True, exist_ok=True)
     (destino / f"iter-{iteracion}.json").write_text(
         informe.read_text(encoding="utf-8"), encoding="utf-8"

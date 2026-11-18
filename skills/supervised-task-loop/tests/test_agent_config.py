@@ -246,6 +246,56 @@ class ConfigTests(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertEqual(r.stdout.strip(), str(proyecto))
 
+    # --- la pipeline y el runtime: donde estan, no donde se suponia ----------------------
+
+    def test_la_pipeline_del_proyecto_manda_sobre_la_de_la_skill(self):
+        self.tablero()
+        propia = self.workspace / "pipeline.agent.kts"
+        propia.write_text("// la del proyecto\n", encoding="utf-8")
+        r = self.correr('str(rt.pipeline_file)')
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(r.stdout.strip(), str(propia))
+
+    def test_sin_pipeline_propia_se_usa_la_de_la_skill(self):
+        self.tablero()
+        r = self.correr('str(rt.pipeline_file)')
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertTrue(r.stdout.strip().endswith("assets/pipeline.agent.kts"), r.stdout)
+
+    def test_el_runtime_es_el_del_proyecto_si_lo_tiene(self):
+        self.tablero()
+        proyecto = Path(self.temp.name) / "proyecto"
+        (proyecto / "scripts").mkdir(parents=True)
+        (proyecto / "pipeline.agent.kts").write_text("// vacia\n", encoding="utf-8")
+        (proyecto / "backlog").mkdir()
+        (proyecto / "backlog" / "config.yml").write_text("statuses:\n", encoding="utf-8")
+        for nombre in ("agent_config.py", "agent_handoff.py", "agent_iteration.py",
+                       "agent_loop_report.py", "agent_preflight.py", "agent_run.py",
+                       "await_verdict.py"):
+            shutil.copy2(SCRIPTS / nombre, proyecto / "scripts" / nombre)
+        shutil.copytree(SCRIPTS.parent / "assets", proyecto / "assets")
+
+        env = dict(os.environ)
+        for clave in VARIABLES_A_LIMPIAR:
+            env.pop(clave, None)
+        env["HOME"] = self.temp.name
+        cuerpo = (
+            "import sys\n"
+            f"sys.path.insert(0, {str(proyecto / 'scripts')!r})\n"
+            "import agent_config as c\n"
+            "rt = c.init_runtime()\n"
+            "print(rt.runtime_dir)\n"
+        )
+        r = subprocess.run(
+            [sys.executable, "-I", "-c", cuerpo],
+            cwd=proyecto,
+            env=env,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(r.stdout.strip(), str(proyecto / "scripts"))
+
 
 if __name__ == "__main__":
     unittest.main()

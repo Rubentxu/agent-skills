@@ -26,8 +26,8 @@ donde vive el dolor de cabeza. Se separan, y se dicen en cada arranque:
 | Sitio | Qué es | Por qué importa |
 |---|---|---|
 | **workspace agéntico** | el directorio desde el que el agente ve **sus** repos | puede ser el propio proyecto, o el **padre** de varios repos |
-| **home repo** | el repo del proyecto: el que lleva el **tablero** (`backlog/`) | el tablero es la única autoridad sobre lo que está hecho |
-| **directorio del run** | donde vive el runtime (los scripts y la pipeline) | es el cwd de las etapas y donde se archivan los artefactos |
+| **home repo** | el repo del proyecto: el que lleva el **tablero** (`backlog/`) | el tablero es la única autoridad sobre lo que está hecho; aquí corre la pipeline |
+| **runtime** | donde viven los scripts (`agent_*.py`) | la skill instalada, o el propio proyecto |
 
 Los tres pueden coincidir (proyecto único) o no (patrón home repo: el workspace es el padre,
 el home repo es un hijo suyo). El runtime los deduce y el `.env` los puede fijar.
@@ -71,7 +71,10 @@ sondeo. Sin esa distinción, la guarda de regresión no guarda nada.
 
 ## Instalación
 
-En el proyecto donde va a correr (el home repo, o el padre si el runtime es global):
+Dos formas, y las dos valen. Elige según si quieres que el proyecto lleve el runtime dentro
+o lo tomes de la skill instalada.
+
+### A. El runtime en el proyecto (copiado de la skill)
 
 ```bash
 # 1. los scripts y los assets
@@ -87,8 +90,20 @@ $EDITOR <proyecto>/agent-loop.env
 python3 <proyecto>/scripts/agent_run.py
 ```
 
-El `.env` no tiene secretos: la autenticación va en el perfil de Claude Code del agente y
-las credenciales del repositorio en las suyas.
+### B. El runtime en la skill instalada (el proyecto solo lleva la configuracion)
+
+```bash
+cp <skill>/assets/agent-loop.env <proyecto>/agent-loop.env
+$EDITOR <proyecto>/agent-loop.env   # AGENT_RUNTIME=<ruta>/scripts
+python3 <skill>/scripts/agent_run.py
+```
+
+En la forma B el proyecto no lleva ni scripts ni pipeline: la pipeline es la de la skill, los
+scripts se invocan por la ruta que dice `AGENT_RUNTIME`, y los artefactos del run se archivan
+en el proyecto (`build/reports/agent-loop/`, gitignored).
+
+El `.env` no tiene secretos: la autenticación va en el perfil del agente y las credenciales
+del repositorio en las suyas.
 
 ## Referencias
 

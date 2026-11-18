@@ -51,7 +51,12 @@
 // La configuracion llega por el entorno (el lanzador `agent_run.py` la carga) o, si alguien
 // lanza la pipeline a mano, por `agent-loop.env`. El entorno gana al fichero.
 fun leerConfig(): Map<String, String> {
-    val candidatos = listOfNotNull(System.getenv("AGENT_LOOP_ENV"), "./agent-loop.env")
+    val casa = System.getenv("HOME") ?: ""
+    val candidatos = listOfNotNull(
+        System.getenv("AGENT_LOOP_ENV"),
+        "./agent-loop.env",
+        if (casa.isEmpty()) null else "$casa/.config/agent-skills/supervised-task-loop.env",
+    )
     val fichero = candidatos.firstOrNull { java.io.File(it).isFile } ?: return emptyMap()
     return java.nio.file.Files.readAllLines(java.nio.file.Path.of(fichero)).mapNotNull { linea ->
         val limpia = linea.trim()
