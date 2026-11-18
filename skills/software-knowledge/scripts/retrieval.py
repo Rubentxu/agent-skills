@@ -44,6 +44,7 @@ def fusion(rankings: list[list[str]], k: int = 60) -> list[str]:
 class Navigator:
     def __init__(self, corpus: dict):
         self.corpus = validate(corpus)
+        self.search_cut = False
         self.nodes = {n["id"]: n for n in corpus["nodes"]}
         self.out, self.inc, self.alias = defaultdict(list), defaultdict(list), defaultdict(set)
         self.postings = defaultdict(dict)
@@ -166,6 +167,8 @@ class Navigator:
         result = {"status": "partial", "project": self.corpus["project"],
                   "coverage": self.corpus["coverage"], "results": [], "omitted": 0,
                   "unchanged": 0, "traversal_cut": cut, "budget_unit": "utf8-json-bytes"}
+        if self.search_cut:
+            result["candidate_cut"] = True
         def size(obj):
             return len(json.dumps(obj, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
         for i in ids:
@@ -211,7 +214,7 @@ class Navigator:
                 result["results"].pop()
                 result["omitted"] += 1
         result["status"] = ("unknown" if not ids else
-                            "partial" if cut or result["omitted"] or self.corpus["coverage"] == "partial"
+                            "partial" if cut or self.search_cut or result["omitted"] or self.corpus["coverage"] == "partial"
                             else "returned")
         require(size(result) <= budget, "Envelope exceeds budget")
         return result
