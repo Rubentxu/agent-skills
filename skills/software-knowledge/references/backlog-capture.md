@@ -24,3 +24,5 @@ Para relaciones explícitas, el agente puede proponer un bloque en el cuerpo ges
     <!-- /knowledge-links:v1 -->
 
 IDs deben ser observados; enlaces a nodos ausentes se registran como no resueltos. El bloque es JSON sin ejecución, se ignoran ejemplos cercados por backticks o tildes, no se permite depends_on en este bloque. Las dependencias de trabajo solo provienen de Backlog.md. Documentos sin bloque no se reescriben ni se les inventan aristas. Para actualizar contenido usar únicamente CLI/MCP autorizada preservando el cuerpo existente. No hacer publicación automática de corpus privados.
+
+Al navegar, content_state distingue captured de metadata-only. Para estos últimos, el resultado devuelve la affordance capture-doc con el ID nativo observado (propuesta, no comando); get full no inventa un cuerpo vacío. Decide si merece otra captura explícita, solicitando también los anclajes todavía relevantes. Un corpus previo no prueba vigencia y no se fusiona silenciosamente.

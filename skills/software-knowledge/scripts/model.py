@@ -63,6 +63,11 @@ def validate(corpus: dict) -> dict:
         for key in ("contexts", "aliases", "tags"):
             require(strings(n.get(key, [])), f"Invalid {key}: {i}")
         require(n.get("claim_state", "unknown") in STATES, f"Invalid claim state: {i}")
+        if "content_state" in n:
+            require(n["content_state"] in ("captured", "metadata-only", "provided"),
+                    f"Invalid content state: {i}")
+            require(n["content_state"] != "metadata-only" or not n.get("body"),
+                    f"Metadata-only node cannot carry body: {i}")
         srcs = n.get("sources", [])
         require(isinstance(srcs, list), f"Invalid sources: {i}")
         for s in srcs:

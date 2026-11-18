@@ -136,3 +136,17 @@ class CaptureTests(unittest.TestCase):
             (root / "backlog").mkdir()
             (root / "backlog" / "config.yml").write_text("project_name: Test")
             self.assertEqual(project_root(root), root.resolve())
+
+
+    def test_navigation_distinguishes_metadata_only_from_captured_content(self):
+        c = capture(Fake(), project="demo", documents=("doc-2",))
+        nav = Navigator(c)
+        r = nav.render(["doc:doc-1", "doc:doc-2"], detail="full")
+        a, b = r["results"]
+        self.assertEqual(a["content_state"], "metadata-only")
+        self.assertNotIn("body", a)
+        self.assertIn({"action": "capture-doc", "id": "doc-1"}, a["_links"])
+        self.assertNotIn({"action": "get", "id": "doc:doc-1", "detail": "full"}, a["_links"])
+        self.assertEqual(b["content_state"], "captured")
+        self.assertIn("irreversible", b["body"])
+        self.assertIn({"action": "get", "id": "doc:doc-2", "detail": "full"}, b["_links"])
