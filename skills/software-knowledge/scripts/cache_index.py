@@ -59,9 +59,15 @@ def source_input(source: Path, provider: str, project: str):
         data = markdown_corpus(source, project)
         return digest(data), lambda: data
     require(source.is_file(), "Missing corpus source")
+    # A single read(MAX_BYTES + 1) may allocate the full safety ceiling even for small files.
+    # Stream bounded chunks; the same observed bytes are hashed and decoded on a miss.
+    raw = bytearray()
+    hasher = hashlib.sha256()
     with source.open("rb") as f:
-        raw = f.read(MAX_BYTES + 1)
-    require(len(raw) <= MAX_BYTES, "Oversized corpus source")
+        while chunk := f.read(64 * 1024):
+            require(len(raw) + len(chunk) <= MAX_BYTES, "Oversized corpus source")
+            raw.extend(chunk)
+            hasher.update(chunk)
     def load():
         data = json.loads(raw)
         require(isinstance(data, dict), "Expected JSON corpus object")
@@ -70,7 +76,7 @@ def source_input(source: Path, provider: str, project: str):
         validate(data)
         require(data["project"] == project, "Project mismatch")
         return data
-    return hashlib.sha256(raw).hexdigest(), load
+    return hasher.hexdigest(), load
 
 
 DDL = (

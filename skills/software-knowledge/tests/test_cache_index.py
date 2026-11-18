@@ -120,3 +120,21 @@ class IndexTests(unittest.TestCase):
             with indexed(self.source, "snapshot", "demo"):
                 pass
         self.assertEqual(target.read_text(), "untouched")
+
+
+    def test_source_reader_bounds_allocation_and_rejects_oversize(self):
+        import tracemalloc
+        from cache_index import source_input
+        tracemalloc.start()
+        try:
+            fingerprint, load = source_input(self.source, "snapshot", "demo")
+            _, peak = tracemalloc.get_traced_memory()
+        finally:
+            tracemalloc.stop()
+        self.assertEqual(len(fingerprint), 64)
+        self.assertEqual(load(), self.corpus)
+        # This tiny fixture needs nowhere near the 16 MiB parser ceiling.
+        self.assertLess(peak, 1024 * 1024)
+        with patch("cache_index.MAX_BYTES", 16):
+            with self.assertRaisesRegex(ValueError, "Oversized"):
+                source_input(self.source, "snapshot", "demo")
