@@ -178,9 +178,12 @@ def sync(conn, corpus, fingerprint):
 class Nodes(Mapping):
     def __init__(self, conn):
         self.conn = conn
+        self._get = lru_cache(maxsize=256)(self._load)
 
-    @lru_cache(maxsize=256)
     def __getitem__(self, key):
+        return self._get(key)
+
+    def _load(self, key):
         row = self.conn.execute("SELECT payload FROM nodes WHERE id=?", (key,)).fetchone()
         if row is None:
             raise KeyError(key)
@@ -199,9 +202,12 @@ class Nodes(Mapping):
 class Adjacency:
     def __init__(self, conn, incoming=False):
         self.conn, self.incoming = conn, incoming
+        self._get = lru_cache(maxsize=256)(self._load)
 
-    @lru_cache(maxsize=256)
     def __getitem__(self, identity):
+        return self._get(identity)
+
+    def _load(self, identity):
         column = "dst" if self.incoming else "src"
         return [json.loads(r[0]) for r in self.conn.execute(
             f"SELECT payload FROM edges WHERE {column}=? ORDER BY src,predicate,dst", (identity,))]
@@ -293,7 +299,9 @@ def indexed(source: Path, provider: str, project: str):
         conn.rollback()
         raise
     finally:
-        # Method caches retain their instances; clear on close.
-        Nodes.__getitem__.cache_clear()
-        Adjacency.__getitem__.cache_clear()
+        # Per-transaction caches cannot retain or invalidate other connections.
+        if nav is not None:
+            nav.nodes._get.cache_clear()
+            nav.out._get.cache_clear()
+            nav.inc._get.cache_clear()
         conn.close()
