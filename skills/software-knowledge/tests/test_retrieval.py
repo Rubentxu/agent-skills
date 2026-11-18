@@ -53,7 +53,8 @@ class RetrievalTests(unittest.TestCase):
 
     def test_output_bytes_and_fingerprint(self):
         r = self.nav.render(["inv", "conflict", "test"], budget=1300,
-                            known={digest(self.nav.nodes["inv"])})
+                            known={digest({"node": self.nav.nodes["inv"], "out": self.nav.out["inv"],
+                                           "in": self.nav.inc["inv"]})})
         self.assertEqual(r["unchanged"], 1)
         self.assertLessEqual(len(json.dumps(r, ensure_ascii=False, separators=(",", ":")).encode()), 1300)
         self.assertEqual(r["status"], "partial")

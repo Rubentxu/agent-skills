@@ -21,4 +21,10 @@ description: "Recupera, relaciona y destila conocimiento de software con navegac
 - Ejecuta el navegador local con corpus/raíz explícitos; devuelve JSON acotado. Reutiliza fingerprints ya leídos dentro de la misma sesión/proyecto. Si hay contradicción, verifica fuentes; si no hay resultado, devuelve UNKNOWN o recupera evidencia adicional.
 - Presupuesto normal: cuatro consultas, cinco resultados, dos saltos. El host controla llamadas acumuladas. Sin suficientes evidencias, declara limitación y no bloquees trabajo técnicamente independiente.
 
+## Aprendizaje incremental
+
+- En checkpoints naturales, recupera una afirmación existente y sus fuentes antes de proponer STORE, REFINE, LINK, CONFLICT, SUPERSEDE o SKIP. Busca valor durable, no cantidad de notas.
+- Usa diff para identificar cambios de nodos/aristas y mapas superiores que requieren revisión. La ausencia en un corpus parcial no prueba borrado. No conviertas cambio de hash en contradicción.
+- Conserva los documentos en su proveedor autorizado. Export solo sobre petición explícita, carpeta nueva, sin publicar. No escribir decisiones, cambiar permisos o crear tareas por cada observación. En proyectos con Backlog.md aplicar únicamente su CLI/MCP autorizada.
+
 Consulta [README](README.md) para uso y límites.

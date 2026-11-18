@@ -106,6 +106,8 @@ El control estricto de `scripts/board_crud.py` solo se usa si el equipo lo solic
 
 ## Conocimiento semántico y arquitectura emergente
 
+Si el host confirma la skill independiente `software-knowledge`, ofrecer navegación activa por corpus v2, subconjunto Markdown/OKF y snapshots Backlog. Pasar referencias/JSON explícitos, no importar scripts de otra skill. El corpus v1 y sus validadores permanecen disponibles; tareas/decisiones/documentos Backlog conservan autoridad. Recuperar contexto por ancla de tarea, invariantes y contratos antes de buscar todo el histórico; preferir resultados acotados y revalidar evidencias. Sin la skill, conservar el flujo semántico existente. No hacer obligatoria la extracción, exportación ni el enriquecimiento para entregar valor.
+
 Backlog.md conserva tareas, documentos y decisiones como autoridad. Los glosarios por bounded context son documentos Backlog gestionados solo por CLI/MCP oficial. El grafo semántico es una proyección derivada y no sustituye Groma, Backlog ni la autoridad humana.
 
 - [Lenguaje ubicuo](references/lenses/ubiquitous-language.md): IDs estables context.concept, definiciones, alias y ejemplos, sin imponer un vocabulario único entre contextos.

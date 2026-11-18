@@ -84,6 +84,25 @@
         "refine"
       ],
       "reason": "Revisar diseños en subagentes frescos solo si host y skill están disponibles, sin escribir tareas ni aprobar decisiones"
+    },
+    {
+      "id": "software-knowledge",
+      "intents": [
+        "refine",
+        "plan",
+        "execute",
+        "verify",
+        "review",
+        "recall",
+        "ubiquitous-language",
+        "semantic-tagging",
+        "okf-documentation",
+        "semantic-consistency",
+        "research-orchestration",
+        "emergent-architecture",
+        "context-drift"
+      ],
+      "reason": "Navegar conocimiento por identidad, pirámide, grafo y procedencia con presupuesto acotado; opcional, sin asumir instalación ni duplicar autoridad"
     }
   ]
 }

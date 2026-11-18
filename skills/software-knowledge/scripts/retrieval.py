@@ -70,7 +70,7 @@ class Navigator:
     def lexical(self, query: str, eligible: set[str]) -> list[str]:
         scores = defaultdict(float)
         count = len(self.nodes)
-        for term in set(tokens(query)):
+        for term in sorted(set(tokens(query))):
             postings = self.postings.get(term, {})
             idf = math.log(1 + (count - len(postings) + 0.5) / (len(postings) + 0.5))
             for i, tf in postings.items():
@@ -160,7 +160,7 @@ class Navigator:
             return len(json.dumps(obj, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
         for i in ids:
             n = self.nodes[i]
-            fingerprint = digest(n)
+            fingerprint = digest({"node": n, "out": self.out[i], "in": self.inc[i]})
             if fingerprint in known:
                 result["unchanged"] += 1
                 continue

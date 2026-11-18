@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Local active knowledge navigation. stdout JSON; no writes or external commands."""
+"""Local active knowledge navigation. Explicit export only; no external commands."""
 from __future__ import annotations
 
 import argparse
@@ -10,6 +10,7 @@ import sys
 from model import load_json, v1_to_v2, include_backlog, validate, require
 from providers import markdown_corpus
 from retrieval import Navigator, PROFILES, INTENTS
+from projection import compare, export_markdown
 
 
 def parser():
@@ -27,6 +28,10 @@ def parser():
     sub = p.add_subparsers(dest="command", required=True)
     for command in ("validate", "overview", "tracks", "snapshot"):
         sub.add_parser(command)
+    e = sub.add_parser("export")
+    e.add_argument("output", type=Path)
+    d = sub.add_parser("diff")
+    d.add_argument("before", type=Path)
     s = sub.add_parser("search")
     s.add_argument("query")
     s.add_argument("--intent", choices=INTENTS, default="implement")
@@ -64,6 +69,10 @@ def load(args):
 
 def run(args):
     c = load(args)
+    if args.command == "export":
+        return export_markdown(c, args.output)
+    if args.command == "diff":
+        return compare(load_json(args.before), c)
     if args.command == "snapshot":
         # Explicit full output bypasses retrieval budgets; do not use in routine retrieval.
         return c

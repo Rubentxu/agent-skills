@@ -13,6 +13,7 @@ Colección modular de **skills para agentes de IA**, mantenidas por separado e i
 | [`delivery-first-testing`](skills/delivery-first-testing/SKILL.md) | Orquestación de testing orientado a valor: UAT efímeros, selección por impacto, promoción selectiva de regresiones y lentes navegables. | Disponible (router) |
 | [`pure-functional-design`](skills/pure-functional-design/SKILL.md) | Diseño y refactorización funcional en Rust/Kotlin: descubrimiento del dominio, ADTs, invariantes, separación de efectos, algoritmos y vertical slices mediante lentes bajo demanda. | Disponible (router + lentes Rust/Kotlin) |
 | [`goldfish-review`](skills/goldfish-review/SKILL.md) | Revisión adversarial de diseños con agentes de contexto nuevo, contratos puros y fingerprints sin dependencia del plugin EGM. | Disponible; aislamiento condicionado al host |
+| [`software-knowledge`](skills/software-knowledge/SKILL.md) | Memoria de desarrollo navegable con pirámide, Zettels, búsqueda y grafo acotados, compatible con snapshots Backlog y Markdown. | Disponible (primer incremento) |
 | [`backlog-agile-workflow`](skills/backlog-agile-workflow/SKILL.md) | Gestión ágil y conversión de ROADMAP/ADR/SPEC/hitos a propuestas de tareas priorizadas, trazables y reconciliables sin duplicación. | Disponible (router y proyector) |
 | [`distribution-first-release`](skills/distribution-first-release/SKILL.md) | Releases orientadas al consumidor: binarios instalables, higiene Git, source archives, SBOM/checksums, verificación de instalación y lentes HATEOAS-like. | Disponible (router + auditor) |
 | [`pipelinek-local-ci`](skills/pipelinek-local-ci/SKILL.md) | Bootstrap con mise/asdf, diseña/revisa/migra `pipeline.kts` y opera PipelineK como CI/CD local agent-first con DSL Jenkins-familiar, eventos y gates. | Disponible |
@@ -83,6 +84,12 @@ npx skills add Rubentxu/agent-skill --skill code-quality-evidence-review --agent
 ```
 
 La instalación presupone que el repositorio ya se ha publicado en GitHub y que se utiliza una versión compatible del CLI `skills`. Si la forma de instalación del agente cambia, consulta la documentación oficial del agente y de [skills.sh](https://skills.sh/).
+
+Para instalar la skill de conocimiento de forma independiente:
+
+```bash
+npx skills add Rubentxu/agent-skills --skill software-knowledge
+```
 
 ## Estructura y convenciones
 

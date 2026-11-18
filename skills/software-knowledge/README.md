@@ -22,3 +22,10 @@ Desde la carpeta de la skill (opciones globales antes del subcomando):
     python3 scripts/knowledge.py --corpus examples/corpus.json zoom-in execution
 
 Usar --markdown ROOT --project ID para notas autónomas; --corpus V1 --project ID --backlog TASKS_JSON para importar registros observados. El comando snapshot emite todo el corpus explícitamente; el resto de consultas está acotado. Ver [política](references/navigation.md).
+
+## Offline e incremento
+
+    python3 scripts/knowledge.py --corpus examples/corpus.json export /tmp/new-knowledge-bundle
+    python3 scripts/knowledge.py --corpus examples/corpus.json diff /tmp/previous-corpus.json
+
+Export crea una carpeta nueva, index por nivel, notas Markdown con enlaces y backlinks, y corpus.json íntegro. El bundle es una vista de solo lectura respecto de la autoridad: para navegarlo con Python, reutilizar corpus.json, no importar sus notas como una nueva autoridad editable. Diff compara snapshots del mismo proyecto y devuelve candidatos de revisión, no elimina notas ni marca STALE automáticamente. No publicar ni exportar datos privados sin permiso.
