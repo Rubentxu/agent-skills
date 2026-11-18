@@ -12,7 +12,7 @@ from model import identifier, require
 ROOT = Path(__file__).resolve().parents[1]
 NAV = {"understand", "implement", "refactor", "verify", "debug", "security", "architecture"}
 INTENTS = NAV | {"catalog", "discover", "capture", "follow", "index", "architecture-review",
-                 "constitution", "checkpoint", "maintain", "context-pack", "federate", "evaluate"}
+                 "constitution", "checkpoint", "maintain", "context-pack", "federate", "evaluate", "initialize-home", "locate-home"}
 ACTIONS = {"get", "trace", "expand", "zoom-in", "zoom-out", "sections", "section", "capture-doc"}
 STATES = {
     "basis": {"unknown", "observed", "stale"},
@@ -22,6 +22,9 @@ STATES = {
     "backlog_project": {"unknown", "initialized", "absent"},
     "remote_policy": {"unknown", "local-only", "remote-enabled"},
     "mode": {"read", "propose", "apply"},
+    "home_state": {"unknown", "unbound", "bound", "invalid"},
+    "placement": {"unknown", "home-repo", "user-local", "git-ignored"},
+    "home_candidate": {"unknown", "absent", "backlog-ready", "present"},
 }
 
 
@@ -72,7 +75,7 @@ def selected_link(value):
 def affordances(state):
     require(isinstance(state, dict), "Session must be object")
     allowed = set(STATES) | {"intent", "project", "query", "anchors", "available_skills",
-                            "read_authorized", "input_ready", "selected_link", "reuse_index"}
+                            "read_authorized", "input_ready", "selected_link", "reuse_index", "placement_confirmed"}
     require(set(state) <= allowed, "Unknown session fields")
     intent = state.get("intent", "catalog")
     require(intent in INTENTS, "Unknown intent")
@@ -84,7 +87,7 @@ def affordances(state):
     require(isinstance(query, str) and len(query) <= 1200, "Invalid query")
     anchors = strings(state.get("anchors", []), "anchors", 16)
     installed = strings(state.get("available_skills", []), "available skills")
-    for k in ("read_authorized", "input_ready", "reuse_index"):
+    for k in ("read_authorized", "input_ready", "reuse_index", "placement_confirmed"):
         require(type(state.get(k, False)) is bool, "Invalid " + k)
     follow = selected_link(state["selected_link"]) if "selected_link" in state else None
     require(follow is None or intent == "follow", "Selected link requires follow intent")
@@ -102,6 +105,9 @@ def affordances(state):
     if intent == "catalog":
         result["available"] = [{"id": x["id"], "status": x["status"]} for x in catalog]
         return result
+    if intent == "locate-home":
+        return finish("DISCOVER", link("locate-home", "Resolver binding privado por raíz de código explícita.",
+            "references/knowledge-home.md", operation={"script":local("scripts/knowledge_home.py"),"command":"locate","arguments":{}}))
     if project is None:
         return finish("DISCOVER", link("identify-project", "Seleccionar identidad explícita del proyecto."))
     if values["basis"] != "observed":
@@ -115,8 +121,9 @@ def affordances(state):
                 links.append(link("delegate-skill", x["reason"], skill_id=x["id"]))
     def operation(rel, why, href, script, command, **arguments):
         # All scripts and commands come from this router, never from external content.
+        managed = {"home": project} if values["home_state"] == "bound" and script == "scripts/knowledge.py" else {}
         return link(rel, why, href, operation={"script": local(script), "command": command,
-                                               "arguments": {"project": project, **arguments}})
+                                               "arguments": {"project": project, **managed, **arguments}})
     def capture(native=None):
         href = "references/backlog-capture.md"
         if values["cli"] != "available":
@@ -133,7 +140,33 @@ def affordances(state):
         delegate()
         return finish("READY", operation("capture-doc" if native else "capture-backlog",
             "Captura acotada; seleccionar raíz y alcance explícitos.", href, "scripts/capture_backlog.py",
-            "capture", **({"doc": native} if native else {"query": query, "docs": docs, "tasks": tasks})))
+            "capture", **({"home": project} if values["home_state"]=="bound" else {}),
+            **({"doc": native} if native else {"query": query, "docs": docs, "tasks": tasks})))
+    if intent == "initialize-home":
+        href="references/knowledge-home.md"
+        if values["home_state"]=="bound":
+            return finish("READY",operation("resolve-home","Reutilizar la ubicación ya elegida.",href,
+                "scripts/knowledge_home.py","resolve"))
+        if values["home_state"]!="unbound":
+            return finish("INSPECT_MORE",link("locate-home","Verificar si ya hay binding; no crear otro.",href))
+        preferred="home-repo" if values["home_candidate"] in {"backlog-ready","present"} else "user-local"
+        if values["placement"]=="unknown":
+            return finish("DISCOVER",link("choose-placement","Elegir ubicación al inicializar; Home Repo con Backlog tiene prioridad.",
+                                          href,recommended=preferred,choices=["home-repo","user-local","git-ignored"]))
+        if values["home_candidate"]=="backlog-ready" and values["placement"]!="home-repo":
+            return finish("INSPECT_MORE",link("reuse-home-backlog","El Backlog existente es la autoridad preferida; revisar conflicto de ubicación.",href))
+        if not state.get("placement_confirmed",False):
+            return finish("PROPOSE_ONLY",operation("plan-home","Validar privacidad, proveedor y destino antes de inicializar.",href,
+                "scripts/knowledge_home.py","plan",mode=values["placement"]))
+        return finish("PROPOSE_ONLY",operation("initialize-home","Inicializar únicamente con aprobación explícita del host.",href,
+            "scripts/knowledge_home.py","init",mode=values["placement"]))
+    if values["home_state"]=="invalid":
+        return finish("INSPECT_MORE",link("review-home","El binding dejó de ser válido; no cambiar fuente por fallback.",
+                                          "references/knowledge-home.md"))
+    if values["home_state"]=="unbound" and (intent in {"capture","checkpoint","maintain"} or
+                                               follow and follow["action"]=="capture-doc"):
+        return finish("DISCOVER",link("choose-placement","Inicializar origen privado antes de conservar conocimiento.",
+                                      "references/knowledge-home.md"))
     if intent == "capture" or (follow and follow["action"] == "capture-doc"):
         if intent == "capture" and values["source"] in {"snapshot", "markdown"}:
             if not state.get("read_authorized", False):

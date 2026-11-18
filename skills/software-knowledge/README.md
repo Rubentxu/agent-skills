@@ -73,3 +73,7 @@ El índice opcional SQLite/FTS5 vive exclusivamente en la caché del usuario, fu
 ## Entrada por affordances
 
 [Router HATEOAS](references/workflow-navigation.md): `python3 scripts/affordances.py examples/session-verify.json`. Selecciona lentes y siguientes operaciones a partir del estado observado. El navegador y sus resultados siguen siendo compatibles.
+
+## Knowledge Home privado
+
+[Ubicación y configuración](references/knowledge-home.md): reutilizar Backlog existente del Home Repo privado; elegir explícitamente en init si no existe. `knowledge_home.py locate/recommend/plan/init/resolve`, `capture_backlog.py --home ID ...` y `knowledge.py --home ID ...` operan por binding. No crear una base de conocimiento en Git del proyecto. Estado y SQLite externos; entradas explícitas anteriores compatibles.

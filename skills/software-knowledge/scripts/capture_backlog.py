@@ -293,8 +293,10 @@ def capture(read, *, project: str, all_docs: bool = False, documents: tuple = ()
 
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--root", type=Path, required=True)
-    p.add_argument("--project", required=True)
+    source=p.add_mutually_exclusive_group(required=True)
+    source.add_argument("--root", type=Path)
+    source.add_argument("--home", help="Managed private Backlog project; store snapshot outside Git")
+    p.add_argument("--project")
     p.add_argument("--backlog-bin", default="backlog")
     p.add_argument("--confirm-cli-read", action="store_true", required=True)
     p.add_argument("--all-docs", action="store_true")
@@ -309,6 +311,14 @@ def main() -> int:
     args = p.parse_args()
     try:
         require(1 <= args.max_commands <= 1024 and 1 <= args.timeout <= 600, "Invalid CLI budget")
+        if args.home:
+            from knowledge_home import resolve, save_snapshot
+            binding=resolve(args.home)
+            require(binding["provider"]=="backlog","Managed home is not a Backlog provider")
+            require(not args.project or args.project==args.home,"Managed project mismatch")
+            args.project=args.home
+            args.root=Path(binding["root"])
+        require(identifier(args.project),"Explicit project identity required")
         cli = Cli(args.backlog_bin, args.root, timeout=args.timeout, max_commands=args.max_commands)
         result = capture(cli, project=args.project, all_docs=args.all_docs, documents=tuple(args.doc),
                          tasks=tuple(args.task), decisions=tuple(args.decision), query=args.query,
@@ -316,7 +326,13 @@ def main() -> int:
         result["capture"]["cli_calls"] = cli.calls
         payload = json.dumps(result, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
         require(len(payload) <= MAX_BYTES, "Corpus exceeds reader size limit; narrow capture")
-        sys.stdout.buffer.write(payload)
+        if args.home:
+            destination=save_snapshot(args.home,result)
+            print(json.dumps({"status":"captured","project":args.home,"snapshot":str(destination),
+                              "coverage":result["coverage"],"nodes":len(result["nodes"]),
+                              "warning":"Derived private snapshot; refresh after provider changes."}))
+        else:
+            sys.stdout.buffer.write(payload)
         return 0
     except (ValueError, TypeError, KeyError, OSError) as exc:
         print(json.dumps({"status": "capture-failed", "error": str(exc)}, ensure_ascii=False), file=sys.stderr)

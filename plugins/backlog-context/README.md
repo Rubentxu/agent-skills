@@ -61,3 +61,7 @@ El hook consulta un máximo de **dos archivos nuevos por sesión** para memoria;
 ## Sugerencia Goldfish opcional
 
 Definir `BACKLOG_CONTEXT_GOLDFISH=hint` **y** un `BACKLOG_CONTEXT_TASK_ID` válido para añadir, solo en `SessionStart`, un recordatorio de revisar diseños de riesgo mediante la skill separada `goldfish-review`. Por defecto permanece **desactivado**. El hook no evalúa riesgo, no inicia subagentes, no crea reportes, no cambia Backlog ni añade permisos. Si el host carece de subagentes de contexto nuevo, la revisión se declara NOT_RUN. Las sugerencias no sustituyen el consentimiento para cambios ni las pruebas de aislamiento.
+
+## Home Repo privado (opcional)
+
+Resolver la ubicación con `software-knowledge` antes de lanzar la sesión. El host puede establecer `BACKLOG_CONTEXT_HOME` con la ruta absoluta del Backlog privado ya seleccionado. El hook mantiene el checkout de código y Groma por separado, recuerda usar la raíz externa y no hace joins automáticos entre rutas relativas de repos distintos. Una selección explícita inválida no vuelve al Backlog local. No lee el binding automáticamente, no mueve documentos ni guarda estado en esa raíz; las lecturas cruzadas y referencias por repo quedan a cargo del agente autorizado. Si no se establece la variable, conserva el comportamiento previo para proyectos autónomos.

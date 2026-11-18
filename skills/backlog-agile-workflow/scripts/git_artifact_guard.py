@@ -18,7 +18,7 @@ ARCHIVE = re.compile(r"(?:^|[-_.])(?:backlog|roadmap|adr|specs?|specifications?|
 BUNDLE_EXT = (".zip", ".tar.gz", ".tgz", ".7z", ".rar")
 MANAGED_DIRS = {"backlog", ".backlog", "groma", ".groma", "groma-export", "specs", "specifications", "roadmaps", "adrs", "adr", "milestones", "project-management", "planning"}
 IGNORE = [
-    "/backlog/", "/.backlog/", "/backlog.config.yml",
+    "/backlog/", "/.backlog/", "/backlog.config.yml", "/.knowledge/",
     "/groma/", "/.groma/", "/groma-export/",
     "/ROADMAP.md", "/BACKLOG.md", "/docs/adr/", "/docs/specs/",
     "/docs/specifications/", "/docs/roadmaps/", "/specs/", "/planning/",
@@ -39,6 +39,8 @@ def classify(path: str) -> str | None:
     if lowered[0] in {"skills", "node_modules", "vendor", ".git"}:
         return None
     name = lowered[-1]
+    if lowered[0] == ".knowledge":
+        return "private-knowledge"
     if name == "backlog.config.yml":
         return "backlog-config"
     if lowered[0] in {"groma", ".groma", "groma-export"}:

@@ -22,6 +22,17 @@ def state(intent="triage", mode="read", task=None, config=None, **kwargs):
 
 
 class RouterTests(unittest.TestCase):
+    def test_existing_home_backlog_never_falls_back_to_code_board(self):
+        r=router.affordances(state(intent="execute",home_backlog="present",authority_location="legacy",
+                                   available_skills=["software-knowledge"]))
+        self.assertEqual(r["decision"],"DISCOVER")
+        self.assertEqual(r["suggested_reads"],[])
+        self.assertEqual(r["_links"][0]["rel"],"reuse-home-backlog")
+        self.assertTrue(any(x.get("skill_id")=="software-knowledge" for x in r["_links"]))
+        r=router.affordances(state(intent="execute",home_backlog="present",authority_location="home-repo"))
+        self.assertEqual(r["decision"],"READY")
+        self.assertEqual(r["execution_root"],"selected-backlog-authority")
+
     def test_stalled_work_routes_directly_to_recovery(self):
         o = router.affordances(state(intent="stalled-work", mode="read"))
         self.assertEqual(o["decision"], "READY")

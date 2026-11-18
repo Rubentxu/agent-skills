@@ -16,3 +16,7 @@ El adaptador acepta knowledge-corpus v1 normalizado (contrato anterior) y envelo
 
 Seleccionar una raíz dedicada, no el checkout entero. Cada nota usa front matter OKF con valores JSON por línea (subconjunto YAML 1.2), type/title/tags y extensión x_knowledge con id, level, summary, sources, contexts, aliases, claim_state y relations (predicate/to/reason). No se pretende parsear YAML arbitrario. Los enlaces Markdown relativos permiten navegación humana; las relaciones explícitas son las únicas aristas semánticas. No seguir enlaces simbólicos. No publicar automáticamente.
 
+
+## Ubicación autoritativa
+
+Aplicar el [Knowledge Home privado](knowledge-home.md): proveedor y ubicación son independientes del corpus. Backlog en Home Repo existente prevalece; no crear Markdown paralelo. Markdown autónomo se conserva en raíz privada elegida, XDG por defecto sin Home Repo. JSON derivado y SQLite nunca son autoridad ni se publican en Git del producto.

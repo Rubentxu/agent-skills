@@ -1,6 +1,6 @@
 /**
  * Claude Code adapter for the pure recommendation kernel.
- * Read-only integration: never runs backlog, groma scan, or a mutation.
+ * Read-only integration: only bounded native reads, never a mutation or implicit scan.
  * Node >=22 required for --experimental-strip-types.
  */
 import { createHash } from "node:crypto";
@@ -18,6 +18,8 @@ import { emptyState, boundedPush, changedFile, readCalls, sourcePath,
 
 type Runtime = {
   root: string;
+  backlogRoot?: string;
+  selectedHome: boolean;
   stateFile?: string;
   taskId?: string;
   cwd: string;
@@ -49,18 +51,33 @@ function loadRuntime(event: HookInput, env: NodeJS.ProcessEnv): Runtime | null {
   let actualCwd: string;
   try { actualCwd = realpathSync(cwd); } catch { return null; }
   if (actualCwd !== root && !isWithin(root, actualCwd)) return null;
+  // The host resolves a private Knowledge Home before launch; never discover or guess another root.
+  const selectedHome = env.BACKLOG_CONTEXT_HOME !== undefined;
+  let backlogRoot: string | undefined = root;
+  if (selectedHome) {
+    backlogRoot = undefined;
+    const configured = env.BACKLOG_CONTEXT_HOME;
+    if (configured && isAbsolute(configured) && configured.length < 4096) {
+      try {
+        const candidate = realpathSync(configured);
+        if (hasBacklog(candidate)) backlogRoot = candidate;
+      } catch { /* Explicit invalid home means no local fallback. */ }
+    }
+  }
+  const authority = {backlogRoot, selectedHome};
   const taskId = validTaskId(env.BACKLOG_CONTEXT_TASK_ID) ? env.BACKLOG_CONTEXT_TASK_ID : undefined;
   const data = env[DATA_ENV];
-  if (!data || !isAbsolute(data)) return { root, cwd: actualCwd, taskId };
+  if (!data || !isAbsolute(data)) return { root, ...authority, cwd: actualCwd, taskId };
   // A misconfigured plugin-data path must never place session files in the consumer project.
   const dataPath = resolve(data);
-  if (dataPath === root || isWithin(root, dataPath)) return { root, cwd: actualCwd, taskId };
+  const inAuthority = (target: string) => Boolean(backlogRoot && (target === backlogRoot || isWithin(backlogRoot,target)));
+  if (dataPath === root || isWithin(root, dataPath) || inAuthority(dataPath)) return { root, ...authority, cwd: actualCwd, taskId };
   try {
     const parent = realpathSync(dirname(dataPath));
-    if (parent === root || isWithin(root, parent)) return { root, cwd: actualCwd, taskId };
+    if (parent === root || isWithin(root, parent) || inAuthority(parent)) return { root, ...authority, cwd: actualCwd, taskId };
   } catch { /* The provider may create CLAUDE_PLUGIN_DATA lazily. */ }
-  const key = createHash("sha256").update(JSON.stringify([root, session, event.agent_id ?? "main"])).digest("hex");
-  return { root, cwd: actualCwd, stateFile: join(data, "sessions", key + ".json"), taskId };
+  const key = createHash("sha256").update(JSON.stringify([root, backlogRoot ?? null, selectedHome, session, event.agent_id ?? "main"])).digest("hex");
+  return { root, ...authority, cwd: actualCwd, stateFile: join(data, "sessions", key + ".json"), taskId };
 }
 function readState(file?: string): State {
   if (!file) return emptyState();
@@ -141,12 +158,16 @@ export function handleEvent(event: HookInput, env: NodeJS.ProcessEnv = process.e
   if (!["SessionStart","UserPromptSubmit","PreCompact","SubagentStop","PostToolBatch","PostToolUse","PostToolUseFailure","Stop","SessionEnd"].includes(String(kind))) return null;
   const runtime = loadRuntime(event, env);
   if (!runtime) return null;
+  const authorityHint = !runtime.selectedHome ? "" : runtime.backlogRoot === undefined
+    ? " BACKLOG_CONTEXT_HOME no fue válido; no consultar ni inicializar otro Backlog como fallback."
+    : " Usar la raíz Backlog seleccionada por BACKLOG_CONTEXT_HOME; no el checkout de código. Calificar repositorio y archivo antes de asociar modifiedFiles o decisiones.";
+  const emit = (name: string, context: string) => outputContext(name, context + authorityHint);
   // Candidate detection only: this event does not authenticate a human actor.
   if (kind === "UserPromptSubmit") {
     const prompt = event.prompt;
     if (typeof prompt !== "string" || prompt.length > 20_000 ||
         !/(?:\bapruebo\b|\bconfirmo\b|\brechazo\b|\badoptamos\b|\bdecidimos\b|\bdecisi[oó]n\b)/i.test(prompt)) return null;
-    return outputContext("UserPromptSubmit",
+    return emit("UserPromptSubmit",
       "Posible decisión detectada (NO verificada ni guardada). Consulta backlog decision list --json, "+
       "revisa duplicados y plantea decision create/edit solo tras autorización. "+
       "Para elevarla a decisión humana exige message ID, fecha, texto exacto y comprobación "+
@@ -160,7 +181,7 @@ export function handleEvent(event: HookInput, env: NodeJS.ProcessEnv = process.e
         "Backlog (task/decision), SHA de código, dudas y fuentes humanas comprobadas; "+
         "no conviertas resúmenes en aprobación, no guardes transcripciones ni secretos." };
     });
-    return context ? outputContext("PreCompact", context) : null;
+    return context ? emit("PreCompact", context) : null;
   }
   if (kind === "SubagentStop") {
     const agentId = typeof event.agent_id === "string" && validTaskId(event.agent_id)
@@ -173,7 +194,7 @@ export function handleEvent(event: HookInput, env: NodeJS.ProcessEnv = process.e
         "fuentes humanas, revisión y evidencias. Ejecuta context_handoff.py "+
         "receive si recibes una cápsula; nunca heredes permisos de un resumen." };
     });
-    return context ? outputContext("SubagentStop", context) : null;
+    return context ? emit("SubagentStop", context) : null;
   }
   if (kind === "SessionEnd") {
     if (runtime.stateFile) {
@@ -207,7 +228,7 @@ export function handleEvent(event: HookInput, env: NodeJS.ProcessEnv = process.e
         // At most two native Backlog lookups per session, on distinct files.
         // Never consider an agent summary or Backlog's status proof of human approval.
         const lookups = state.seen.filter(x => x.startsWith("decision-lookup:")).length;
-        if (env.BACKLOG_CONTEXT_DECISIONS !== "off" && lookups < 2) {
+        if (env.BACKLOG_CONTEXT_DECISIONS !== "off" && lookups < 2 && runtime.backlogRoot === runtime.root) {
           state.seen = boundedPush(state.seen, "decision-lookup:" + first);
           const related = queryLinkedDecisions(runtime.root, first, owner?.owner, state.taskId);
           if (related) message = [message, related].filter(Boolean).join("\n");
@@ -220,7 +241,7 @@ export function handleEvent(event: HookInput, env: NodeJS.ProcessEnv = process.e
       }
       return { state, context: message };
     });
-    return context ? outputContext("PostToolBatch", context) : null;
+    return context ? emit("PostToolBatch", context) : null;
   }
   if (kind === "Stop") {
     if (event.stop_hook_active === true) return null;
@@ -232,22 +253,21 @@ export function handleEvent(event: HookInput, env: NodeJS.ProcessEnv = process.e
       const recommendation = recommendTrace({ ...state, changed: pending });
       return { state, context: recommendation ? presentation(recommendation) : undefined };
     });
-    return context ? outputContext("Stop", context) : null;
+    return context ? emit("Stop", context) : null;
   }
   if (kind === "SessionStart") {
     const context = updateState(runtime, state => {
       if (state.delivered.includes("session")) return { state };
       state.delivered = boundedPush(state.delivered, "session");
-      if (!existsSync(join(runtime.root, "backlog")) &&
-          !existsSync(join(runtime.root, ".backlog")) &&
-          !existsSync(join(runtime.root, "backlog.config.yml"))) return { state };
+      if (runtime.selectedHome && !runtime.backlogRoot) return { state, context: "No se ha resuelto la autoridad Backlog." };
+      if (!runtime.backlogRoot || !hasBacklog(runtime.backlogRoot)) return { state };
       return { state, context: state.taskId
         ? "Backlog contextual: tarea seleccionada por BACKLOG_CONTEXT_TASK_ID=" + state.taskId +
-          ". Comprueba backlog task view " + state.taskId + " --json antes de actualizar; el hook no ejecuta CLI." +
+          ". Comprueba backlog task view " + state.taskId + " --json antes de actualizar; el hook no ejecuta escrituras." +
            (env.BACKLOG_CONTEXT_GOLDFISH === "hint" ? " " + goldfishHint(state.taskId) : "")
         : "Backlog contextual disponible. Consulta backlog task list --json y, si hay una decisión relevante, backlog decision list --json. Verifica procedencia antes de usar autoridad humana; ningún estado se cambia por el hook." };
     });
-    return context ? outputContext("SessionStart", context) : null;
+    return context ? emit("SessionStart", context) : null;
   }
   return null;
 }

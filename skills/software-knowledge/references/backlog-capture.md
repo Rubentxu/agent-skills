@@ -26,3 +26,7 @@ Para relaciones explícitas, el agente puede proponer un bloque en el cuerpo ges
 IDs deben ser observados; enlaces a nodos ausentes se registran como no resueltos. El bloque es JSON sin ejecución, se ignoran ejemplos cercados por backticks o tildes, no se permite depends_on en este bloque. Las dependencias de trabajo solo provienen de Backlog.md. Documentos sin bloque no se reescriben ni se les inventan aristas. Para actualizar contenido usar únicamente CLI/MCP autorizada preservando el cuerpo existente. No hacer publicación automática de corpus privados.
 
 Al navegar, content_state distingue captured de metadata-only. Para estos últimos, el resultado devuelve la affordance capture-doc con el ID nativo observado (propuesta, no comando); get full no inventa un cuerpo vacío. Decide si merece otra captura explícita, solicitando también los anclajes todavía relevantes. Un corpus previo no prueba vigencia y no se fusiona silenciosamente.
+
+## Captura gestionada privada (preferida)
+
+[Knowledge Home](knowledge-home.md) vincula la raíz real de Backlog, normalmente el Home Repo existente. Usar `python3 scripts/capture_backlog.py --home ID --confirm-cli-read --task TASK-1` y `python3 scripts/knowledge.py --home ID context --anchor task:TASK-1`. No redirigir corpus privado al checkout. La CLI anterior --root/--project es interoperabilidad explícita; usar temporales privados, no ficheros versionados.

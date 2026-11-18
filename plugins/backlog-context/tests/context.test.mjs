@@ -216,3 +216,32 @@ test("Goldfish hint is strictly opt-in, bound to an explicit task and never exec
   });
   assert.doesNotMatch(noTaskReply.hookSpecificOutput.additionalContext, /Revisión Goldfish/);
 });
+
+
+test("explicit Home Repo root disambiguates Backlog and does not fallback on invalid selection",()=>{
+  const f=fixture();
+  const h=fixture();
+  const chosen={...f.env,BACKLOG_CONTEXT_HOME:h.root};
+  const response=handleEvent(f.event("SessionStart"),chosen);
+  assert.match(response.hookSpecificOutput.additionalContext,/BACKLOG_CONTEXT_HOME/);
+  assert.match(response.hookSpecificOutput.additionalContext,/no el checkout/);
+  const invalid=handleEvent({...f.event("SessionStart"),session_id:"invalid-home"},{...f.env,BACKLOG_CONTEXT_HOME:join(h.root,"absent")});
+  assert.match(invalid.hookSpecificOutput.additionalContext,/no consultar ni inicializar otro Backlog/);
+});
+
+test("external authority is not automatically joined to unqualified code paths",()=>{
+  const f=fixture();
+  const h=fixture();
+  const bin=mkdtempSync(join(tmpdir(),"home-no-join-"));
+  const sentinel=join(bin,"called");
+  const cmd=join(bin,"backlog");
+  writeFileSync(cmd,"#!/bin/sh\\ntouch '"+sentinel+"'\\nexit 1\\n".replaceAll("\\n","\n"));
+  chmodSync(cmd,0o755);
+  const original=process.env.PATH;
+  try {
+    process.env.PATH=bin+":"+original;
+    handleEvent({...f.event("PostToolBatch"),tool_calls:[{tool_name:"Read",tool_input:{file_path:f.file},tool_response:"source"}]},
+      {...f.env,BACKLOG_CONTEXT_HOME:h.root});
+    assert.equal(existsSync(sentinel),false);
+  }finally{process.env.PATH=original;}
+});

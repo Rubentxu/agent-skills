@@ -19,6 +19,7 @@ from sections import section_response
 def parser():
     p = argparse.ArgumentParser(description=__doc__)
     src = p.add_mutually_exclusive_group(required=True)
+    src.add_argument("--home", help="Previously initialized private knowledge project")
     src.add_argument("--corpus", type=Path)
     src.add_argument("--markdown", type=Path)
     src.add_argument("--backlog-only", action="store_true", help="Build a partial corpus from explicit snapshots")
@@ -90,6 +91,18 @@ def load(args):
 
 
 def run(args):
+    if args.home:
+        from knowledge_home import resolve, read_snapshot, snapshot_path
+        b = resolve(args.home)
+        require(not args.project or args.project == b["project"], "Managed home identity mismatch")
+        require(not args.backlog, "Managed home does not accept external Backlog overlays")
+        args.project = b["project"]
+        if b["provider"] == "markdown":
+            args.markdown = Path(b["root"])
+        else:
+            # Revalidate private binding and snapshot before reading/indexing.
+            read_snapshot(args.home)
+            args.corpus = snapshot_path(args.home)
     if args.cache:
         from cache_index import indexed
         require(bool(args.project) and not args.backlog and not args.backlog_only,
@@ -103,6 +116,8 @@ def run(args):
             return navigate(args, nav)
     require(args.command != "index-status", "index-status requires --cache")
     c = load(args)
+    if args.home:
+        c.pop("home_binding_digest", None)
     if args.command == "architecture-review":
         from architecture import review
         return review(c, load_json(args.input), limit=20 if args.limit is None else args.limit,
@@ -115,6 +130,11 @@ def run(args):
     if args.command == "map-candidates":
         return map_candidates(c)
     if args.command == "export":
+        if args.home:
+            from knowledge_home import outside_git, private_dir
+            destination = outside_git(args.output)
+            private_dir(destination.parent)
+            return export_markdown(c, destination)
         return export_markdown(c, args.output)
     if args.command == "diff":
         return compare(load_json(args.before), c)

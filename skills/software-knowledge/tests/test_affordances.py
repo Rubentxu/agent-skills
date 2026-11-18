@@ -88,3 +88,21 @@ class AffordancesTests(unittest.TestCase):
         self.assertEqual(self.operations(affordances(state))[0]["operation"]["arguments"]["detail"],"evidence")
         r=affordances(dict(intent="evaluate",project="demo",basis="observed",input_ready=True))
         self.assertEqual(r["decision"],"READY")
+
+
+    def test_home_choice_and_existing_binding(self):
+        s=self.state("initialize-home",home_state="unbound",home_candidate="backlog-ready")
+        r=affordances(s)
+        self.assertEqual(r["_links"][-1]["recommended"],"home-repo")
+        s.update(placement="user-local")
+        self.assertEqual(self.operations(affordances(s)),[])
+        s.update(placement="home-repo")
+        self.assertEqual(self.operations(affordances(s))[0]["operation"]["command"],"plan")
+        s.update(placement_confirmed=True)
+        self.assertEqual(self.operations(affordances(s))[0]["operation"]["command"],"init")
+        s.update(home_state="bound")
+        self.assertEqual(self.operations(affordances(s))[0]["operation"]["command"],"resolve")
+        s=dict(intent="locate-home")
+        self.assertEqual(self.operations(affordances(s))[0]["operation"]["command"],"locate")
+        s=self.state("verify",home_state="bound",query="run")
+        self.assertEqual(self.operations(affordances(s))[0]["operation"]["arguments"]["home"],"demo")
