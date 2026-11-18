@@ -44,6 +44,7 @@ def fusion(rankings: list[list[str]], k: int = 60) -> list[str]:
 class Navigator:
     def __init__(self, corpus: dict):
         self.corpus = validate(corpus)
+        self.search_cut = False
         self.nodes = {n["id"]: n for n in corpus["nodes"]}
         self.out, self.inc, self.alias = defaultdict(list), defaultdict(list), defaultdict(set)
         self.postings = defaultdict(dict)
@@ -66,6 +67,16 @@ class Navigator:
         for e in sorted(corpus["edges"], key=lambda e: (e["from"], e["predicate"], e["to"])):
             self.out[e["from"]].append(e)
             self.inc[e["to"]].append(e)
+
+    def sections(self, identity: str) -> list[dict]:
+        from sections import split_sections
+        return split_sections(self.nodes[identity].get("body", ""))
+
+    def ids_for_level(self, level: str) -> list[str]:
+        return sorted(i for i, n in self.nodes.items() if n["level"] == level)
+
+    def fingerprint(self, identity: str) -> str:
+        return digest({"node": self.nodes[identity], "out": self.out[identity], "in": self.inc[identity]})
 
     def lexical(self, query: str, eligible: set[str]) -> list[str]:
         scores = defaultdict(float)
@@ -156,11 +167,13 @@ class Navigator:
         result = {"status": "partial", "project": self.corpus["project"],
                   "coverage": self.corpus["coverage"], "results": [], "omitted": 0,
                   "unchanged": 0, "traversal_cut": cut, "budget_unit": "utf8-json-bytes"}
+        if self.search_cut:
+            result["candidate_cut"] = True
         def size(obj):
             return len(json.dumps(obj, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
         for i in ids:
             n = self.nodes[i]
-            fingerprint = digest({"node": n, "out": self.out[i], "in": self.inc[i]})
+            fingerprint = self.fingerprint(i)
             if fingerprint in known:
                 result["unchanged"] += 1
                 continue
@@ -190,6 +203,8 @@ class Navigator:
                         break
             else:
                 item["_links"].insert(0, {"action": "get", "id": i, "detail": "full"})
+                if n.get("body"):
+                    item["_links"].append({"action": "sections", "id": i})
             if any(e["predicate"] == "contains" for e in self.out[i]):
                 item["_links"].append({"action": "zoom-in", "id": i})
             if any(e["predicate"] == "contains" for e in self.inc[i]):
@@ -199,7 +214,7 @@ class Navigator:
                 result["results"].pop()
                 result["omitted"] += 1
         result["status"] = ("unknown" if not ids else
-                            "partial" if cut or result["omitted"] or self.corpus["coverage"] == "partial"
+                            "partial" if cut or self.search_cut or result["omitted"] or self.corpus["coverage"] == "partial"
                             else "returned")
         require(size(result) <= budget, "Envelope exceeds budget")
         return result

@@ -6,12 +6,14 @@ import argparse
 import json
 from pathlib import Path
 import sys
+import sqlite3
 
 from model import load_json, v1_to_v2, include_backlog, validate, require, make_corpus
 from providers import markdown_corpus
 from retrieval import Navigator, PROFILES, INTENTS
 from projection import compare, export_markdown
 from reconcile import reconcile, map_candidates
+from sections import section_response
 
 
 def parser():
@@ -20,6 +22,7 @@ def parser():
     src.add_argument("--corpus", type=Path)
     src.add_argument("--markdown", type=Path)
     src.add_argument("--backlog-only", action="store_true", help="Build a partial corpus from explicit snapshots")
+    p.add_argument("--cache", action="store_true", help="Use private external SQLite/FTS5 index (requires --project)")
     p.add_argument("--project", help="Explicit ID for Markdown or v1; check identity for v2")
     p.add_argument("--backlog", type=Path, action="append", default=[], help="Observed v1 JSON list/view/search envelope")
     p.add_argument("--profile", choices=PROFILES, default="normal")
@@ -28,7 +31,7 @@ def parser():
     p.add_argument("--detail", choices=["identity", "summary", "full", "evidence"], default="summary")
     p.add_argument("--known", action="append", default=[], help="Previously observed node fingerprints in this project")
     sub = p.add_subparsers(dest="command", required=True)
-    for command in ("validate", "overview", "tracks", "snapshot", "map-candidates"):
+    for command in ("validate", "overview", "tracks", "snapshot", "map-candidates", "index-status"):
         sub.add_parser(command)
     rec = sub.add_parser("reconcile")
     rec.add_argument("proposal", type=Path)
@@ -42,6 +45,12 @@ def parser():
     s.add_argument("--context")
     s.add_argument("--kind")
     s.add_argument("--level", choices=["L0", "L1", "L2", "L3"])
+    s = sub.add_parser("sections")
+    s.add_argument("id")
+    s.add_argument("--query", default="")
+    s = sub.add_parser("section")
+    s.add_argument("id")
+    s.add_argument("section_id")
     g = sub.add_parser("get")
     g.add_argument("ids", nargs="+")
     for command in ("expand", "trace", "zoom-in", "zoom-out", "impact"):
@@ -75,6 +84,18 @@ def load(args):
 
 
 def run(args):
+    if args.cache:
+        from cache_index import indexed
+        require(bool(args.project) and not args.backlog and not args.backlog_only,
+                "--cache requires --project and explicit corpus or Markdown without overlays")
+        require(args.command not in {"validate", "snapshot", "export", "diff", "reconcile", "map-candidates"},
+                "Use uncached source for maintenance or full snapshots")
+        source = args.corpus or args.markdown
+        with indexed(source, "snapshot" if args.corpus else "markdown", args.project) as (nav, stats):
+            if args.command == "index-status":
+                return {"status": "indexed", **stats}
+            return navigate(args, nav)
+    require(args.command != "index-status", "index-status requires --cache")
     c = load(args)
     if args.command == "reconcile":
         return reconcile(c, load_json(args.proposal))
@@ -90,15 +111,21 @@ def run(args):
     if args.command == "validate":
         return {"status": "valid-structure", "project": c["project"], "coverage": c["coverage"],
                 "nodes": len(c["nodes"]), "edges": len(c["edges"])}
-    nav = Navigator(c)
+    return navigate(args, Navigator(c))
+
+
+def navigate(args, nav):
     limit, depth, budget = PROFILES[args.profile]
     limit = args.limit if args.limit is not None else limit
     budget = args.budget_bytes if args.budget_bytes is not None else budget
     paths, cut = None, False
     detail = args.detail
     command = args.command
+    if command in {"sections", "section"}:
+        return section_response(nav, args.id, query=getattr(args, "query", ""),
+                                section_id=getattr(args, "section_id", None), limit=limit, budget=budget)
     if command in {"overview", "tracks"}:
-        ids = sorted(i for i, n in nav.nodes.items() if n["level"] == ("L3" if command == "overview" else "L2"))
+        ids = nav.ids_for_level("L3" if command == "overview" else "L2")
     elif command == "search":
         ids = nav.search(args.query, intent=args.intent, context=args.context, kind=args.kind, level=args.level)
     elif command == "get":
@@ -130,7 +157,7 @@ def main():
         result = run(parser().parse_args())
         print(json.dumps(result, ensure_ascii=False, separators=(",", ":")), end="")
         return 0
-    except (ValueError, TypeError, KeyError, OSError) as exc:
+    except (ValueError, TypeError, KeyError, OSError, sqlite3.Error) as exc:
         print(json.dumps({"status": "invalid-input", "error": str(exc)}, ensure_ascii=False), file=sys.stderr)
         return 2
 
