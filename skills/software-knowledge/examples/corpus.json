@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 2,
+  "kind": "knowledge-corpus",
+  "project": "example-runtime",
+  "coverage": "partial",
+  "nodes": [
+    {
+      "id": "project",
+      "level": "L3",
+      "kind": "profile",
+      "title": "Example runtime",
+      "summary": "Illustrative runtime; not a real project."
+    },
+    {
+      "id": "execution",
+      "level": "L2",
+      "kind": "track",
+      "title": "Execution lifecycle",
+      "summary": "Identity, state transitions and recovery."
+    },
+    {
+      "id": "execution.terminal",
+      "level": "L1",
+      "kind": "invariant",
+      "title": "Terminal state",
+      "summary": "A terminal execution must not become active again.",
+      "claim_state": "proposed",
+      "contexts": [
+        "execution"
+      ],
+      "aliases": [
+        "estado terminal"
+      ],
+      "body": "Illustrative proposal; verify before applying."
+    },
+    {
+      "id": "execution.test",
+      "level": "L0",
+      "kind": "test",
+      "title": "Proposed transition check",
+      "summary": "Illustrative pointer, not an executed test.",
+      "claim_state": "proposed",
+      "sources": [
+        {
+          "provider": "external",
+          "locator": "example:transition-test"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from": "project",
+      "predicate": "contains",
+      "to": "execution"
+    },
+    {
+      "from": "execution",
+      "predicate": "contains",
+      "to": "execution.terminal"
+    },
+    {
+      "from": "execution.terminal",
+      "predicate": "verified_by",
+      "to": "execution.test",
+      "reason": "Illustrative proposed verification, not a PASS."
+    }
+  ]
+}
