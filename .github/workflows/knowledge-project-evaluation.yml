@@ -1,0 +1,70 @@
+name: Knowledge retrieval on pinned public projects
+on:
+  pull_request:
+    paths:
+      - 'skills/software-knowledge/**'
+      - '.github/workflows/knowledge-project-evaluation.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - repository: Rubentxu/pipeline-kotlin
+            revision: 245ee0c635d1d92487a29f44d41d4d49b63e448a
+            dataset: pipelinek
+            sparse: examples/catalogue/features
+          - repository: Rubentxu/CogniCode
+            revision: 26a92f78ff5c1c2780b5b945cb85615e82e4ef39
+            dataset: cognicode
+            sparse: docs/adr
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ matrix.repository }}
+          ref: ${{ matrix.revision }}
+          path: .evaluation-source
+          sparse-checkout: ${{ matrix.sparse }}
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Evaluate selected documentation without executing project code
+        env:
+          DATASET: ${{ matrix.dataset }}
+          REVISION: ${{ matrix.revision }}
+          REPOSITORY: ${{ matrix.repository }}
+          XDG_CACHE_HOME: ${{ runner.temp }}/knowledge-eval-cache
+        run: |
+          set -euo pipefail
+          test "$(git -C .evaluation-source rev-parse HEAD)" = "$REVISION"
+          k=skills/software-knowledge
+          python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          m=json.loads(Path('skills/software-knowledge/examples/'+os.environ['DATASET']+'-evaluation.json').read_bytes())
+          assert m['revision']==os.environ['REVISION'] and m['repository']==os.environ['REPOSITORY'],m
+          PY
+          python3 "$k/scripts/evaluate_index.py" --root .evaluation-source "$k/examples/$DATASET-evaluation.json" > "$RUNNER_TEMP/evaluation.json"
+          python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          r=json.loads((Path(os.environ['RUNNER_TEMP'])/'evaluation.json').read_bytes())
+          assert r['questions']==10 and len(r['dataset']['documents'])==8,r
+          for name,stats in r['aggregate'].items():
+              assert stats['correct_abstention']==1,(name,stats)
+              print(name,json.dumps(stats,sort_keys=True))
+          print('index',json.dumps(r['index'],sort_keys=True))
+          for q in r['rows']:
+              print(q['id'],json.dumps({k:v['retrieved'] for k,v in q['variants'].items()},sort_keys=True))
+          PY
+          test -z "$(find . -name '*.sqlite3' -print -quit)"

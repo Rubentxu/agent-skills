@@ -1,0 +1,176 @@
+{
+  "schemaVersion": 1,
+  "kind": "documentation-evaluation",
+  "project": "cognicode-docs",
+  "repository": "Rubentxu/CogniCode",
+  "revision": "26a92f78ff5c1c2780b5b945cb85615e82e4ef39",
+  "documents": [
+    {
+      "id": "effect-order",
+      "kind": "contract",
+      "title": "Effect before validation",
+      "summary": "File operation ordering",
+      "path": "docs/adr/ADR-054-file-operations-effect-order.md",
+      "contexts": [
+        "files"
+      ]
+    },
+    {
+      "id": "batch",
+      "kind": "contract",
+      "title": "All-or-nothing batches",
+      "summary": "Route persistence and advertised capability",
+      "path": "docs/adr/ADR-055-the-batch-is-all-or-nothing.md",
+      "contexts": [
+        "routes"
+      ]
+    },
+    {
+      "id": "stages",
+      "kind": "contract",
+      "title": "Stage observations",
+      "summary": "Test surface classification and gates",
+      "path": "docs/adr/ADR-057-the-stages-say-what-they-observe.md",
+      "contexts": [
+        "verification"
+      ]
+    },
+    {
+      "id": "refusal",
+      "kind": "contract",
+      "title": "Refusal without trace",
+      "summary": "Rejected writes and simultaneous edits",
+      "path": "docs/adr/ADR-058-what-is-refused-leaves-no-trace.md",
+      "contexts": [
+        "files"
+      ]
+    },
+    {
+      "id": "unicode",
+      "kind": "contract",
+      "title": "Character boundary",
+      "summary": "Byte cuts and continuation offset",
+      "path": "docs/adr/ADR-060-a-cut-never-splits-a-character.md",
+      "contexts": [
+        "files"
+      ]
+    },
+    {
+      "id": "atomic",
+      "kind": "contract",
+      "title": "Whole publication",
+      "summary": "Write atomicity and version preconditions",
+      "path": "docs/adr/ADR-061-the-write-is-published-whole.md",
+      "contexts": [
+        "files"
+      ]
+    },
+    {
+      "id": "snapshot",
+      "kind": "contract",
+      "title": "Snapshot producer identity",
+      "summary": "Incremental graph provenance",
+      "path": "docs/adr/ADR-065-a-snapshot-says-who-produced-it.md",
+      "contexts": [
+        "graph"
+      ]
+    },
+    {
+      "id": "guard",
+      "kind": "contract",
+      "title": "Toolchain guard",
+      "summary": "Offline host resolution",
+      "path": "docs/adr/ADR-066-the-guard-does-not-need-the-network.md",
+      "contexts": [
+        "verification"
+      ]
+    }
+  ],
+  "edges": [],
+  "questions": [
+    {
+      "id": "boundary",
+      "query": "¿En qué decisión se exige resolver rutas relativas al workspace antes de crear directorios?",
+      "relevant": [
+        "effect-order",
+        "refusal"
+      ],
+      "intent": "security"
+    },
+    {
+      "id": "batch",
+      "query": "¿Qué puerto de persistencia de rutas carecía de adaptador y no debía ofrecerse como capacidad?",
+      "relevant": [
+        "batch"
+      ],
+      "intent": "architecture"
+    },
+    {
+      "id": "stages",
+      "query": "¿Qué decisión distingue pruebas simuladas de garantías medidas en binarios y carriles?",
+      "relevant": [
+        "stages"
+      ],
+      "intent": "verify"
+    },
+    {
+      "id": "simultaneous",
+      "query": "¿Dónde se define aplicar sustituciones sobre el original y evitar que A B se convierta en C C?",
+      "relevant": [
+        "refusal"
+      ],
+      "intent": "implement"
+    },
+    {
+      "id": "utf8",
+      "query": "¿Qué decisión evita un pánico al cortar dentro de un punto de código multibyte?",
+      "relevant": [
+        "unicode"
+      ],
+      "intent": "debug"
+    },
+    {
+      "id": "rename",
+      "query": "¿Qué decisión aborda creación exclusiva del temporal, limpieza en error y precondición de versión?",
+      "relevant": [
+        "atomic"
+      ],
+      "intent": "verify"
+    },
+    {
+      "id": "identity",
+      "query": "¿Dónde se exige saber qué versión y capacidades del analizador produjeron un grafo persistido?",
+      "relevant": [
+        "snapshot"
+      ],
+      "intent": "architecture"
+    },
+    {
+      "id": "offline",
+      "query": "¿Qué decisión explica por qué rustup intentaba instalar una toolchain al aislar HOME?",
+      "relevant": [
+        "guard"
+      ],
+      "intent": "debug"
+    },
+    {
+      "id": "file-edits",
+      "query": "Relacionar rechazo sin efectos con publicación entera",
+      "relevant": [
+        "refusal",
+        "atomic"
+      ],
+      "intent": "verify",
+      "anchors": [
+        "refusal",
+        "atomic"
+      ]
+    },
+    {
+      "id": "absent",
+      "query": "zebrasharkunrelated",
+      "relevant": [],
+      "intent": "debug"
+    }
+  ]
+}
