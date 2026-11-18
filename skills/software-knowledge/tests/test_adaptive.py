@@ -39,3 +39,14 @@ class AdaptiveTests(unittest.TestCase):
         self.assertEqual(r["steps"][0]["response"]["results"][0]["id"],"dna")
         self.assertEqual(r["steps"][1]["strategy"],"sections")
         self.assertTrue(r["steps"][1]["response"]["results"])
+
+
+    def test_query_only_defaults_ranked_and_forced_context_is_available(self):
+        req={"schemaVersion":1,"kind":"context-pack-input","project":"p",
+             "steps":[{"query":"Terminal","intent":"verify"},
+                      {"query":"Terminal","mode":"context"}]}
+        result=context_pack(self.nav,req)
+        self.assertEqual(result["steps"][0]["strategy"],"ranked")
+        self.assertEqual(result["steps"][0]["response"]["results"][0]["id"],"rule")
+        self.assertIn("sources",result["steps"][0]["response"]["results"][0])
+        self.assertEqual(result["steps"][1]["strategy"],"active")

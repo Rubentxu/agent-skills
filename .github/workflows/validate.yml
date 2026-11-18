@@ -85,6 +85,9 @@ jobs:
           r=json.loads(Path('/tmp/knowledge-real-doc-eval.json').read_bytes())
           assert r['questions']==8 and r['dataset']['documents']==8,r
           assert r['aggregate']['adaptive']['correct_abstention']==1,r
+          # On unanchored documentation queries, preserve direct ranking, not forced graph expansion.
+          assert r['aggregate']['adaptive']['mrr']==r['aggregate']['ranked']['mrr'],r
+          assert r['aggregate']['adaptive']['ndcg_at_k']==r['aggregate']['ranked']['ndcg_at_k'],r
           for name, stats in r['aggregate'].items():
               print(name,json.dumps(stats,sort_keys=True))
           PY

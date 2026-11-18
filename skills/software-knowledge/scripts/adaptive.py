@@ -53,7 +53,9 @@ def context_pack(nav, request, *, profile="normal", budget=None, max_results=Non
             continue
         # Orientation prefers the profile and tracks; implementation follows explicit anchors.
         strategy = ("orientation" if mode == "auto" and intent == "understand" and not anchors and not query
-                    else "sections" if mode == "sections" else "active")
+                    else "sections" if mode == "sections"
+                    else "ranked" if mode == "auto" and query and not anchors
+                    else "active")
         result["calls"] += 1
         path_map = None
         new_keys = set()
@@ -66,10 +68,13 @@ def context_pack(nav, request, *, profile="normal", budget=None, max_results=Non
                 ids = nav.ids_for_level("L3") + nav.ids_for_level("L2")
                 cut = False
                 nav.search_cut = False
+            elif strategy == "ranked":
+                ids = nav.search(query, intent=intent)
+                cut = False
             else:
                 ids, path_map, cut = nav.plan(query, anchors, intent, depth)
-                if intent in {"verify", "security"} and detail == "summary":
-                    detail = "evidence"
+            if intent in {"verify", "security"} and detail == "summary":
+                detail = "evidence"
             # Candidate dedup is representation-sensitive, including path and detail.
             response = nav.render(ids, paths=path_map, cut=cut, detail=detail,
                                   limit=limit, budget=remaining)

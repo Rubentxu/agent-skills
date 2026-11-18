@@ -41,10 +41,12 @@ Entrada:
      "steps":[{"intent":"understand"},{"intent":"verify","anchors":["doc:doc-1"]},
               {"mode":"sections","anchors":["doc:doc-1"],"query":"timeout"}]}
 
-Orientación sin consulta usa perfil y tracks; verify/security usa evidencia por defecto, pasos concretos usan navegación activa, sections lista fragmentos de una nota. Deduplicación solo de la representación ya entregada al pack, no de evidencia nunca vista. Quick/normal/deep admiten 2/4/8 operaciones locales y el presupuesto total UTF-8 JSON, no tokens exactos; se declaran pasos omitidos. No hay consultas LLM ni exploración autónoma, y el host conserva límites entre invocaciones. Compatible con --cache salvo mantenimiento/review/checkpoint. evaluate.py compara BM25, RRF, activo y adaptativo con etiquetas y bytes, no rendimiento de agentes.
+Orientación sin consulta usa perfil y tracks; verify/security usa evidencia por defecto, consultas sin anclajes usan ranking lexical/RRF directo y pasos con anclajes usan navegación activa; mode=context solicita explícitamente expansión por el grafo y sections lista fragmentos de una nota. Deduplicación solo de la representación ya entregada al pack, no de evidencia nunca vista. Quick/normal/deep admiten 2/4/8 operaciones locales y el presupuesto total UTF-8 JSON, no tokens exactos; se declaran pasos omitidos. No hay consultas LLM ni exploración autónoma, y el host conserva límites entre invocaciones. Compatible con --cache salvo mantenimiento/review/checkpoint. evaluate.py compara BM25, RRF, activo y adaptativo con etiquetas y bytes, no rendimiento de agentes.
 
 Evaluación reproducible con documentos existentes (no código):
 
     python3 skills/software-knowledge/scripts/evaluate_docs.py --root . skills/software-knowledge/examples/documentation-evaluation.json
 
 El manifest define paths seleccionados, etiquetas de relevancia y aristas curadas. Lee únicamente Markdown explícito, no el checkout del proyecto investigado por CogniCode. Registra digest de cada documento. Las ocho preguntas son una primera evaluación de recuperación sobre documentos reales de la colección; no un benchmark de agentes LLM, ni una muestra representativa de otros repositorios.
+
+Decisión de diseño basada en la primera evaluación de ocho documentos: la expansión indiscriminada conservó recall@5 pero penalizó MRR/nDCG y bytes frente al ranking directo. Por ello auto sin anclajes usa ranking, mientras que la navegación activa sigue disponible cuando interesa conocer relaciones, conflictos e impacto. Es una regla determinista revisable, no un algoritmo aprendido ni una afirmación de mejora generalizada.
