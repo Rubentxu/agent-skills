@@ -12,6 +12,7 @@ from providers import markdown_corpus
 from retrieval import Navigator, PROFILES, INTENTS
 from projection import compare, export_markdown
 from reconcile import reconcile, map_candidates
+from sections import section_response
 
 
 def parser():
@@ -42,6 +43,12 @@ def parser():
     s.add_argument("--context")
     s.add_argument("--kind")
     s.add_argument("--level", choices=["L0", "L1", "L2", "L3"])
+    s = sub.add_parser("sections")
+    s.add_argument("id")
+    s.add_argument("--query", default="")
+    s = sub.add_parser("section")
+    s.add_argument("id")
+    s.add_argument("section_id")
     g = sub.add_parser("get")
     g.add_argument("ids", nargs="+")
     for command in ("expand", "trace", "zoom-in", "zoom-out", "impact"):
@@ -97,8 +104,11 @@ def run(args):
     paths, cut = None, False
     detail = args.detail
     command = args.command
+    if command in {"sections", "section"}:
+        return section_response(nav, args.id, query=getattr(args, "query", ""),
+                                section_id=getattr(args, "section_id", None), limit=limit, budget=budget)
     if command in {"overview", "tracks"}:
-        ids = sorted(i for i, n in nav.nodes.items() if n["level"] == ("L3" if command == "overview" else "L2"))
+        ids = nav.ids_for_level("L3" if command == "overview" else "L2")
     elif command == "search":
         ids = nav.search(args.query, intent=args.intent, context=args.context, kind=args.kind, level=args.level)
     elif command == "get":

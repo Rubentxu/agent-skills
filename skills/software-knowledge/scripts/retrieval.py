@@ -67,6 +67,16 @@ class Navigator:
             self.out[e["from"]].append(e)
             self.inc[e["to"]].append(e)
 
+    def sections(self, identity: str) -> list[dict]:
+        from sections import split_sections
+        return split_sections(self.nodes[identity].get("body", ""))
+
+    def ids_for_level(self, level: str) -> list[str]:
+        return sorted(i for i, n in self.nodes.items() if n["level"] == level)
+
+    def fingerprint(self, identity: str) -> str:
+        return digest({"node": self.nodes[identity], "out": self.out[identity], "in": self.inc[identity]})
+
     def lexical(self, query: str, eligible: set[str]) -> list[str]:
         scores = defaultdict(float)
         count = len(self.nodes)
@@ -160,7 +170,7 @@ class Navigator:
             return len(json.dumps(obj, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
         for i in ids:
             n = self.nodes[i]
-            fingerprint = digest({"node": n, "out": self.out[i], "in": self.inc[i]})
+            fingerprint = self.fingerprint(i)
             if fingerprint in known:
                 result["unchanged"] += 1
                 continue
@@ -190,6 +200,8 @@ class Navigator:
                         break
             else:
                 item["_links"].insert(0, {"action": "get", "id": i, "detail": "full"})
+                if n.get("body"):
+                    item["_links"].append({"action": "sections", "id": i})
             if any(e["predicate"] == "contains" for e in self.out[i]):
                 item["_links"].append({"action": "zoom-in", "id": i})
             if any(e["predicate"] == "contains" for e in self.inc[i]):
