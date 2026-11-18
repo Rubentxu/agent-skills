@@ -61,6 +61,7 @@ class TrialTests(unittest.TestCase):
         self.obs["trials"]=[self.row("baseline"),self.row("knowledge")]
         self.obs["trials"][1]["status"]="failed"
         r=compare(self.plan,self.obs)
+        self.assertEqual(r["status"],"measured-completion-only")
         self.assertEqual(r["completion_pairs"],1)
         self.assertEqual(r["completion_regressions"],1)
         self.assertEqual(r["completion_by_variant"]["knowledge"]["failed"],1)

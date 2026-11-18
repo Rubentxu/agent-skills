@@ -126,15 +126,31 @@ def affordances(state):
         if values["remote_policy"] != "local-only" or not state.get("read_authorized", False):
             return finish("INSPECT_MORE", link("inspect-capture-policy",
                 "Requiere lectura autorizada y política local-only observada; no alterar la configuración.", href))
+        docs = [native] if native else [i[4:] for i in anchors if i.startswith("doc:") and re.fullmatch(r"doc-[0-9]+", i[4:], re.IGNORECASE)]
+        tasks = [i[5:] for i in anchors if i.startswith("task:") and re.fullmatch(r"TASK-[0-9]+(?:\\.[0-9]+)*", i[5:], re.IGNORECASE)]
+        if not native and not (query.strip() or docs or tasks):
+            return finish("INSPECT_MORE", link("narrow-scope", "Seleccionar consulta, documento o tarea nativa; no capturar todo por defecto.", href))
         delegate()
         return finish("READY", operation("capture-doc" if native else "capture-backlog",
             "Captura acotada; seleccionar raíz y alcance explícitos.", href, "scripts/capture_backlog.py",
-            "capture", **({"doc": native} if native else {"query": query, "anchors": anchors})))
+            "capture", **({"doc": native} if native else {"query": query, "docs": docs, "tasks": tasks})))
     if intent == "capture" or (follow and follow["action"] == "capture-doc"):
+        if intent == "capture" and values["source"] in {"snapshot", "markdown"}:
+            if not state.get("read_authorized", False):
+                return finish("INSPECT_MORE", link("inspect-source", "Confirmar lectura autorizada del origen.", "references/contract.md"))
+            return finish("READY", operation("validate", "Validar origen explícito sin escribirlo.",
+                "references/contract.md", "scripts/knowledge.py", "validate", source=values["source"]))
         if intent == "capture" and values["source"] != "backlog":
             return finish("DISCOVER", link("select-source", "Elegir Markdown, snapshot o Backlog autorizado.",
                                            "references/contract.md"))
         return capture(follow["id"] if follow else None)
+    if intent == "evaluate" and state.get("input_ready", False):
+        delegate()
+        return finish("READY", link("choose-evaluation", "Distinguir recuperación, índice y ensayos observados.",
+                                    "references/operational-evaluation.md"))
+    if intent == "discover" and values["corpus"] == "ready":
+        return finish("READY", operation("overview", "Orientación del corpus ya validado.",
+            "references/navigation.md", "scripts/knowledge.py", "overview"))
     if intent == "discover" or values["corpus"] != "ready":
         return finish("DISCOVER", link("inspect-source", "Seleccionar y validar corpus, raíz Markdown o snapshots autorizados.",
                                        "references/contract.md"))
@@ -152,7 +168,8 @@ def affordances(state):
         delegate()
         return finish("READY", operation(command, "Recuperar el mínimo contexto pertinente.",
             "references/navigation.md", "scripts/knowledge.py", command,
-            query=query, anchors=anchors, intent=intent))
+            query=query, anchors=anchors, intent=intent,
+            detail="evidence" if intent in {"verify", "security"} else "summary"))
     if intent == "index":
         if not state.get("reuse_index", False):
             return finish("READY", link("use-memory", "Modo puro por defecto; usar caché solo si aporta reutilización.",
@@ -175,9 +192,6 @@ def affordances(state):
     if intent == "federate":
         return finish("READY", operation("federate", "Referencias calificadas; fuentes externas explícitas.",
             "references/federation.md", "scripts/federation.py", "navigate"))
-    if intent == "evaluate":
-        return finish("READY", link("choose-evaluation", "Distinguir recuperación, índice y ensayos observados.",
-                                    "references/operational-evaluation.md"))
     if intent in {"architecture-review", "checkpoint", "context-pack"}:
         decision = "PROPOSE_ONLY" if intent in {"architecture-review", "checkpoint"} else "READY"
         return finish(decision, operation(intent, "Proyección acotada; no concede autorización ni verifica fuentes vivas.",

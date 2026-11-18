@@ -47,7 +47,12 @@ class AffordancesTests(unittest.TestCase):
                cli="available",backlog_project="initialized",mode="apply")
         self.assertFalse(self.operations(affordances(s)))
         s.update(remote_policy="local-only",read_authorized=True)
-        self.assertEqual(self.operations(affordances(s))[0]["rel"],"capture-backlog")
+        self.assertFalse(self.operations(affordances(s)))
+        s.update(anchors=["task:TASK-1", "doc:doc-2", "other"])
+        op=self.operations(affordances(s))[0]
+        self.assertEqual(op["rel"],"capture-backlog")
+        self.assertEqual(op["operation"]["arguments"]["tasks"],["TASK-1"])
+        self.assertEqual(op["operation"]["arguments"]["docs"],["doc-2"])
 
     def test_follow_the_actual_navigation_response(self):
         n=node("doc:doc-1","contract","Rule","Rule",sources=[{"provider":"backlog","locator":"doc-1"}])
@@ -71,3 +76,15 @@ class AffordancesTests(unittest.TestCase):
         self.assertEqual(self.operations(affordances(self.state("index",reuse_index=True)))[0]["operation"]["arguments"]["cache"],True)
         with self.assertRaises(ValueError):
             affordances(self.state("understand",unknown=True))
+
+
+    def test_discover_and_capture_standalone_markdown_not_backlog(self):
+        self.assertEqual(self.operations(affordances(self.state("discover")))[0]["rel"],"overview")
+        state=dict(intent="capture",project="demo",basis="observed",source="markdown")
+        self.assertFalse(self.operations(affordances(state)))
+        state["read_authorized"]=True
+        self.assertEqual(self.operations(affordances(state))[0]["rel"],"validate")
+        state=self.state("verify",query="check")
+        self.assertEqual(self.operations(affordances(state))[0]["operation"]["arguments"]["detail"],"evidence")
+        r=affordances(dict(intent="evaluate",project="demo",basis="observed",input_ready=True))
+        self.assertEqual(r["decision"],"READY")
