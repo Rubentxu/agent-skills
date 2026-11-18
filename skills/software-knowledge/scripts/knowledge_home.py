@@ -106,7 +106,9 @@ def write_private(path, data, *, replace=False, maximum=MAX_DESCRIPTOR):
 
 def git(repo,*args,input=None,ok=(0,)):
     env={k:v for k,v in os.environ.items() if not k.startswith("GIT_")}
-    env.update(GIT_OPTIONAL_LOCKS="0",GIT_TERMINAL_PROMPT="0",GIT_LITERAL_PATHSPECS="1")
+    env.update(GIT_OPTIONAL_LOCKS="0",GIT_TERMINAL_PROMPT="0")
+    if args[0]=="ls-files":
+        env["GIT_LITERAL_PATHSPECS"]="1"
     try:
         out=subprocess.run(["git","-C",str(repo),*args],input=input,stdout=subprocess.PIPE,
                            stderr=subprocess.PIPE,env=env,timeout=10)
