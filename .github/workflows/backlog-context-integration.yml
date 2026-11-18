@@ -189,3 +189,37 @@ jobs:
           PY
           backlog task list --json > /tmp/knowledge-tasks-after.json
           diff -u /tmp/knowledge-tasks.json /tmp/knowledge-tasks-after.json
+
+      - name: Capture complete native document bodies with bounded CLI reads
+        run: |
+          set -euo pipefail
+          cd "$FIXTURE"
+          backlog config set remoteOperations false
+          backlog doc update doc-1 --content $'# Run (execution)\n\nAn identifiable execution with stable identity.'
+          find backlog -type f -print0 | sort -z | xargs -0 sha256sum > /tmp/capture-before.txt
+          python3 "$GITHUB_WORKSPACE/skills/software-knowledge/scripts/capture_backlog.py" \
+            --root "$FIXTURE" --project context-smoke --confirm-cli-read \
+            --task TASK-1 --all-docs --max-docs 8 > /tmp/live-corpus.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          corpus = json.loads(Path('/tmp/live-corpus.json').read_bytes())
+          nodes = {n['id']: n for n in corpus['nodes']}
+          atom = nodes['doc:doc-1']
+          assert atom['content_state'] == 'captured', atom
+          assert 'stable identity' in atom['body'], atom
+          assert atom['claim_state'] == 'unknown', atom
+          assert corpus['capture']['captured_documents'] == ['doc-1'], corpus
+          assert any(e['from'] == 'task:TASK-1' and e['to'] == 'doc:doc-1'
+                     for e in corpus['edges']), corpus
+          PY
+          python3 "$GITHUB_WORKSPACE/skills/software-knowledge/scripts/knowledge.py" \
+            --corpus /tmp/live-corpus.json search "stable identity" > /tmp/live-result.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r = json.loads(Path('/tmp/live-result.json').read_bytes())
+          assert r['results'][0]['id'] == 'doc:doc-1', r
+          PY
+          find backlog -type f -print0 | sort -z | xargs -0 sha256sum > /tmp/capture-after.txt
+          diff -u /tmp/capture-before.txt /tmp/capture-after.txt

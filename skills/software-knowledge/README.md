@@ -2,7 +2,7 @@
 
 Skill independiente, Python 3.11+, biblioteca estándar. Inspirada en [Zettelkasten](https://zettelkasten.de/posts/building-a-second-brain-and-zettelkasten/), [NapMem](https://arxiv.org/abs/2607.05794) y [OKF](https://github.com/GoogleCloudPlatform/open-knowledge-format). No implementa entrenamiento RL ni afirma reproducir las métricas del artículo.
 
-El [contrato](references/contract.md) desacopla almacenamiento y navegación. Conserva el v1 de backlog-agile-workflow y permite importar sus snapshots explícitos, además de notas Markdown autónomas. No modifica Backlog, ni ejecuta herramientas externas, ni añade paquetes o servidores.
+El [contrato](references/contract.md) desacopla almacenamiento y navegación. Conserva el v1 de backlog-agile-workflow y permite importar sus snapshots explícitos, además de notas Markdown autónomas. No modifica Backlog ni añade paquetes o servidores. El navegador es puro; la captura nativa opt-in invoca exclusivamente lecturas CLI autorizadas.
 
 Ejecutar pruebas desde este directorio:
 
@@ -53,3 +53,7 @@ Compara BM25, ranking con intención y expansión activa usando las mismas pregu
     python3 scripts/knowledge.py --corpus examples/corpus.json map-candidates
 
 El primer comando compara un corpus v2 de una única nota L1 del mismo proyecto: identidad, afirmación normalizada, ámbito y vecinos léxicos. Solo emite propuestas; el responsable compara evidencias y elige conservar, refinar, enlazar, registrar conflicto o descartar. El segundo descubre contextos etiquetados y átomos aún sin track; no inventa arquitectura ni sintetiza afirmaciones automáticamente. Estas son operaciones de mantenimiento explícitas, no consultas sujetas al presupuesto de navegación.
+
+## Captura de contenido real
+
+Ver [captura nativa](references/backlog-capture.md): captura focalizada por tarea, consulta o documento, y corpus completo activo bajo presupuesto. Reutiliza el JSON derivado localmente con knowledge.py.
