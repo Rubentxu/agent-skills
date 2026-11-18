@@ -105,10 +105,11 @@ def run(args):
     c = load(args)
     if args.command == "architecture-review":
         from architecture import review
-        return review(c, load_json(args.input), limit=args.limit or 20, budget=args.budget_bytes or 12000)
+        return review(c, load_json(args.input), limit=20 if args.limit is None else args.limit,
+                      budget=12000 if args.budget_bytes is None else args.budget_bytes)
     if args.command == "checkpoint":
         from discovery import checkpoint
-        return checkpoint(c, load_json(args.input), budget=args.budget_bytes or 12000)
+        return checkpoint(c, load_json(args.input), budget=12000 if args.budget_bytes is None else args.budget_bytes)
     if args.command == "reconcile":
         return reconcile(c, load_json(args.proposal))
     if args.command == "map-candidates":
@@ -135,7 +136,7 @@ def navigate(args, nav):
     command = args.command
     if command == "context-pack":
         from adaptive import context_pack
-        return context_pack(nav, load_json(args.input), profile=args.profile, budget=budget)
+        return context_pack(nav, load_json(args.input), profile=args.profile, budget=budget, max_results=limit)
     if command == "constitution":
         from discovery import constitution
         return constitution(nav, args.anchor, context=args.context, limit=limit, budget=budget)

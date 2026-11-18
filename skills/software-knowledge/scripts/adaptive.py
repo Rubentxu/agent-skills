@@ -15,11 +15,13 @@ def size(value):
     return len(json.dumps(value, ensure_ascii=False, separators=(",", ":")).encode())
 
 
-def context_pack(nav, request, *, profile="normal", budget=None):
+def context_pack(nav, request, *, profile="normal", budget=None, max_results=None):
     require(request.get("schemaVersion") == 1 and request.get("kind") == "context-pack-input"
             and request.get("project") == nav.corpus["project"], "Context pack project mismatch")
     require(profile in PROFILES, "Unknown pack profile")
     limit, depth, default_budget = PROFILES[profile]
+    limit = limit if max_results is None else max_results
+    require(type(limit) is int and 1 <= limit <= 50, "Invalid pack result limit")
     budget = default_budget if budget is None else budget
     require(1024 <= budget <= 64000, "Invalid context pack byte budget")
     steps = request.get("steps")
@@ -54,6 +56,7 @@ def context_pack(nav, request, *, profile="normal", budget=None):
                     else "sections" if mode == "sections" else "active")
         result["calls"] += 1
         path_map = None
+        new_keys = set()
         if strategy == "sections":
             require(len(anchors)==1, "Section navigation requires one node anchor")
             require(remaining >= 512, "Section budget exhausted")
@@ -74,7 +77,7 @@ def context_pack(nav, request, *, profile="normal", budget=None):
             for n in response["results"]:
                 key = digest([detail, n])
                 if key not in known:
-                    known.add(key)
+                    new_keys.add(key)
                     fresh.append(n)
                 else:
                     response["unchanged"] += 1
@@ -84,6 +87,8 @@ def context_pack(nav, request, *, profile="normal", budget=None):
         if size(result) > budget - 32:
             result["steps"].pop()
             result["omitted_steps"] += 1
+        else:
+            known.update(new_keys)
     if result["omitted_steps"] == 0 and all(s["response"]["status"]=="returned" for s in result["steps"]):
         result["status"] = "returned"
     require(size(result)<=budget, "Pack exceeds aggregate byte budget")

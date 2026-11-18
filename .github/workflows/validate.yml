@@ -57,6 +57,23 @@ jobs:
           export XDG_CACHE_HOME="$RUNNER_TEMP/knowledge-index-cache"
           python3 skills/software-knowledge/scripts/benchmark_index.py --size 1000 --repeat 3
           test -z "$(find skills -name '*.sqlite3' -print -quit)"
+      - name: Exercise architecture, adaptive packs and federation from public examples
+        run: |
+          set -euo pipefail
+          k=skills/software-knowledge
+          python3 "$k/scripts/knowledge.py" --corpus "$k/examples/corpus.json" architecture-review "$k/examples/architecture-review.json" > /tmp/arch-review.json
+          python3 "$k/scripts/knowledge.py" --corpus "$k/examples/corpus.json" context-pack "$k/examples/context-pack.json" > /tmp/arch-pack.json
+          python3 "$k/scripts/federation.py" "$k/examples/federation.json" --source "example-runtime=$k/examples/corpus.json" --project example-runtime --node execution.terminal > /tmp/arch-federation.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('/tmp/arch-review.json').read_bytes())
+          assert r['results'][0]['id']=='execution.terminal' and not r['edit_authorized'],r
+          p=json.loads(Path('/tmp/arch-pack.json').read_bytes())
+          assert p['calls']==3 and len(Path('/tmp/arch-pack.json').read_bytes())<=12000,p
+          f=json.loads(Path('/tmp/arch-federation.json').read_bytes())
+          assert f['results'][0]['links'][0]['status']=='explicit-source-required',f
+          PY
       - name: Run backlog-agile-workflow unit tests
         run: python3 -m unittest discover -s skills/backlog-agile-workflow/tests -p 'test_*.py' -v
       - name: Check backlog-agile-workflow navigation smoke

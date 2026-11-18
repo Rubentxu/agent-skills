@@ -56,7 +56,7 @@ def evaluate(corpus: dict, questions: dict, k: int = 5) -> dict:
                               "response_bytes": len(json.dumps(response, ensure_ascii=False,
                                                                 separators=(",", ":")).encode())}
         pack = context_pack(nav, {"schemaVersion":1, "kind":"context-pack-input", "project":corpus["project"],
-                                  "steps":[{"query":query, "anchors":anchors, "intent":intent}]})
+                                  "steps":[{"query":query, "anchors":anchors, "intent":intent}]}, max_results=k)
         actual = list(dict.fromkeys(n["id"] for step in pack["steps"]
                                    for n in step["response"]["results"]))[:k]
         variants["adaptive"] = {"metrics": metrics(actual, expected, k), "retrieved": actual,
@@ -71,6 +71,8 @@ def evaluate(corpus: dict, questions: dict, k: int = 5) -> dict:
         for name in ("precision_at_k", "recall_at_k", "mrr", "ndcg_at_k", "correct_abstention"):
             numbers = [v["metrics"][name] for v in values if v["metrics"][name] is not None]
             summary[name] = sum(numbers) / len(numbers) if numbers else None
+        if variant == "adaptive":
+            summary["mean_local_calls"] = sum(v["calls"] for v in values) / len(values)
         summary["mean_response_bytes"] = sum(v["response_bytes"] for v in values) / len(values)
         aggregate[variant] = summary
     return {"status": "evaluated", "project": corpus["project"], "k": k,

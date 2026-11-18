@@ -206,14 +206,33 @@ def review(corpus, data, *, limit=20, budget=12000):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("corpus", type=Path)
-    p.add_argument("input", type=Path)
-    p.add_argument("--limit", type=int, default=20)
-    p.add_argument("--budget-bytes", type=int, default=12000)
+    sub = p.add_subparsers(dest="command", required=True)
+    rp = sub.add_parser("review")
+    rp.add_argument("corpus", type=Path)
+    rp.add_argument("input", type=Path)
+    rp.add_argument("--limit", type=int, default=20)
+    rp.add_argument("--budget-bytes", type=int, default=12000)
+    cp = sub.add_parser("capsule-ref")
+    cp.add_argument("input", type=Path)
+    cp.add_argument("--project", required=True)
+    cp.add_argument("--locator", required=True)
+    cp.add_argument("--path", action="append", default=[])
+    gp = sub.add_parser("groma-refs")
+    gp.add_argument("input", type=Path)
+    gp.add_argument("--project", required=True)
+    gp.add_argument("--scope", required=True)
     a = p.parse_args()
     try:
-        print(json.dumps(review(load_json(a.corpus), load_json(a.input), limit=a.limit, budget=a.budget_bytes),
-                         ensure_ascii=False, separators=(",", ":")))
+        if a.command == "review":
+            result = review(load_json(a.corpus), load_json(a.input), limit=a.limit, budget=a.budget_bytes)
+        else:
+            require(identifier(a.project), "Explicit valid project required")
+            data = load_json(a.input)
+            if a.command == "capsule-ref":
+                result = capsule_reference(data, a.locator, a.project, a.path)
+            else:
+                result = {"project": a.project, "observations": groma_references(data, a.project, a.scope)}
+        print(json.dumps(result, ensure_ascii=False, separators=(",", ":")))
     except (ValueError, TypeError, KeyError, OSError) as exc:
         print(json.dumps({"status":"invalid-input", "error":str(exc)}), file=sys.stderr)
         return 2

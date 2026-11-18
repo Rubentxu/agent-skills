@@ -29,6 +29,14 @@ Si Backlog.md está instalado y la lectura de su proyecto y configuración está
 
 Cuando haya consultas repetidas sobre el mismo corpus o raíz Markdown, usa [índice externo](references/index-cache.md): opt-in mediante --cache y --project explícito, fuera de Git. No persistir por defecto ni sincronizar a remoto. Para notas largas usa sections y section, no copies el cuerpo entero. Los fingerprints de secciones no certifican vigencia ni aprobación; comprueba las fuentes cuando importe. Si faltan cuerpos, sigue capture-doc solo con lectura autorizada y refresca el snapshot bajo presupuesto. El índice no hidrata fuentes por sí solo.
 
+## Evidencia, descubrimiento y contexto especializado
+
+Usa [flujo arquitectónico](references/architecture-discovery.md) para revisión selectiva por rutas cambiadas, referencias CogniCode/Groma, constitution y checkpoint. Sigue siempre el contrato de la skill proveedora: ninguna evidencia derivada verifica código vivo y CogniCode-only no admite fallback de lectura. Las propuestas no escriben ni cambian autoridad. En seguridad/verificación prioriza fuentes y contradicciones.
+
+Usa context-pack para varias preguntas relacionadas con presupuesto total de llamadas y bytes; selecciona orientación para visión global, evidencia para verificar y secciones para notas largas. El límite aplica a una invocación; el host sigue controlando sesiones y herramientas externas. [Contrato](references/architecture-discovery.md).
+
+Para consultar otros proyectos, usa [federación explícita](references/federation.md); no buscar globalmente ni importar notas externas por defecto.
+
 ## Aprendizaje incremental
 
 - En checkpoints naturales, recupera una afirmación existente y sus fuentes antes de proponer STORE, REFINE, LINK, CONFLICT, SUPERSEDE o SKIP. Busca valor durable, no cantidad de notas.

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "kind": "architecture-review-input",
+  "project": "example-runtime",
+  "intent": "verify",
+  "revision": "synthetic-revision",
+  "anchors": [
+    "execution.terminal"
+  ],
+  "changedPaths": [],
+  "observations": []
+}

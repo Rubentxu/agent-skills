@@ -61,3 +61,7 @@ Ver [captura nativa](references/backlog-capture.md): captura focalizada por tare
 ## Índice externo y secciones
 
 El índice opcional SQLite/FTS5 vive exclusivamente en la caché del usuario, fuera de Git. Ver [contrato operativo](references/index-cache.md) para uso, privacidad, rutas, recuperación de secciones y benchmark reproducible. Sin --cache, el navegador permanece sin persistencia.
+
+## Conocimiento arquitectónico acumulativo
+
+[Revisión arquitectónica, descubrimiento y context packs](references/architecture-discovery.md): referencias externas a evidencia, impacto candidato, constitución contextual y aprendizaje negativo bajo presupuesto. [Federación](references/federation.md): referencias calificadas entre snapshots sin compartir autoridades.

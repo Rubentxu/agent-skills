@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "kind": "context-pack-input",
+  "project": "example-runtime",
+  "maxCalls": 4,
+  "steps": [
+    {
+      "intent": "understand"
+    },
+    {
+      "intent": "verify",
+      "anchors": [
+        "execution.terminal"
+      ]
+    },
+    {
+      "query": "terminal",
+      "mode": "sections",
+      "anchors": [
+        "execution.terminal"
+      ]
+    }
+  ]
+}
