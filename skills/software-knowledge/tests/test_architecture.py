@@ -64,3 +64,15 @@ class ReviewTests(unittest.TestCase):
                               "confirmedElementIds":["runtime"],"changedFiles":["src/run.kt"]},"demo","work")
         self.assertEqual(g[0]["paths"],[])
         self.assertEqual(g[0]["plane"],"curated")
+
+
+    def test_pinned_source_change_is_review_even_at_same_revision(self):
+        self.corpus["nodes"][0]["sources"][0]["digest"]="a"*64
+        self.request["revision"]="old"
+        self.request["changedPaths"]=[]
+        self.request["observations"][0]["digest"]="b"*64
+        r=review(self.corpus,self.request)
+        reason=r["results"][0]["reasons"][0]
+        self.assertTrue(reason["source_pin_mismatch"])
+        self.assertEqual(reason["digest"],"b"*64)
+        self.assertEqual(reason["plane"],"static")

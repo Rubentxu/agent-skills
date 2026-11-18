@@ -120,6 +120,7 @@ def review(corpus, data, *, limit=20, budget=12000):
     nav = Navigator(corpus)
     refs = observations(data, corpus["project"])
     bindings = defaultdict(set)
+    pin_mismatches = set()
     known_locations = defaultdict(set)
     reasons = defaultdict(list)
     for i,n in nav.nodes.items():
@@ -129,6 +130,8 @@ def review(corpus, data, *, limit=20, budget=12000):
                 k = (s["provider"], s["locator"])
                 if k in refs:
                     bindings[k].add(i)
+                    if any(s.get(field) and s.get(field) != refs[k].get(field) for field in ("digest", "revision")):
+                        pin_mismatches.add((i, k))
                 if s["provider"] == "git" and s["locator"] in changed:
                     known_locations[i].add(s["locator"])
         for f in n.get("native_fields", {}).get("modifiedFiles", []) or []:
@@ -151,10 +154,11 @@ def review(corpus, data, *, limit=20, budget=12000):
         ref["freshness"] = freshness
         affected = sorted(changed & set(ref["paths"]))
         for i in sorted(bindings[k]):
-            if affected or freshness != "same-declared-revision-not-live-verified":
+            if affected or (i, k) in pin_mismatches or freshness != "same-declared-revision-not-live-verified":
                 reasons[i].append({"reason": "external-evidence-review", "provider": k[0],
-                                   "locator": k[1], "paths": affected, "freshness": freshness})
-    findings = []
+                                   "locator": k[1], "paths": affected, "freshness": freshness,
+                                   "plane": ref["plane"], "coverage": ref["coverage"], "revision": ref["revision"],
+                                   "digest": ref.get("digest"), "source_pin_mismatch": (i,k) in pin_mismatches})
     for f in array(data.get("findings", []), "findings"):
         require(isinstance(f, dict) and f.get("node") in nav.nodes, "Unknown finding node")
         k = source_ref(f.get("provider"), f.get("locator"))
@@ -164,7 +168,6 @@ def review(corpus, data, *, limit=20, budget=12000):
         reason = text(f.get("reason"), "finding reason", 600)
         item = {"reason": f["kind"], "provider": k[0], "locator": k[1], "detail": reason}
         reasons[f["node"]].append(item)
-        findings.append({"node": f["node"], **item})
     anchors = array(data.get("anchors", []), "anchors")
     require(all(isinstance(i, str) and i in nav.nodes for i in anchors), "Unknown review anchor")
     for i in anchors:

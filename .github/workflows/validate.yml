@@ -74,6 +74,50 @@ jobs:
           f=json.loads(Path('/tmp/arch-federation.json').read_bytes())
           assert f['results'][0]['links'][0]['status']=='explicit-source-required',f
           PY
+      - name: Compare retrieval against selected real skill documentation
+        run: |
+          set -euo pipefail
+          k=skills/software-knowledge
+          python3 "$k/scripts/evaluate_docs.py" --root "$GITHUB_WORKSPACE" "$k/examples/documentation-evaluation.json" > /tmp/knowledge-real-doc-eval.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('/tmp/knowledge-real-doc-eval.json').read_bytes())
+          assert r['questions']==8 and r['dataset']['documents']==8,r
+          assert r['aggregate']['adaptive']['correct_abstention']==1,r
+          for name, stats in r['aggregate'].items():
+              print(name,json.dumps(stats,sort_keys=True))
+          PY
+      - name: Verify existing provider handoff contracts without cross-skill imports
+        run: |
+          set -euo pipefail
+          k=skills/software-knowledge
+          # Use the real M5 producer on its own existing synthetic ledger fixture, in a separate process.
+          python3 - <<'PY'
+          import sys
+          from pathlib import Path
+          sys.path.insert(0,str(Path('skills/cognicode-diagrams/tests').resolve()))
+          from test_report_thinking import ReportThinkingTests, capsule
+          fixture=ReportThinkingTests()
+          fixture.setUp()
+          try:
+              result=capsule.build(fixture.repo,'App::Store','Review persistence',home=fixture.home)
+              Path('/tmp/provider-capsule.json').write_bytes(Path(result['json']).read_bytes())
+          finally:
+              fixture.tearDown()
+          PY
+          python3 "$k/scripts/architecture.py" capsule-ref /tmp/provider-capsule.json --project demo --locator handoff-7 > /tmp/provider-ref.json
+          python3 "$k/scripts/architecture.py" groma-refs skills/backlog-agile-workflow/examples/groma-task-links.json --project demo --scope execution > /tmp/groma-refs.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('/tmp/provider-ref.json').read_bytes())
+          assert r['external_ids']['symbol']=='App::Store',r
+          assert 'R1' in r['external_ids']['claims'] and 'Q1' in r['external_ids']['queries'],r
+          assert 'observed_relations' not in r,r
+          g=json.loads(Path('/tmp/groma-refs.json').read_bytes())
+          assert g['observations'][0]['locator']=='http-adapter' and not g['observations'][0]['paths'],g
+          PY
       - name: Run backlog-agile-workflow unit tests
         run: python3 -m unittest discover -s skills/backlog-agile-workflow/tests -p 'test_*.py' -v
       - name: Check backlog-agile-workflow navigation smoke

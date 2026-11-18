@@ -1,0 +1,179 @@
+{
+  "schemaVersion": 1,
+  "kind": "documentation-evaluation",
+  "project": "agent-skills-documentation",
+  "documents": [
+    {
+      "id": "cache",
+      "kind": "contract",
+      "title": "External cache index",
+      "summary": "Privacy, indexing and retrieval constraints",
+      "path": "skills/software-knowledge/references/index-cache.md",
+      "contexts": [
+        "index"
+      ]
+    },
+    {
+      "id": "capture",
+      "kind": "contract",
+      "title": "Native Backlog capture",
+      "summary": "Read-only CLI capture of native knowledge",
+      "path": "skills/software-knowledge/references/backlog-capture.md",
+      "contexts": [
+        "providers"
+      ]
+    },
+    {
+      "id": "corpus",
+      "kind": "contract",
+      "title": "Knowledge corpus v2",
+      "summary": "Identity, sources, evidence, claims and semantic relationships",
+      "path": "skills/software-knowledge/references/contract.md",
+      "contexts": [
+        "model"
+      ]
+    },
+    {
+      "id": "architecture",
+      "kind": "contract",
+      "title": "Architecture discovery",
+      "summary": "Impact review, learning and context packs",
+      "path": "skills/software-knowledge/references/architecture-discovery.md",
+      "contexts": [
+        "architecture"
+      ]
+    },
+    {
+      "id": "navigation",
+      "kind": "convention",
+      "title": "Active navigation",
+      "summary": "Retrieval and budget policy",
+      "path": "skills/software-knowledge/references/navigation.md",
+      "contexts": [
+        "retrieval"
+      ]
+    },
+    {
+      "id": "federation",
+      "kind": "contract",
+      "title": "Explicit federation",
+      "summary": "Cross-project references and identity",
+      "path": "skills/software-knowledge/references/federation.md",
+      "contexts": [
+        "federation"
+      ]
+    },
+    {
+      "id": "capsule",
+      "kind": "contract",
+      "title": "CogniCode context capsules",
+      "summary": "Authoritative provider handoff and receiver policy",
+      "path": "skills/cognicode-diagrams/references/context-capsules.md",
+      "contexts": [
+        "providers"
+      ]
+    },
+    {
+      "id": "groma",
+      "kind": "contract",
+      "title": "Groma integration",
+      "summary": "Ownership references and work-source boundaries",
+      "path": "skills/backlog-agile-workflow/references/groma-integration.md",
+      "contexts": [
+        "providers"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from": "architecture",
+      "predicate": "requires",
+      "to": "capsule"
+    },
+    {
+      "from": "architecture",
+      "predicate": "requires",
+      "to": "corpus"
+    },
+    {
+      "from": "cache",
+      "predicate": "implements",
+      "to": "navigation"
+    },
+    {
+      "from": "capture",
+      "predicate": "implements",
+      "to": "corpus"
+    },
+    {
+      "from": "federation",
+      "predicate": "requires",
+      "to": "corpus"
+    }
+  ],
+  "questions": [
+    {
+      "id": "cache-privacy",
+      "query": "XDG_CACHE_HOME SQLite fuera checkout",
+      "relevant": [
+        "cache"
+      ],
+      "intent": "security"
+    },
+    {
+      "id": "native-content",
+      "query": "remoteOperations filesystemOnly doc view --plain",
+      "relevant": [
+        "capture"
+      ],
+      "intent": "verify"
+    },
+    {
+      "id": "handoff",
+      "query": "LEDGER_MATCHES_RUNTIME_UNVERIFIED PAUSED_NO_FALLBACK",
+      "relevant": [
+        "capsule"
+      ],
+      "intent": "verify"
+    },
+    {
+      "id": "negative-learning",
+      "query": "learning attempted outcome applicability",
+      "relevant": [
+        "architecture"
+      ],
+      "intent": "implement"
+    },
+    {
+      "id": "cross-project",
+      "query": "explicit-source-required --follow",
+      "relevant": [
+        "federation"
+      ],
+      "intent": "architecture"
+    },
+    {
+      "id": "groma-ownership",
+      "query": "work source Groma ownership modifiedFiles",
+      "relevant": [
+        "groma"
+      ],
+      "intent": "understand"
+    },
+    {
+      "id": "truth",
+      "query": "verified claim_state source cobertura",
+      "relevant": [
+        "corpus",
+        "architecture"
+      ],
+      "intent": "verify"
+    },
+    {
+      "id": "abstain",
+      "query": "zebrasharkunrelated",
+      "relevant": [],
+      "intent": "debug"
+    }
+  ]
+}
