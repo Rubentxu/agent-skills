@@ -221,14 +221,19 @@ def resolver_assets(run_dir: Path) -> Path:
     )
 
 
-def resolver_pipeline(run_dir: Path) -> Path:
-    """La pipeline: junto al runtime, o en sus assets."""
-    for candidato in (run_dir / "pipeline.agent.kts", run_dir / "assets/pipeline.agent.kts",
+def resolver_pipeline(run_dir: Path, home_repo: Path) -> Path:
+    """La pipeline: la del proyecto si la tiene, y si no la del runtime.
+
+    El proyecto manda: su pipeline es la suya (puede estar ajustada a su tablero). La del
+    runtime es el plan por defecto.
+    """
+    for candidato in (home_repo / "pipeline.agent.kts", run_dir / "pipeline.agent.kts",
+                      run_dir / "assets/pipeline.agent.kts",
                       ASSETS_DEL_SKILL / "pipeline.agent.kts"):
         if candidato.is_file():
             return candidato
     raise ErrorDeConfig(
-        f"no encuentro pipeline.agent.kts (ni en {run_dir} ni en {run_dir}/assets "
+        f"no encuentro pipeline.agent.kts (ni en {home_repo} ni en {run_dir} "
         f"ni en {ASSETS_DEL_SKILL})"
     )
 
@@ -305,7 +310,7 @@ def init_runtime() -> Runtime:
         board_dir=tablero,
         runtime_dir=runtime_dir,
         assets=resolver_assets(run_dir),
-        pipeline_file=resolver_pipeline(run_dir),
+        pipeline_file=resolver_pipeline(run_dir, home_repo),
         state=estado,
         config_file=fichero,
         profile=os.environ.get("AGENT_PROFILE", DEFECTOS["AGENT_PROFILE"]).strip(),

@@ -48,15 +48,15 @@ def main() -> int:
             print("uso: agent_run.py [--resume|--rerun]", file=sys.stderr)
             return 1
 
-    # El workspace de la pipeline es el directorio del run: ahi es donde estan los scripts que
-    # invoca cada etapa (`./scripts/...`), y donde se archivan los artefactos. El workspace
-    # agéntico —donde corre la sesion— es otro sitio, y lo dice la configuracion.
+    # El workspace de la pipeline es el PROYECTO (el home repo): ahi es donde se archivan los
+    # artefactos y donde vive el tablero. El runtime puede estar en otro sitio —la skill
+    # instalada— y entonces los scripts se invocan por la ruta que dice `AGENT_RUNTIME`.
     orden = [
         "pipelinek",
         "run",
         *extra,
         "--workspace",
-        str(rt.run_dir),
+        str(rt.home_repo),
         "--db",
         str(rt.state / "run.sqlite"),
         "--control-root",

@@ -13,8 +13,8 @@ de la sesión y las pruebas que lo cubren.
 | Sitio | Qué es |
 |---|---|
 | **workspace agéntico** | el directorio desde el que el agente ve sus repos: el propio proyecto, o el padre de varios |
-| **home repo** | el repo del proyecto: el que lleva el tablero (`backlog/`) |
-| **directorio del run** | donde vive el runtime: el cwd de las etapas y donde se archivan los artefactos |
+| **home repo** | el repo del proyecto: el que lleva el tablero (`backlog/`); aquí corre la pipeline |
+| **runtime** | donde viven los scripts (`agent_*.py`): la skill instalada o el propio proyecto |
 
 En el **patrón home repo** los tres no coinciden: el workspace agéntico es el directorio
 padre, el home repo es uno de sus hijos, y el runtime puede vivir en el home repo o en la
@@ -23,14 +23,18 @@ skill instalada.
 ## Uso mínimo
 
 ```bash
+# el runtime en el proyecto
 cp -r <skill>/scripts <proyecto>/scripts
 cp -r <skill>/assets  <proyecto>/assets
 cp <skill>/assets/pipeline.agent.kts <proyecto>/pipeline.agent.kts
+
+# el runtime en la skill instalada: el proyecto solo lleva la configuracion
 cp <skill>/assets/agent-loop.env <proyecto>/agent-loop.env   # rellenalo una vez
-python3 <proyecto>/scripts/agent_run.py
+
+python3 <proyecto>/scripts/agent_run.py     # o <skill>/scripts/agent_run.py
 ```
 
-Requiere `pipelinek`, la CLI de `backlog`, `gh` autenticado y un perfil de Claude Code.
+Requiere `pipelinek`, la CLI de `backlog`, `gh` autenticado y un perfil de sesión del host.
 
 Instalación selectiva desde la colección pública:
 
