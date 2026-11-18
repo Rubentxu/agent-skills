@@ -15,4 +15,10 @@ description: "Recupera, relaciona y destila conocimiento de software con navegac
 4. Separa estado de una afirmación, estado de una tarea, procedencia y autoridad humana. No eleves un hallazgo o resumen a norma obligatoria.
 5. Conserva únicamente conocimiento reusable: busca antes de crear, refina, enlaza, contrasta con evidencia. No convertir cada evento o ticket en una nota.
 
+## Navegación activa
+
+- Consulta [política de navegación](references/navigation.md). Para trabajo concreto, empieza por referencias directas, no por todo el ADN. Usa nivel y detalle mínimos; sigue _links solo si resuelve una incertidumbre.
+- Ejecuta el navegador local con corpus/raíz explícitos; devuelve JSON acotado. Reutiliza fingerprints ya leídos dentro de la misma sesión/proyecto. Si hay contradicción, verifica fuentes; si no hay resultado, devuelve UNKNOWN o recupera evidencia adicional.
+- Presupuesto normal: cuatro consultas, cinco resultados, dos saltos. El host controla llamadas acumuladas. Sin suficientes evidencias, declara limitación y no bloquees trabajo técnicamente independiente.
+
 Consulta [README](README.md) para uso y límites.

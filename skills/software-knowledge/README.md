@@ -8,3 +8,17 @@ Ejecutar pruebas desde este directorio:
 
     python3 -m unittest discover -s tests -p 'test_*.py' -v
 
+
+## Navegación local
+
+Desde la carpeta de la skill (opciones globales antes del subcomando):
+
+    python3 scripts/knowledge.py --corpus examples/corpus.json overview
+    python3 scripts/knowledge.py --corpus examples/corpus.json tracks
+    python3 scripts/knowledge.py --corpus examples/corpus.json search "estado terminal"
+    python3 scripts/knowledge.py --corpus examples/corpus.json context --anchor execution.terminal
+    python3 scripts/knowledge.py --corpus examples/corpus.json --detail full get execution.terminal
+    python3 scripts/knowledge.py --corpus examples/corpus.json trace execution.terminal
+    python3 scripts/knowledge.py --corpus examples/corpus.json zoom-in execution
+
+Usar --markdown ROOT --project ID para notas autónomas; --corpus V1 --project ID --backlog TASKS_JSON para importar registros observados. El comando snapshot emite todo el corpus explícitamente; el resto de consultas está acotado. Ver [política](references/navigation.md).
