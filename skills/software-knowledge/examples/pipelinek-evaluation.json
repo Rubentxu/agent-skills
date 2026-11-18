@@ -1,0 +1,175 @@
+{
+  "schemaVersion": 1,
+  "kind": "documentation-evaluation",
+  "project": "pipelinek-docs",
+  "repository": "Rubentxu/pipeline-kotlin",
+  "revision": "245ee0c635d1d92487a29f44d41d4d49b63e448a",
+  "documents": [
+    {
+      "id": "replay",
+      "kind": "contract",
+      "title": "Durable Replay",
+      "summary": "Durable replay scenario",
+      "path": "examples/catalogue/features/durable/durable-replay/README.md",
+      "contexts": [
+        "durability"
+      ]
+    },
+    {
+      "id": "recover",
+      "kind": "contract",
+      "title": "Recovery refusal",
+      "summary": "Incomplete run recovery scenario",
+      "path": "examples/catalogue/features/durable/recover-refuses-a-half-finished-run/README.md",
+      "contexts": [
+        "durability"
+      ]
+    },
+    {
+      "id": "saga",
+      "kind": "contract",
+      "title": "Saga compensation crash",
+      "summary": "Compensation crash scenario",
+      "path": "examples/catalogue/features/durable/saga-crash-compensation/README.md",
+      "contexts": [
+        "durability"
+      ]
+    },
+    {
+      "id": "reader",
+      "kind": "contract",
+      "title": "External reader resumes",
+      "summary": "Event reader continuation scenario",
+      "path": "examples/catalogue/features/events/external-reader-resumes/README.md",
+      "contexts": [
+        "events"
+      ]
+    },
+    {
+      "id": "observer",
+      "kind": "contract",
+      "title": "Observer isolation",
+      "summary": "Producer and observer scenario",
+      "path": "examples/catalogue/features/events/observer-death-does-not-kill-the-producer/README.md",
+      "contexts": [
+        "events"
+      ]
+    },
+    {
+      "id": "workspace",
+      "kind": "contract",
+      "title": "Workspace symlink escape",
+      "summary": "Workspace guard scenario",
+      "path": "examples/catalogue/features/negative/workspace-symlink-escape/README.md",
+      "contexts": [
+        "security"
+      ]
+    },
+    {
+      "id": "credentials",
+      "kind": "contract",
+      "title": "Credential store tampered",
+      "summary": "Credential integrity scenario",
+      "path": "examples/catalogue/features/negative/credential-store-tampered/README.md",
+      "contexts": [
+        "security"
+      ]
+    },
+    {
+      "id": "streams",
+      "kind": "contract",
+      "title": "Read-only verb streams",
+      "summary": "Process output contract scenario",
+      "path": "examples/catalogue/features/output/read-only-verb-streams/README.md",
+      "contexts": [
+        "protocol"
+      ]
+    }
+  ],
+  "edges": [],
+  "questions": [
+    {
+      "id": "once",
+      "query": "How is an external side effect asserted to happen once after replay?",
+      "relevant": [
+        "replay"
+      ],
+      "intent": "verify"
+    },
+    {
+      "id": "incomplete",
+      "query": "Which case refuses recovery rather than returning an unfinished run?",
+      "relevant": [
+        "recover"
+      ],
+      "intent": "debug"
+    },
+    {
+      "id": "uncertain",
+      "query": "What expected failure identifies compensation whose answer was lost?",
+      "relevant": [
+        "saga"
+      ],
+      "intent": "verify"
+    },
+    {
+      "id": "cursor",
+      "query": "What scenario resumes an event consumer over parallel branches?",
+      "relevant": [
+        "reader"
+      ],
+      "intent": "architecture"
+    },
+    {
+      "id": "observer",
+      "query": "Where does the producer survive the observer process dying?",
+      "relevant": [
+        "observer"
+      ],
+      "intent": "verify"
+    },
+    {
+      "id": "escape",
+      "query": "Which refusal distinguishes normalized paths from paths through a link outside the root?",
+      "relevant": [
+        "workspace"
+      ],
+      "intent": "security"
+    },
+    {
+      "id": "integrity",
+      "query": "Which response distinguishes a corrupt secret store from the wrong key?",
+      "relevant": [
+        "credentials"
+      ],
+      "intent": "security"
+    },
+    {
+      "id": "streams",
+      "query": "How are capability refusals separated from successful read-only answers at process boundary?",
+      "relevant": [
+        "streams"
+      ],
+      "intent": "verify"
+    },
+    {
+      "id": "related",
+      "query": "Compare replay and recovery refusal",
+      "relevant": [
+        "replay",
+        "recover"
+      ],
+      "intent": "verify",
+      "anchors": [
+        "replay",
+        "recover"
+      ]
+    },
+    {
+      "id": "unobserved",
+      "query": "zebrasharkunrelated",
+      "relevant": [],
+      "intent": "debug"
+    }
+  ]
+}

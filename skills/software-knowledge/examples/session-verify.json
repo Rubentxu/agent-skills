@@ -1,0 +1,13 @@
+{
+  "intent": "verify",
+  "project": "example-runtime",
+  "basis": "observed",
+  "corpus": "ready",
+  "source": "snapshot",
+  "anchors": [
+    "execution.terminal"
+  ],
+  "available_skills": [
+    "cognicode-diagrams"
+  ]
+}

@@ -121,6 +121,38 @@ jobs:
           g=json.loads(Path('/tmp/groma-refs.json').read_bytes())
           assert g['observations'][0]['locator']=='http-adapter' and not g['observations'][0]['paths'],g
           PY
+      - name: Validate paired agent evaluation contract without claiming agent runs
+        run: |
+          set -euo pipefail
+          k=skills/software-knowledge
+          python3 "$k/scripts/evaluate_trials.py" "$k/examples/agent-trial-plan.json" > /tmp/agent-eval-empty.json
+          python3 "$k/scripts/evaluate_trials.py" "$k/examples/agent-trial-plan.json" /tmp/agent-eval-empty.json > /tmp/agent-eval-report.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('/tmp/agent-eval-report.json').read_bytes())
+          assert r['planned_cases']==4 and r['observed_runs']==0 and r['status']=='not-evaluated',r
+          assert r['aggregate']['input_tokens']['median_delta'] is None,r
+          PY
+      - name: Verify software knowledge HATEOAS first entrypoint
+        run: |
+          set -euo pipefail
+          k=skills/software-knowledge
+          python3 "$k/scripts/affordances.py" "$k/examples/session-verify.json" > /tmp/knowledge-route.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('/tmp/knowledge-route.json').read_bytes())
+          assert r['decision']=='READY' and len(r['lenses'])<=2,r
+          assert any(l.get('operation',{}).get('command')=='context' for l in r['_links']),r
+          PY
+          python3 "$k/scripts/knowledge.py" --corpus "$k/examples/corpus.json" --detail evidence context --anchor execution.terminal --intent verify > /tmp/routed-knowledge.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('/tmp/routed-knowledge.json').read_bytes())
+          assert r['results'][0]['id']=='execution.terminal' and 'sources' in r['results'][0],r
+          PY
       - name: Run backlog-agile-workflow unit tests
         run: python3 -m unittest discover -s skills/backlog-agile-workflow/tests -p 'test_*.py' -v
       - name: Check backlog-agile-workflow navigation smoke
