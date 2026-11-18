@@ -2,6 +2,8 @@
 
 ## Fuente de verdad
 
+Si existe Backlog en un Home Repo privado, reutilizarlo como fuente única para todos los repos asociados. La CLI/MCP se ejecuta desde el Home Repo, incluso cuando se trabaja en el código de otro checkout. No duplicar documentos ni crear tracking o conocimiento paralelo. Si software-knowledge está confirmado, delegar su Knowledge Home; sin él seleccionar explícitamente raíz privada y conservar solo referencias. Las proyecciones temporales y caché se mantienen fuera de Git del producto.
+
 La CLI/MCP de Backlog.md es la autoridad para tareas, documentos y decisiones. Los glosarios por bounded context son documentos Backlog en glossary/<context>, con etiquetas kind:term, ctx:<context> y term:<context.concept>. Groma es autoridad opcional sobre componentes observados. El grafo semántico y el bundle OKF son **proyecciones**, no nuevas bases de datos.
 
 La versión actual de la CLI admite solo readme, guide, specification y other como tipos de documento. Los tipos lógicos research, invariant, risk, algorithm o term se expresan como etiquetas kind:*. Un adaptador autorizado normaliza lecturas de CLI en un JSON temporal; no se manipula directamente el frontmatter de los documentos de Backlog.

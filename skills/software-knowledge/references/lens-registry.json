@@ -2,6 +2,15 @@
   "schema_version": 1,
   "lenses": [
     {
+      "id": "knowledge-home",
+      "status": "ready",
+      "intents": [
+        "initialize-home",
+        "locate-home"
+      ],
+      "playbook": "references/knowledge-home.md"
+    },
+    {
       "id": "discovery",
       "status": "ready",
       "intents": [
