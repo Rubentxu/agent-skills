@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "kind": "paired-agent-evaluation",
+  "cases": [
+    {
+      "id": "pk-durable",
+      "project": "pipelinek-docs",
+      "revision": "245ee0c635d1d92487a29f44d41d4d49b63e448a",
+      "prompt": "Explain what the selected durable replay, recovery refusal and compensation crash examples actually specify. Propose a minimal test plan for a changed recovery contract; distinguish documented expectations from runtime evidence.",
+      "access_policy": "same-selected-public-documents-read-only-no-project-execution",
+      "checks": [
+        {
+          "id": "replay",
+          "description": "Identifies the replay example and expected effects=1",
+          "required": true
+        },
+        {
+          "id": "refusal",
+          "description": "Identifies recovery refusal and avoids claiming successful recovery",
+          "required": true
+        },
+        {
+          "id": "uncertainty",
+          "description": "Distinguishes compensation uncertainty from automatic retry",
+          "required": true
+        },
+        {
+          "id": "evidence",
+          "description": "Separates documented expectations from actual execution",
+          "required": true
+        }
+      ]
+    },
+    {
+      "id": "pk-security",
+      "project": "pipelinek-docs",
+      "revision": "245ee0c635d1d92487a29f44d41d4d49b63e448a",
+      "prompt": "Review the documented workspace escape and tampered credential store scenarios. Identify refusal contracts and propose an evidence-based verification plan without executing project code.",
+      "access_policy": "same-selected-public-documents-read-only-no-project-execution",
+      "checks": [
+        {
+          "id": "escape",
+          "description": "Identifies symlink escape and expected refusal",
+          "required": true
+        },
+        {
+          "id": "tamper",
+          "description": "Identifies store-tampered exit and diagnostic",
+          "required": true
+        },
+        {
+          "id": "scope",
+          "description": "Does not promote documentation to successful runtime test",
+          "required": true
+        }
+      ]
+    },
+    {
+      "id": "cc-write",
+      "project": "cognicode-docs",
+      "revision": "26a92f78ff5c1c2780b5b945cb85615e82e4ef39",
+      "prompt": "Explain the documented progression of file-operation safeguards across the ADRs. Identify what evidence would be needed before concluding a current implementation is correct.",
+      "access_policy": "same-selected-public-documents-read-only-no-project-execution",
+      "checks": [
+        {
+          "id": "effects",
+          "description": "Distinguishes path validation ordering and size-before-effects",
+          "required": true
+        },
+        {
+          "id": "edits",
+          "description": "Identifies simultaneous edits over original content",
+          "required": true
+        },
+        {
+          "id": "atomic",
+          "description": "Distinguishes atomic rename and durability or version precondition",
+          "required": true
+        },
+        {
+          "id": "scope",
+          "description": "Does not claim current code was inspected",
+          "required": true
+        }
+      ]
+    },
+    {
+      "id": "cc-snapshot",
+      "project": "cognicode-docs",
+      "revision": "26a92f78ff5c1c2780b5b945cb85615e82e4ef39",
+      "prompt": "Explain why a persisted graph snapshot needs producer identity and how offline toolchain guard behavior differs from graph freshness. Outline validation without claiming execution.",
+      "access_policy": "same-selected-public-documents-read-only-no-project-execution",
+      "checks": [
+        {
+          "id": "identity",
+          "description": "Distinguishes producer version or capabilities from source manifest",
+          "required": true
+        },
+        {
+          "id": "guard",
+          "description": "Explains isolated HOME and accidental network installation",
+          "required": true
+        },
+        {
+          "id": "scope",
+          "description": "Does not claim documentation verifies live behavior",
+          "required": true
+        }
+      ]
+    }
+  ]
+}
