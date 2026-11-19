@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "kind": "delegated-loop-state",
+  "phase": "ready",
+  "availableSkills": [
+    "backlog-agile-workflow",
+    "software-knowledge",
+    "goldfish-review"
+  ],
+  "capabilities": {
+    "fresh": true,
+    "background": true,
+    "notify": true
+  },
+  "budgetRemaining": 3,
+  "taskId": "EXAMPLE-1",
+  "signal": "normal",
+  "ownership": "clear",
+  "evidence": "unknown",
+  "review": "none",
+  "outcome": "unknown"
+}
