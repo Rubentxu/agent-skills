@@ -1,0 +1,9 @@
+# Resource Adoption
+
+Tarea = propietario lógico; intento = gestor temporal. La autoridad efectiva siempre es el host. Antes de replacement, observar handle nativo, operaciones dependientes, worktrees, procesos/servicios y resultados. Para un proceso local usar PID + identidad de arranque y máquina/boot; para Kubernetes UID+cluster+namespace; contenedor ID; workflow run ID; no buscar por coincidencia de nombre. No exigir PID a una operación interna/remota.
+
+Registrar inventario del envelope v2 afuera de Git, sin secretos. UNKNOWN impide transferir efectos que colisionan, no impide trabajo independiente. RUNNING: adoptar por operationKey, identidad y resultado esperado; observe-only por defecto. COMPLETED: recuperar recibo original; FAILED: evaluar hipótesis y reintento explícito, no duplicar efecto. Si la identidad cambió, tratar UNKNOWN hasta reconciliar. Revalidar timestamp al usar, no inferir vida por antigüedad. Si no puede observar, explicitar.
+
+Conservar reservation mark-pending cuando el worker espera background work. Si se terminó el handle pero el recurso sigue vivo, la reserva continúa. observe-stop registra parada del agente únicamente; observe-resources registra inventario distinto. replace con adoptionRef hereda operaciones, no crea un segundo escritor incompatible. El receptor debe evitar cualquier acción paralela con los efectos de esa ejecución hasta que termine o se coordine de forma comprobada. release únicamente inventario clear. Un handle fantasma confirmado se limpia con operación nativa autorizada; nunca matar un PID no atribuido ni inferir terminación por falta de transcript.
+
+No hay daemon, sondeo continuo ni nuevo scheduler. Reconciliar al recuperar, al llegar una señal o en checkpoint acotado. Si se usa herramienta de espera nativa, reutilizarla; no iniciar otra espera competidora.

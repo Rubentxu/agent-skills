@@ -20,3 +20,5 @@ El resultado devuelve decision, hasta dos lenses y _links con operaciones simbó
 La señal se puede obtener del [reductor de eventos](event-supervision.md). Goldfish requiere fresh y reviewReadOnly observados. La capacidad no concede permiso ni verifica un revisor concreto.
 
 Ready prepara anclajes, authority-handoff con taskDigest, plan de verificación y facts; validar el [brief v2](handoff-engineering.md) y permisos antes de utilizar delegate-after-preflight. No es un gate administrativo ni prueba semántica, y la estructura no permite omitir una obligación.
+
+Signals pending, silence y resource-drift indican espera/reconciliación, no liberación ni cancelación. En interrupted se recomienda adopción de operaciones vivas antes de resume/replace. El journal exige inventario observado; las affordances siguen sin ejecutar nada.

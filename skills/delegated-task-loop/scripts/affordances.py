@@ -11,7 +11,7 @@ GOLDFISH = "goldfish-review"
 TESTING = "delivery-first-testing"
 PHASES = {"discover", "ready", "running", "verify", "review", "accept", "learn", "release", "interrupted", "stopped"}
 CAPS = {"fresh", "background", "notify", "progress", "steer", "cancel", "resume", "reviewReadOnly"}
-SIGNALS = {"normal", "repeated-failure", "stalled", "budget-exhausted", "context-pressure", "scope-drift", "question", "result"}
+SIGNALS = {"normal", "repeated-failure", "stalled", "budget-exhausted", "context-pressure", "scope-drift", "question", "result", "pending", "silence", "resource-drift"}
 
 def validate(s):
     if not isinstance(s, dict) or type(s.get("schemaVersion")) is not int or s["schemaVersion"] != 1 or s.get("kind") != "delegated-loop-state":
@@ -128,6 +128,15 @@ def route(s):
                 link("checkpoint")
                 provider("recover-context", KNOWLEDGE, "context-pack")
                 native("steer", "steer")
+            elif signal == "pending":
+                decision = "WAIT_PENDING"
+                link("reconcile-live-resources")
+                link("await-existing-operation")
+            elif signal in {"silence","resource-drift"}:
+                decision = "RECONCILE"
+                link("observe-liveness")
+                link("reconcile-live-resources")
+                native("steer", "steer")
             elif signal == "result":
                 link("reconcile-result")
             else:
@@ -149,6 +158,7 @@ def route(s):
             link("preserve-checkpoint")
         else:
             link("revalidate-checkpoint")
+            link("adopt-live-resources-before-resume")
             if caps.get("resume"):
                 native("resume-after-revalidation", "resume")
             elif caps.get("fresh"):

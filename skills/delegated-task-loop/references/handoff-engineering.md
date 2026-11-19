@@ -17,3 +17,5 @@ Validar envelope con delegation_contract.py envelope FILE. Para trabajo complejo
 PENDING no es aceptación ni fin del escritor. El worker comunica operación y pendientes, el supervisor conserva reserva y espera señal real o revalida. En READY_FOR_REVIEW solo criterios del worker deben estar pass; los del supervisor se verifican antes de Done. Contradecir hechos exige reconciliación, no falsa entrega.
 
 Golden path: preparar anclajes y hechos → plan → envelope v2 → native fresh → resultado → comprobar revisión/evidencia/oráculo asignado → decisión → registro autorizado. No usar un revisor para cada brief. Goldfish conserva su propia solicitud de target/pregunta/fuentes aisladas, no recibe razonamiento del implementador. Steward requiere permiso acotado y decisión del supervisor; no utilizar un implementer para gestionar tablero.
+
+El [journal](run-state.md) conserva reserva PENDING y exige reconciliación de recursos. Para trabajo auxiliar usar el contrato [Steward](steward.md), no el mismo brief de implementación. Goldfish mantiene contrato independiente.

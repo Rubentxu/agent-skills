@@ -39,6 +39,7 @@ class JournalTests(unittest.TestCase):
         self.attempt("attach", handle="native-id")
         self.attempt("checkpoint", checkpointRef="private:checkpoint")
         self.attempt("observe-stop", observation="terminated", observationRef="host:terminal")
+        self.attempt("observe-resources", resourceStatus="clear", inventoryRef="obs:clear")
         self.attempt("release", resultRef="private:result")
         self.mutate("supervisor-checkpoint", checkpointRef="private:supervisor")
         self.mutate("finish")
@@ -73,6 +74,8 @@ class JournalTests(unittest.TestCase):
             self.attempt("replace", briefRef="brief2")
         self.attempt("checkpoint", checkpointRef="checkpoint")
         old = self.s["active"]["attemptId"]
+        with self.assertRaises(ValueError): self.attempt("replace", briefRef="brief2")
+        self.attempt("observe-resources", resourceStatus="clear", inventoryRef="obs:clear")
         self.attempt("replace", briefRef="brief2")
         self.assertNotEqual(self.s["active"]["attemptId"], old)
         self.assertEqual(self.s["active"]["checkpointRef"], "checkpoint")
@@ -82,10 +85,39 @@ class JournalTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.attempt("replace", briefRef="brief3")
 
+    def test_pending_adoption_keeps_ownership(self):
+        self.claim()
+        self.attempt("attach",handle="native")
+        self.attempt("mark-pending",pendingRef="operation:1")
+        self.attempt("checkpoint",checkpointRef="checkpoint")
+        self.attempt("observe-stop",observation="terminated",observationRef="host:stop")
+        self.attempt("observe-resources",resourceStatus="live",inventoryRef="inventory:live")
+        for op,req in (("release",{"resultRef":"result"}),("replace",{"briefRef":"next"})):
+            with self.assertRaises(ValueError): self.attempt(op,**req)
+        self.attempt("replace",briefRef="next",adoptionRef="adopt:existing")
+        self.assertEqual(self.s["active"]["resourceInventoryRef"],"inventory:live")
+        self.assertEqual(self.s["active"]["adoptionRef"],"adopt:existing")
+        self.assertEqual(self.s["active"]["pendingRef"],"operation:1")
+        self.attempt("observe-resources",resourceStatus="clear",inventoryRef="obs:clear")
+        self.assertIsNone(self.s["active"]["pendingRef"])
+
+    def test_steward_disjoint_and_safe_release(self):
+        self.mutate("claim",taskId="T1",briefRef="brief",effectDomains=["product:/repo"])
+        with self.assertRaises(ValueError): self.mutate("claim-steward",briefRef="s",effectDomains=["product:/repo"],isolationObservationRef="host:obs")
+        self.mutate("claim-steward",briefRef="s",effectDomains=["home:/home"],isolationObservationRef="host:obs")
+        sid=self.s["steward"]["attemptId"]
+        with self.assertRaises(ValueError): self.mutate("release-steward",attemptId=sid,resultRef="r")
+        self.mutate("attach-steward",attemptId=sid,handle="native:steward")
+        self.mutate("observe-steward-stop",attemptId=sid,observation="terminated",observationRef="host:stop",resourcesClearedRef="host:clear")
+        self.mutate("release-steward",attemptId=sid,resultRef="receipt")
+        self.assertIsNone(self.s["steward"])
+        self.assertIsNotNone(self.s["active"])
+
     def test_task_budget(self):
         for i in range(2):
             self.mutate("claim", taskId="T-" + str(i), briefRef="brief")
             self.attempt("observe-stop", observation="never-launched", observationRef="host:confirmed")
+            self.attempt("observe-resources", resourceStatus="clear", inventoryRef="obs:clear")
             self.attempt("release", resultRef="result")
         with self.assertRaises(ValueError):
             self.mutate("claim", taskId="T-3", briefRef="brief")
