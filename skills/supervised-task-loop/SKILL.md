@@ -123,5 +123,8 @@ del repositorio en las suyas.
 - La sesión se abre **sin `--bare`** por defecto: ese flag apaga también el login de
   `claude.ai`, con el que se autentican estos perfiles. El contexto en cero lo garantiza el
   proceso nuevo, no el flag.
-- Los topes viven en el **pipeline**, nunca en el texto del objetivo: un objetivo sin tope
-  más un mecanismo que re-pregunta es un bucle infinito.
+- El tope exterior vive en el pipeline; un watchdog independiente limita el grupo de sesión y el prompt lleva soft/hard deadline absoluto. Recursos deliberadamente desprendidos requieren reconciliación.
+
+## Recuperación y pruebas proporcionales
+
+El runtime no mide JSON vacío, incompleto ni error de arranque como sesión terminada. Reutiliza informe válido sin recalcular. Si hay intento incompleto, reconciliar proceso/operaciones y archivar sin borrar. Ver [recuperación](references/04-failure-modes.md). El supervisor prepara pruebas proporcionales mediante delivery-first-testing si disponible y traslada hechos, políticas y recursos; no se presupone rama ni autorización de publicación.

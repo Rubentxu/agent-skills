@@ -27,6 +27,11 @@ CÓDIGOS DE SALIDA
 from __future__ import annotations
 
 import json
+import os
+import ipaddress
+from urllib.parse import urlsplit
+from urllib.request import Request, build_opener, HTTPRedirectHandler, ProxyHandler
+from urllib.error import HTTPError, URLError
 import shutil
 import subprocess
 import sys
@@ -35,7 +40,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from agent_config import ErrorDeConfig, Runtime, init_runtime, repos_de_producto  # noqa: E402
 
-BINARIOS = ("backlog", "gh", "claude", "pipelinek")
+BINARIOS = ("backlog", "gh", "claude", "pipelinek", "timeout")
 
 
 class Fallo(Exception):
@@ -76,12 +81,92 @@ def comprobar_gh(rt: Runtime) -> None:
     print("preflight: ok gh autenticado")
 
 
+class NoRedirect(HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+def catalogo_modelos(profile: dict, environ: dict | None = None, opener=None) -> str:
+    env = os.environ if environ is None else environ
+    mode = env.get("AGENT_MODEL_CHECK", "auto").strip()
+    if mode == "off":
+        return "DISABLED"
+    if mode not in ("auto", "required"):
+        raise Fallo("AGENT_MODEL_CHECK invalido")
+    profile_env = profile.get("env") or {}
+    if not isinstance(profile_env, dict):
+        raise Fallo("perfil: env invalido")
+    def effective(key):
+        a,b=profile_env.get(key),env.get(key)
+        if a and b and a!=b:
+            # Do not pretend to know precedence across hosts/configurations.
+            raise Fallo("MODEL_UNRESOLVED: configuracion en conflicto para "+key, codigo=2)
+        value=a or b
+        if value is not None and not isinstance(value,str): raise Fallo("perfil: valor invalido de "+key)
+        return value
+    base=effective("ANTHROPIC_BASE_URL")
+    model=env.get("AGENT_MODEL_CHECK_MODEL") or effective("ANTHROPIC_MODEL") or profile.get("model")
+    def unsupported(reason):
+        if mode=="required": raise Fallo(reason,codigo=2)
+        return reason
+    if not base:
+        return unsupported("CHECK_UNSUPPORTED: sin gateway explicito")
+    if not isinstance(model,str) or not model.strip() or model.lower() in ("sonnet","opus","haiku","default","opusplan"):
+        return unsupported("MODEL_UNRESOLVED: alias o modelo no concreto")
+    try:
+        u=urlsplit(base)
+        if u.username or u.password or u.query or u.fragment or not u.hostname: raise ValueError()
+        local=u.hostname=="localhost"
+        try: local=local or ipaddress.ip_address(u.hostname).is_loopback
+        except ValueError: pass
+        if u.scheme!="https" and not (u.scheme=="http" and local): raise ValueError()
+    except ValueError:
+        raise Fallo("MODEL_CHECK_UNSAFE_URL: use HTTPS o loopback",codigo=2)
+    url=base.rstrip("/")
+    url += "/models" if url.endswith("/v1") else "/v1/models"
+    headers={"Accept":"application/json"}
+    token=effective("ANTHROPIC_AUTH_TOKEN")
+    key=effective("ANTHROPIC_API_KEY")
+    if token and key:
+        raise Fallo("MODEL_UNRESOLVED: autenticacion ambigua",codigo=2)
+    # Never forward login/OAuth credentials or follow redirects.
+    if token: headers["Authorization"]="Bearer "+token
+    if key: headers["x-api-key"]=key
+    if any("\n" in x or "\r" in x for x in headers.values()): raise Fallo("cabecera de autenticacion invalida")
+    client=opener or build_opener(ProxyHandler({}),NoRedirect())
+    try:
+        with client.open(Request(url,headers=headers,method="GET"),timeout=3) as response:
+            raw=response.read(1024*1024+1)
+        if len(raw)>1024*1024: raise Fallo("MODEL_CHECK_INVALID_RESPONSE",codigo=2)
+        data=json.loads(raw)
+    except HTTPError as e:
+        if e.code in (404,405):
+            return unsupported("CHECK_UNSUPPORTED: catalogo no disponible")
+        if e.code in (401,403):
+            raise Fallo("AUTH_FAILED: catalogo rechazo autenticacion",codigo=2) from None
+        raise Fallo("PROVIDER_UNAVAILABLE: HTTP "+str(e.code),codigo=2) from None
+    except (URLError,TimeoutError,OSError,ValueError):
+        raise Fallo("PROVIDER_UNAVAILABLE: catalogo no responde o formato invalido",codigo=2) from None
+    rows=data.get("data") if isinstance(data,dict) else None
+    if not isinstance(rows,list) or any(not isinstance(x,dict) or not isinstance(x.get("id"),str) for x in rows):
+        return unsupported("CHECK_UNSUPPORTED: catalogo sin IDs")
+    if model in {x["id"] for x in rows}:
+        return "READY"
+    if data.get("has_more") or data.get("next"):
+        return unsupported("MODEL_UNRESOLVED: catalogo paginado")
+    raise Fallo("MODEL_UNAVAILABLE: modelo configurado ausente del catalogo",codigo=2)
+
 def comprobar_perfil(rt: Runtime) -> None:
     """El perfil de Claude Code: cada perfil vive en su fichero y trae su autenticacion."""
     perfil = Path.home() / ".config/claude-profiles" / f"{rt.profile}.json"
     if not perfil.is_file():
         raise Fallo(f"el perfil de Claude Code no existe: {perfil}")
-    print(f"preflight: ok perfil {perfil}")
+    try:
+        profile=json.loads(perfil.read_text(encoding="utf-8"))
+        if not isinstance(profile,dict): raise ValueError()
+    except (OSError,ValueError):
+        raise Fallo("perfil JSON invalido") from None
+    status=catalogo_modelos(profile)
+    print(f"preflight: perfil {perfil}; modelo={status}")
 
 
 def comprobar_tablero(rt: Runtime) -> None:

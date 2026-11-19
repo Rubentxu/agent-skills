@@ -39,7 +39,8 @@ def main() -> int:
 
     # `--resume` no reintenta un step fallido: lo reporta. Para re-ejecutar hay que usar
     # `--rerun`, y `--rerun` es seguro porque la iteracion es idempotente: la iteracion ya
-    # medida reutiliza su informe y no consume una tarea.
+    # medida reutiliza su informe y no consume una tarea. Un intento incompleto se
+    # reconcilia y archiva; no borrar iter-* ni asumir que ausencia de JSON es parada.
     extra: list[str] = []
     for argumento in sys.argv[1:]:
         if argumento in ("--resume", "--rerun"):
