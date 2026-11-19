@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "kind": "delivery-pilot-workloads",
+  "repository": "Rubentxu/agent-skills",
+  "baseRevision": "3769b8164186611a590468dad39f923c2b292409",
+  "variants": [
+    {
+      "id": "single-agent",
+      "skillRevision": null
+    },
+    {
+      "id": "supervised-task-loop",
+      "skillRevision": "3769b8164186611a590468dad39f923c2b292409"
+    },
+    {
+      "id": "delegated-task-loop-before",
+      "skillRevision": "88436246a4c8e1b535c2121ab713df963302ecae"
+    },
+    {
+      "id": "delegated-task-loop",
+      "skillRevision": "3769b8164186611a590468dad39f923c2b292409"
+    }
+  ],
+  "cases": [
+    {
+      "id": "PILOT-01",
+      "objective": "Impedir que el router recomiende aceptar una entrega declarada bloqueada.",
+      "anchors": [
+        "skills/delegated-task-loop/scripts/affordances.py"
+      ],
+      "acceptance": [
+        "Con outcome=blocked no ofrecer accept-after-authority-check aunque evidencia y recursos sean suficientes.",
+        "Con outcome=unknown y precondiciones satisfechas conservar aceptación disponible."
+      ],
+      "allowedPaths": [
+        "skills/delegated-task-loop/scripts/affordances.py",
+        "skills/delegated-task-loop/tests/test_affordances.py"
+      ],
+      "focusedTest": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "skills/delegated-task-loop/tests",
+        "-p",
+        "test_affordances.py"
+      ],
+      "budgetMinutes": 15
+    },
+    {
+      "id": "PILOT-02",
+      "objective": "Rechazar cwd de verificación no canónico o no portable antes de proyectar comandos.",
+      "anchors": [
+        "skills/delivery-first-testing/scripts/verification_plan.py"
+      ],
+      "acceptance": [
+        "Rechazar cwd con letra de unidad, doble separador, segmentos . o .. y ruta absoluta.",
+        "Conservar cwd '.' y rutas relativas normales."
+      ],
+      "allowedPaths": [
+        "skills/delivery-first-testing/scripts/verification_plan.py",
+        "skills/delivery-first-testing/tests/test_verification_plan.py"
+      ],
+      "focusedTest": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "skills/delivery-first-testing/tests",
+        "-p",
+        "test_verification_plan.py"
+      ],
+      "budgetMinutes": 15
+    },
+    {
+      "id": "PILOT-03",
+      "objective": "Distinguir consumo observado parcial de un total completo por campo de uso del transcript.",
+      "anchors": [
+        "skills/delegated-task-loop/scripts/worker_metrics.py"
+      ],
+      "acceptance": [
+        "Preservar observedUsage como suma de valores presentes.",
+        "Añadir completeUsage con null para campos ausentes en cualquier mensaje assistant identificado, y suma solo si todos los mensajes identificados informan el campo.",
+        "Formato no soportado o sin mensajes no implica cero."
+      ],
+      "allowedPaths": [
+        "skills/delegated-task-loop/scripts/worker_metrics.py",
+        "skills/delegated-task-loop/tests/test_worker_metrics.py"
+      ],
+      "focusedTest": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "skills/delegated-task-loop/tests",
+        "-p",
+        "test_worker_metrics.py"
+      ],
+      "budgetMinutes": 15
+    }
+  ]
+}
