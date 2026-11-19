@@ -2,7 +2,7 @@
 
 El supervisor conserva ownership del objetivo. Topología estrella: un worker escritor por defecto; no delegación recursiva. Usar exclusivamente herramientas anunciadas del host.
 
-El brief contiene project binding, runId, taskId, attemptId, revisión Git completa, objetivo, AC/DoD efectivos, alcance permitido, restricciones, presupuesto, referencias al handoff y context-pack, formato de resultado y política de stop. Ver [plantilla](../assets/worker-prompt.md). No duplicar los contratos semánticos de los proveedores.
+El brief contiene project binding, runId, taskId, attemptId, revisión Git completa, objetivo, AC/DoD efectivos, alcance permitido, restricciones, presupuesto, referencias al handoff y context-pack, formato de resultado y política de stop. Ver [plantilla](../assets/worker-prompt.md). Validar el sobre y el resultado con [contratos operativos](contracts.md). No duplicar los contratos semánticos de los proveedores.
 
 Fresh: tarea nueva o revisor independiente. Resume: mismo worker para corrección o continuación cuando el host lo permita, revalidando fuentes y permisos. Fork: solo si el host expone esa opción y la información heredada está acotada; nunca para Goldfish. Sin fresh real, NOT_RUN.
 

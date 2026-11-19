@@ -2,7 +2,7 @@
 
 El helper run_state.py realiza reservas locales, identidad de run/intento, control optimista de versión, checkpoints por referencia y reemplazo seguro. No es Backlog ni ejecuta agentes. Solo POSIX (flock); si no está disponible, no declarar reserva atómica. No protege frente a otros programas que ignoren la reserva ni frente a varias máquinas.
 
-Usar el binding estable registrado de software-knowledge (no basename) y el workspace real. Estado bajo XDG_STATE_HOME, con raíz privada y rechazo de checkouts. JSON pequeño, escritura atómica y fsync; nunca transcripts, secretos ni contenido de código. La proyección vigente sustituye la anterior; Backlog conserva la historia de entregas. El journal no otorga permisos y no verifica el evento del host.
+Usar el binding estable registrado de software-knowledge (no basename) y el workspace real. Estado bajo XDG_STATE_HOME, con raíz privada y rechazo de checkouts. El directorio compartido agent-skills puede existir con permisos de lectura públicos, pero no admitir escritura de otros usuarios; la raíz de esta skill y el proyecto deben ser privados. JSON pequeño, escritura atómica y fsync; nunca transcripts, secretos ni contenido de código. La proyección vigente sustituye la anterior; Backlog conserva la historia de entregas. El journal no otorga permisos y no verifica el evento del host.
 
 Interfaz: python3 scripts/run_state.py --binding BINDING --workspace WORKSPACE OPERACION; JSON por stdin salvo read. El resultado contiene state, authorized=false y runtimeVerified=false.
 

@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "kind": "delegation-envelope",
+  "project": "example-project",
+  "runId": "run-1",
+  "attemptId": "attempt-1",
+  "taskId": "EXAMPLE-1",
+  "objective": "Verify cancellation preserves the current result",
+  "criteria": [
+    {
+      "id": "AC-1",
+      "kind": "AC",
+      "text": "Cancelling stops the operation without overwriting the last result."
+    },
+    {
+      "id": "DOD-1",
+      "kind": "DoD",
+      "text": "Run the focused regression test."
+    }
+  ],
+  "repositories": [
+    {
+      "id": "example/repo",
+      "baseSha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "paths": [
+        "src",
+        "tests"
+      ]
+    }
+  ],
+  "policyRefs": [
+    "git:example/repo@base:AGENTS.md"
+  ],
+  "authorityHandoffRef": "private:handoff-1",
+  "knowledgePackRef": "private:pack-1",
+  "reviewProfile": "lite",
+  "contextBudgetBytes": 16000,
+  "resultBudgetBytes": 3200
+}

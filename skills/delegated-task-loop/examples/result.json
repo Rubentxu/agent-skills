@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "kind": "delegation-result",
+  "project": "example-project",
+  "runId": "run-1",
+  "attemptId": "attempt-1",
+  "taskId": "EXAMPLE-1",
+  "outcome": "READY_FOR_REVIEW",
+  "criteria": [
+    {
+      "id": "AC-1",
+      "status": "pass",
+      "evidenceRefs": [
+        "artifact:test-1"
+      ]
+    },
+    {
+      "id": "DOD-1",
+      "status": "pass",
+      "evidenceRefs": [
+        "artifact:test-report"
+      ]
+    }
+  ],
+  "revisions": [
+    {
+      "id": "example/repo",
+      "baseSha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "headSha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    }
+  ],
+  "remaining": [],
+  "resourceRefs": [
+    "private:worktree"
+  ],
+  "learningRefs": [],
+  "nextAction": "verify independently"
+}

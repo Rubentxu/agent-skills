@@ -53,7 +53,11 @@ def root_for(binding, workspace, state_home=None):
     for p in (root.parent, root):
         if p.is_symlink():
             raise ValueError("symlink in state path")
-        private_dir(p)
+    root.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    parent_info = root.parent.lstat()
+    if not stat.S_ISDIR(parent_info.st_mode) or parent_info.st_uid != os.getuid() or parent_info.st_mode & 0o022:
+        raise ValueError("unsafe shared agent-skills directory")
+    private_dir(root)
     project = root / hashlib.sha256(binding.encode()).hexdigest()
     if project.is_symlink():
         raise ValueError("symlink in project state")
