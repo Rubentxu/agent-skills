@@ -22,3 +22,5 @@ Backlog.md y decisiones humanas conservan autoridad. Git y pruebas verifican có
 Referencias públicas: [backlog-agile-workflow](https://github.com/Rubentxu/agent-skills/tree/main/skills/backlog-agile-workflow), [software-knowledge](https://github.com/Rubentxu/agent-skills/tree/main/skills/software-knowledge), [goldfish-review](https://github.com/Rubentxu/agent-skills/tree/main/skills/goldfish-review).
 
 Si delivery-first-testing no está instalada, no inventar resultado de su compilador. Preparar manualmente plan proporcional con comandos y autoridad observados, identificar limitación y no declarar un selector verificado. No impedir trabajo técnicamente independiente por una dependencia opcional.
+
+Handoff compiler: usar outputs públicos observados, no importar código de proveedores. La información de autoridad y los digests son referencias de contexto; no permiten ejecutar ni certificar.

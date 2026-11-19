@@ -80,6 +80,8 @@ def receive(handoff: dict, assessment: dict, *, revision: str,
     return {"schemaVersion": 1, "kind": "handoff-receipt",
             "status": "PAUSED" if reasons else "CONTEXT_MATCHES_RUNTIME_UNVERIFIED",
             "reasons": sorted(set(reasons)), "taskContentCompared": task_view is not None,
+            "taskDigest": task_digest(task_view) if task_view is not None else None,
+            "sourceRevision": revision,
             "editAuthorized": False,
             "next": "Recheck Backlog task, code revision, source attestations and host permissions."}
 

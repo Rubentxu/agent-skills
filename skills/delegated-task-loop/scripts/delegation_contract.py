@@ -266,6 +266,8 @@ def result(v, e):
         if cid not in ids or cid in seen or not isinstance(c["status"], str) or c["status"] not in STATES:
             raise ValueError("unknown or duplicate criterion/status")
         evidence = refs(c["evidenceRefs"], "evidence")
+        if version==2 and e["criterionOwners"][cid]=="supervisor" and c["status"]=="pass":
+            raise ValueError("worker cannot claim supervisor acceptance criterion")
         if c["status"] == "pass" and not evidence:
             raise ValueError("pass without evidence reference")
         if v["outcome"] == "READY_FOR_REVIEW" and c["status"] != "pass" and (version==1 or e["criterionOwners"][cid]=="worker"):

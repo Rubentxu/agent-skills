@@ -291,7 +291,8 @@ def valid_report(d,iteration):
     session=report.leer_json(str(d/"session.json"))
     return (value.get("kind")=="agent-loop-report" and str(value.get("iteration"))==iteration
             and value.get("verdict") in ("PASS","FAIL","BLOCKED")
-            and report.estado_sesion(session)=="COMPLETED")
+            and report.estado_sesion(session)=="COMPLETED"
+            and isinstance(value.get("session"),dict) and value["session"].get("session_id")==session.get("session_id"))
 
 def finish_report(rt,d,iteration):
     value=report.leer_json(str(d/"report.json"))

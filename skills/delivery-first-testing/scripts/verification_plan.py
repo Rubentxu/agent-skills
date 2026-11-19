@@ -61,7 +61,13 @@ def compile_plan(v):
     candidates={}
     commands=set()
     for c in rows(v["candidates"]):
+        if not isinstance(c,dict):raise ValueError("invalid candidate")
+        global_gate=c.get("globalGate",False)
+        c=c.copy();c.pop("globalGate",None)
         obj(c, ("id","argv","cwd","covers","stage","mandatory","independent","costMs","sourceRef"))
+        if type(global_gate) is not bool or (global_gate and (c["mandatory"] is not True or c["stage"]=="integration")):
+            raise ValueError("global gate must be explicit mandatory acceptance check")
+        if global_gate:c["globalGate"]=True
         cid=txt(c["id"])
         if cid in candidates:
             raise ValueError("duplicate test")
@@ -110,7 +116,7 @@ def compile_plan(v):
         uncovered-=set(c["covers"])
     ordered=sorted((candidates[x] for x in selected),key=lambda c: (("worker","supervisor","integration").index(c["stage"]),c["costMs"] is None,c["costMs"] or 0,c["id"]))
     blocking=[]
-    if v["scope"] in ("global","unknown") or v["selector"]=="unverified":
+    if v["scope"]=="unknown" or v["selector"]=="unverified" or (v["scope"]=="global" and not any(c.get("globalGate") for c in ordered)):
         blocking.append("RESOLVE_IMPACT_OR_CONFIRM_REQUIRED_GLOBAL_GATE")
     if uncovered:
         blocking.append("UNCOVERED_GUARANTEES")

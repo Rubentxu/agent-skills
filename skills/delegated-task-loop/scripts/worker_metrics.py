@@ -98,6 +98,7 @@ def scan(path,previous=None,max_bytes=64*1024*1024):
             sums.update(u);observed.update(u.keys())
         output={k:(sums[k] if observed[k] else None) for k in ("input_tokens","output_tokens","cache_read_input_tokens","cache_creation_input_tokens")}
         status="PARTIAL" if s["limited"] or s["invalidRows"] or s["outOfOrder"] or s["offset"]<os.fstat(f.fileno()).st_size else "OBSERVED"
+        if not s["messages"] and not s["calls"]: status="UNSUPPORTED_OR_EMPTY"
         metrics={"kind":"worker-metrics","schemaVersion":1,"status":status,
                  "assistantMessageIds":len(s["messages"]),"observedUsage":output,
                  "usageMessages":dict(observed),"toolCalls":s["calls"],"toolResultPairs":s["pairs"],

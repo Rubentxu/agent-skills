@@ -217,6 +217,7 @@ def change(s, op, req, binding):
                 raise ValueError("attempt already attached or stopped")
             a["handle"] = string(req["handle"], "handle")
             a["state"] = "attached"
+            a["resourceStatus"] = "unknown" # older observation cannot authorize future release
         elif op == "checkpoint":
             keys(req, (*common, "checkpointRef"))
             a["checkpointRef"] = string(req["checkpointRef"], "checkpointRef", 1024)
@@ -244,6 +245,7 @@ def change(s, op, req, binding):
             if req["observation"] == "never-launched" and a["state"] != "reserved":
                 raise ValueError("attached attempt cannot be never-launched")
             a["state"] = "stopped"
+            a["resourceStatus"] = "unknown" # reconcile effects after termination
             a["stopObservationRef"] = string(req["observationRef"], "observationRef", 1024)
         elif op == "replace":
             keys(req, (*common, "briefRef"), ("adoptionRef",))

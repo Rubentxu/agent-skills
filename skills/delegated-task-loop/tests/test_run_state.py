@@ -85,6 +85,15 @@ class JournalTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.attempt("replace", briefRef="brief3")
 
+    def test_stop_invalidates_old_clear_observation(self):
+        self.claim()
+        self.attempt("attach", handle="native")
+        self.attempt("observe-resources", resourceStatus="clear", inventoryRef="before-stop")
+        self.attempt("observe-stop", observation="terminated", observationRef="stop")
+        with self.assertRaises(ValueError):self.attempt("release", resultRef="result")
+        self.attempt("observe-resources", resourceStatus="clear", inventoryRef="after-stop")
+        self.attempt("release", resultRef="result")
+
     def test_pending_adoption_keeps_ownership(self):
         self.claim()
         self.attempt("attach",handle="native")

@@ -24,3 +24,8 @@ class WorkerMetricsTests(unittest.TestCase):
             p=Path(root)/"s";r=dict(type="assistant",message=dict(id="m",usage=dict(output_tokens=10),content=[]))
             p.write_text(json.dumps(r)+"\n"+json.dumps(r|{"message":r["message"]|{"usage":{"output_tokens":20}}})+"\n")
             self.assertEqual(scan(p)["metrics"]["observedUsage"]["output_tokens"],20)
+
+    def test_unknown_format_not_zero_activity(self):
+        with tempfile.TemporaryDirectory() as root:
+            p=Path(root)/"s";p.write_text('{"unknown":"format"}\n')
+            self.assertEqual(scan(p)["metrics"]["status"],"UNSUPPORTED_OR_EMPTY")

@@ -37,7 +37,7 @@ class RecoveryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as root:
             d=Path(root)
             (d/"session.json").write_text('{"session_id":"s","is_error":false,"num_turns":2}')
-            (d/"report.json").write_text('{"kind":"agent-loop-report","iteration":"1","verdict":"PASS"}')
+            (d/"report.json").write_text('{"kind":"agent-loop-report","iteration":"1","verdict":"PASS","session":{"session_id":"s"}}')
             self.assertTrue(iteration.valid_report(d,"1"))
             a=iteration.archive_attempt(d,"obs:1")
             self.assertTrue((a/"report.json").exists());self.assertFalse((d/"report.json").exists())

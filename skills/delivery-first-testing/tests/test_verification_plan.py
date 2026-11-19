@@ -43,3 +43,9 @@ class PlanTests(unittest.TestCase):
         p=compile_plan(f)
         o=dict(schemaVersion=1,kind="verification-observations",planDigest=digest(p),treeDigest="a"*64,environmentDigest="b"*64,receipts=[dict(id="oracle",treeDigest="a"*64,environmentDigest="b"*64,outcome="PASS",runnerRef="run:1",executed=1,failed=0,skipped=0,role="worker")])
         self.assertEqual(receipts(p,o)["checks"]["oracle"],"RECHECK")
+
+    def test_explicit_global_gate(self):
+        f=fixture();f['scope']='global'
+        self.assertEqual(compile_plan(f)['status'],'NEEDS_REFINEMENT')
+        f['candidates'][0].update(globalGate=True,mandatory=True)
+        self.assertEqual(compile_plan(f)['status'],'PLANNED')
