@@ -13,7 +13,7 @@ El agente anfitrión es el supervisor Elephant. Una delegación, una tarea, cont
 2. Descubrir capacidades reales de delegación fresca, background, notificación, intervención, cancelación y reanudación. No inferirlas por nombre del host. Consultar [hosts](references/host-capabilities.md).
 3. Descubrir las skills instaladas por el mecanismo del host. Localizar el Home Repo registrado mediante software-knowledge; Backlog.md es la única autoridad de trabajo. Leer las políticas AGENTS.md aplicables, incluidas las de cada repositorio afectado.
 4. Ejecutar el router puro con un objeto de estado observado: `python3 scripts/affordances.py -`. Ver [navegación](references/workflow-navigation.md). Leer como máximo dos lentes relevantes; recalcular al cambiar estado. Los enlaces son recomendaciones, no autorización ni ejecución.
-5. Recuperar cualquier intento activo antes de crear otro. No abrir dos escritores sobre el mismo recurso. Si no hay subagentes nativos con contexto nuevo, declarar NOT_RUN; nunca lanzar otra instancia del agente.
+5. Recuperar cualquier intento activo antes de crear otro. Usar [estado operativo](references/run-state.md) para reservar, adjuntar handle y reconciliar sin doble escritor. No abrir dos escritores sobre el mismo recurso. Si no hay subagentes nativos con contexto nuevo, declarar NOT_RUN; nunca lanzar otra instancia del agente.
 
 ## Bucle de entrega
 

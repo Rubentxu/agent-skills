@@ -6,4 +6,4 @@ Antes de sustituir o reanudar un worker: observar el handle nativo, Git/worktree
 
 Checkpoint antes de ceder control, y al recibir progreso material, resultado o interrupción. Revalidar autoridad con context_handoff receive. Si cambia el target o revisión, reevaluar evidencia y alcance. Mantener aprendizaje durable solo en el Knowledge Home. La limpieza comprueba ownership por recurso, no patrones globales de nombres. Registrar pendientes honestamente.
 
-Primer incremento: este procedimiento se ejecuta por el anfitrión; el router no mantiene ni bloquea estado persistente. Hasta disponer de reserva local atómica, no ejecutar varios supervisores sobre el mismo proyecto/alcance.
+Usar [estado operativo](run-state.md) para reservar el escritor antes de lanzar, registrar el handle, confirmar parada y liberar. El router permanece puro. El helper solo coordina escritores cooperativos locales; el host verifica la parada real y el alcance de cada operación.

@@ -15,7 +15,7 @@ Invocar desde un agente que disponga de delegación nativa: «Usa delegated-task
 
 [Contrato principal](SKILL.md) · [Navegación](references/workflow-navigation.md) · [Evaluaciones](tests/skill-evals.md).
 
-Primer incremento: composición, políticas de contexto, router puro y evaluaciones de contrato. El host ejecuta y supervisa; no hay garantía de background, eventos, interrupción ni aislamiento sin comprobar cada capacidad. No se ejecutan agentes desde Python.
+Composición, políticas de contexto, router puro, [reservas y checkpoints privados](references/run-state.md) y evaluaciones de contrato. El host ejecuta y supervisa; no hay garantía de background, eventos, interrupción ni aislamiento sin comprobar cada capacidad. No se ejecutan agentes desde Python.
 
 ```bash
 python3 skills/delegated-task-loop/scripts/affordances.py skills/delegated-task-loop/examples/ready.json
