@@ -18,3 +18,9 @@ El resultado devuelve decision, hasta dos lenses y _links con operaciones simbó
 - learn/release: aprendizaje opcional y limpieza segura; interrupted: reconciliar y recuperar, nunca relanzar un escritor de estado desconocido.
 
 La señal se puede obtener del [reductor de eventos](event-supervision.md). Goldfish requiere fresh y reviewReadOnly observados. La capacidad no concede permiso ni verifica un revisor concreto.
+
+Ready prepara anclajes, authority-handoff con taskDigest, plan de verificación y facts; validar el [brief v2](handoff-engineering.md) y permisos antes de utilizar delegate-after-preflight. No es un gate administrativo ni prueba semántica, y la estructura no permite omitir una obligación.
+
+Signals pending, silence y resource-drift indican espera/reconciliación, no liberación ni cancelación. En interrupted se recomienda adopción de operaciones vivas antes de resume/replace. El journal exige inventario observado; las affordances siguen sin ejecutar nada.
+
+Nuevos campos observados opcionales (ausencia = unknown): preflight unknown/needs-refinement/prepared, preflightRef obligatorio al prepared (referencia de brief validado y permisos revalidados), resourceState unknown/clear/live/adoptable. Ready con tarea ofrece preparar y validar; no ofrece delegación hasta contar con preflight preparado y recursos claros. Interrupted requiere clear o adoptable (inventario y adopción comprobados), verify/accept/release requieren clear (sin efectos pendientes incompatibles). Estas observaciones no conceden permisos ni sustituyen CAS del journal. Las entradas anteriores siguen válidas pero conservadoras.

@@ -26,3 +26,5 @@ El resultado se usa en el router como capabilities, junto con limitaciones y el 
 - [OpenCode](https://opencode.ai/docs/agents/): utilizar Task/subagent nativo según la versión, conservar sessionID y usar el mecanismo de continuación anunciado. Las versiones con background devuelven mensajes de subagente; idle no equivale a fin de todas las operaciones. [Changelog](https://opencode.ai/changelog/v2.3.0).
 
 No ejecutar comandos de estos ejemplos como sustitutos de herramientas nativas. No instalar hooks globales automáticamente. Las herramientas concretas y el esquema anunciado por el host prevalecen sobre esta guía.
+
+Canary Steward: confirmar permisos efectivos disjuntos del implementador y Home Repo, notificación independiente y prohibición de publicación indirecta por hooks/autoCommit. Si no se prueba, serializar. Canary handoff: comprobar que preflight desconocido o referencias stale no abren delegación; cambios del plan generan versión nueva, resultados viejos no aceptables. Medir coste de coordinación además del coste de implementación.

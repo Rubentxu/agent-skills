@@ -44,3 +44,5 @@ npx skills add Rubentxu/agent-skills --skill supervised-task-loop --agent openco
 
 Antes de publicar, ejecutar el validador (`python3 scripts/validate_skills.py`) y las pruebas
 de `skills/supervised-task-loop/tests/`.
+
+La recuperación distingue sesión terminada de intento incompleto, preserva artefactos y evita re-medir. Consultar [fallos](references/04-failure-modes.md) para reconciliación, proxy y deadline autónomo.

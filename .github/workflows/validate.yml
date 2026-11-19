@@ -29,6 +29,8 @@ jobs:
           python3 -m json.tool .claude-plugin/marketplace.json > /dev/null
       - name: Validate skill manifests and local references
         run: python3 scripts/validate_skills.py
+      - name: Run supervised task loop tests
+        run: python3 -m unittest discover -s skills/supervised-task-loop/tests -p 'test_*.py' -v
       - name: Run delegated task loop tests
         run: python3 -m unittest discover -s skills/delegated-task-loop/tests -p 'test_*.py' -v
       - name: Run collection validator tests

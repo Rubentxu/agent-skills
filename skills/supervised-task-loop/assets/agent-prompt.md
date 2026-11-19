@@ -6,7 +6,7 @@
 ## OBJETIVO
 
 Objetivo: cerrar UNA tarea del backlog.md —la siguiente que este lista— y dejarla verificable y
-publicada, usando las skills backlog-agile-workflow, software-knowledge y goldfish-review. El
+publicada, usando las skills backlog-agile-workflow, software-knowledge goldfish-review y delivery-first-testing. El
 objetivo de fondo es vaciar el backlog, pero en esta sesion el objetivo es exactamente una tarea:
 si dudas entre dos, elige la de mas valor, cierrala y sal. El bucle repite el ciclo en la
 siguiente sesion, con el handoff al dia.
@@ -25,25 +25,25 @@ Has que me sienta orgulloso de tus implementaciones en las tareas.
 ## WORKFLOW BASICO
 
 - leemos backlog y elegimos UNA tarea
-- creamos rama para esa tarea a partir de main
+- resolver antes de implementar las ambiguedades, anclajes, politicas AGENTS.md y plan proporcional de pruebas; crear rama solo segun politica real
 - **Sin duplicar responsabilidades**: Antes de empezar evaluamos las especificaciones y que no
   colisiona, ni se duplicaria responsabilidades que ya estan en el codigo. Aqui aplica
   goldfish-review: revision independiente del DISENO de la tarea, antes de escribir codigo.
 - trabajamos en esa rama la implementacion de la tarea hasta completar con TDD y test de
   integracion solo sobre el codigo afectado.
-- Corregimos cualquier problema y deuda tecnica detectada en el proceso.
-- Integramos todos los cambios con un merge a main a traves de PRs, tienes autorizacion implicita.
+- Corregimos defectos en alcance y necesarios para la entrega; registrar otros sin desviarse.
+- Integramos solo con autorizacion efectiva y la politica Git observada; no heredar permisos del prompt.
 - Hacemos limpieza de ramas en local y remoto creados para la tarea.
 - **Liberamos los recursos que la tarea creo: worktrees de git, ramas locales y remotas, pods de
   Kubernetes, contenedores, clusters kind y procesos auxiliares.** Lo que se usa, se libera, el
   mismo dia que la tarea deja de necesitarlo; no se acumula para una limpieza futura.
-- Cada diez tareas completadas lanzamos los gates de validaciones.
+- Ejecutar gates por cadencia y politica efectiva del proyecto, nunca inventar full suite por costumbre.
 - Volvemos a empezar el ciclo desde el primer punto (en la siguiente sesion, con el handoff al
   dia).
 
 ## SKILLS
 
-Lee y aplica estas tres, por esta ruta exacta (no dependas de que se carguen solas):
+Lee y aplica las necesarias, por esta ruta exacta (no dependas de que se carguen solas):
 
 {{SKILLS}}
 
@@ -108,3 +108,7 @@ subagentes real. Mide lo que te cuesta; si la tarea es trivial, no lo fuerces.
    Lo que NO liberes porque la siguiente sesion lo va a usar, dejalo escrito con el motivo.
 3. Sal. La sesion termina aqui; la siguiente arranca con contexto en cero. Si no escribes el
    handoff, esta sesion se pierde.
+
+## Eficiencia y continuidad
+
+El supervisor de esta sesion prepara las comprobaciones afectadas con delivery-first-testing, no repite hechos vigentes ni ejecuta suites ajenas. No generar prosa extensa; si un recurso queda vivo, dejar operationKey, identidad, estado observado, resultado esperado y siguiente accion en el handoff. La siguiente sesion adopta el recurso, no lo relanza. Respetar deadlines absolutos anexados al prompt y entregar estado parcial antes del soft deadline.

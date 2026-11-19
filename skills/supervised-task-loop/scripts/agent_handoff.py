@@ -220,7 +220,8 @@ def texto_de_las_skills(rt: Runtime) -> str:
         "- `backlog-agile-workflow` — busca su `SKILL.md` en los directorios de skills de tu "
         "instalacion\n"
         "- `software-knowledge` — idem\n"
-        "- `goldfish-review` — idem"
+        "- `goldfish-review` — idem\n"
+        "- `delivery-first-testing` — idem"
     )
 
 

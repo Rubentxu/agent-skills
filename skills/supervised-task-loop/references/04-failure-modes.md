@@ -117,3 +117,13 @@ vivos se sueltan al terminar, antes de que se acumulen.
 
 Cada eventualidad de arriba tiene su sitio: el runtime la resuelve, y el **test** la
 comprueba. Si una eventualidad vuelve, el test que la cubría tiene que haber cambiado.
+
+## Rerun sin sesiones fantasma
+
+El resultado completo exige session_id, num_turns positivo e is_error boolean. Un error con cero turnos no se mide como entrega. Informe válido se devuelve inmediatamente sin recapturar tablero. Para un intento incompleto, el supervisor confirma identidad/fin del proceso, estado real del código/tablero y operaciones desprendidas; si estaban vivas, adoptar antes de repetir. No borrar iter-*; ejecutar `AGENT_RECOVERY_ITERATION=1 AGENT_RECOVERY_REF=private:reconciliation python3 scripts/agent_run.py --rerun` únicamente con evidencia real para esa iteración. El runtime no valida esa attestation, nunca autoriza saltar un PID todavía vivo. Archiva artefactos en iter-N/attempts/ con identificación nueva y refresca baseline. Popen fallido confirmado (never-launched) permite archivar sin intervención. Para sesión anterior sin identidad verificable o sin baseline, reconciliación explícita. Crear nuevo run en AGENT_STATE distinto, no limpiar a ciegas.
+
+## Proxy y límite
+
+AGENT_MODEL_CHECK=auto comprueba catálogo /v1/models de ANTHROPIC_BASE_URL explícito (HTTPS o loopback) con ID concreto de modelo; alias sin resolver o endpoint no compatible se declaran, no se presentan como verde. required falla cerrado, off desactiva. AGENT_MODEL_CHECK_MODEL permite ID concreto para catálogo, no impone modelo efectivo. Comprobar al preflight y antes de abrir cada intento; HTTP 401/403, modelo ausente o proveedor caído impiden lanzar. No pasar tokens por argumentos, no seguir redirects ni imprimir respuestas. El timeout de conexión/lectura es 3 s, no garantía de latencia total.
+
+GNU timeout independiente (TERM + 15s KILL) limita el grupo de sesión aunque muera el wrapper; margen de 45s dentro del presupuesto exterior para medir. Soft/hard deadline UTC en prompt de cada intento, incluidos prompts personalizados. No promete detener procesos que llamen setsid/servicios remotos o sobrevivan fuera del grupo: reconciliar y adoptar. PID + boot ID + start ticks cuando Linux los exponga. Diagnóstico estructurado es hipótesis, extracto final corto con redacción best effort; informes siguen privados y revisar antes de publicar.

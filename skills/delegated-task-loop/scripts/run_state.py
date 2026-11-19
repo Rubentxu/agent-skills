@@ -114,16 +114,29 @@ def save(project, s):
         if os.path.exists(name):
             os.unlink(name)
 
-def new_attempt(task, number, brief, checkpoint=None):
+def domains(value):
+    if not isinstance(value,list) or not 1<=len(value)<=16:
+        raise ValueError("effect domains required")
+    result=[string(x,"effect domain",256) for x in value]
+    if len(result)!=len(set(result)) or ("*" in result and result!=["*"]):
+        raise ValueError("invalid effect domains")
+    return sorted(result)
+
+def disjoint(a,b):
+    return "*" not in a and "*" not in b and not set(a).intersection(b)
+
+def new_attempt(task, number, brief, checkpoint=None, effect_domains=None):
     return {"taskId": task, "attemptId": str(uuid.uuid4()), "number": number,
             "state": "reserved", "briefRef": brief, "handle": None,
-            "checkpointRef": checkpoint, "stopObservationRef": None}
+            "checkpointRef": checkpoint, "stopObservationRef": None,
+            "resourceStatus": "unknown", "resourceInventoryRef": None,
+            "pendingRef": None, "effectDomains": effect_domains or ["*"]}
 
 def change(s, op, req, binding):
     if op == "start":
         keys(req, ("maxTasks", "maxAttempts"), ("objectiveRef", "expectedVersion"))
         if s:
-            if s["active"] or not s["finished"]:
+            if s["active"] or s.get("steward") or not s["finished"]:
                 raise ValueError("active run exists; reconcile or finish")
             if req.get("expectedVersion") != s["version"] or type(req.get("expectedVersion")) is not int:
                 raise ValueError("version conflict")
@@ -135,26 +148,63 @@ def change(s, op, req, binding):
                 "maxTasks": integer(req["maxTasks"], "maxTasks", 1),
                 "maxAttempts": integer(req["maxAttempts"], "maxAttempts", 1, 20),
                 "tasksStarted": 0, "active": None, "lastRelease": None,
-                "supervisorCheckpointRef": None, "finished": False}
+                "supervisorCheckpointRef": None, "steward": None, "lastStewardRelease": None, "finished": False}
     if not s or s["binding"] != binding or s["finished"]:
         raise ValueError("no active run")
     common = ("runId", "expectedVersion")
     if not isinstance(req, dict) or req.get("runId") != s["runId"] or type(req.get("expectedVersion")) is not int or req["expectedVersion"] != s["version"]:
         raise ValueError("run or version conflict")
     a = s["active"]
+    steward=s.get("steward")
     if op == "claim":
-        keys(req, (*common, "taskId", "briefRef"))
+        keys(req, (*common, "taskId", "briefRef"), ("effectDomains",))
+        effects=domains(req.get("effectDomains",["*"]))
+        if steward and not disjoint(effects,steward["effectDomains"]):
+            raise ValueError("steward effect conflict")
         if a or s["tasksStarted"] >= s["maxTasks"]:
             raise ValueError("writer reserved or task budget exhausted")
         s["active"] = new_attempt(string(req["taskId"], "taskId", 128), 1,
-                                  string(req["briefRef"], "briefRef", 1024))
+                                  string(req["briefRef"], "briefRef", 1024), effect_domains=effects)
         s["tasksStarted"] += 1
+    elif op == "claim-steward":
+        keys(req,(*common,"briefRef","effectDomains","isolationObservationRef"))
+        effects=domains(req["effectDomains"])
+        if steward or "*" in effects or (a and not disjoint(effects,a.get("effectDomains",["*"]))):
+            raise ValueError("steward reserved or overlapping effects")
+        s["steward"]={"attemptId":str(uuid.uuid4()),"state":"reserved","handle":None,
+                     "briefRef":string(req["briefRef"],"briefRef",1024),"effectDomains":effects,
+                     "isolationObservationRef":string(req["isolationObservationRef"],"isolation observation",1024),
+                     "stopObservationRef":None,"resourcesClearedRef":None}
+    elif op in ("attach-steward","observe-steward-stop","release-steward"):
+        common=(*common,"attemptId")
+        if not steward or req.get("attemptId")!=steward["attemptId"]:
+            raise ValueError("steward attempt conflict")
+        if op=="attach-steward":
+            keys(req,(*common,"handle"))
+            if steward["state"]!="reserved": raise ValueError("steward not reserved")
+            steward["handle"]=string(req["handle"],"handle")
+            steward["state"]="attached"
+        elif op=="observe-steward-stop":
+            keys(req,(*common,"observation","observationRef","resourcesClearedRef"))
+            if steward["state"]=="stopped" or req["observation"] not in ("terminated","never-launched"):
+                raise ValueError("steward stop not confirmed")
+            if req["observation"]=="never-launched" and steward["state"]!="reserved":
+                raise ValueError("attached steward cannot be never launched")
+            steward["stopObservationRef"]=string(req["observationRef"],"stop evidence",1024)
+            steward["resourcesClearedRef"]=string(req["resourcesClearedRef"],"resource evidence",1024)
+            steward["state"]="stopped"
+        else:
+            keys(req,(*common,"resultRef"))
+            if steward["state"]!="stopped" or not steward["resourcesClearedRef"]:
+                raise ValueError("steward ownership unresolved")
+            s["lastStewardRelease"]={"attemptId":steward["attemptId"],"resultRef":string(req["resultRef"],"result",1024)}
+            s["steward"]=None
     elif op == "supervisor-checkpoint":
         keys(req, (*common, "checkpointRef"))
         s["supervisorCheckpointRef"] = string(req["checkpointRef"], "checkpointRef", 1024)
     elif op == "finish":
         keys(req, common)
-        if a:
+        if a or steward:
             raise ValueError("cannot finish with active reservation")
         s["finished"] = True
     else:
@@ -167,9 +217,25 @@ def change(s, op, req, binding):
                 raise ValueError("attempt already attached or stopped")
             a["handle"] = string(req["handle"], "handle")
             a["state"] = "attached"
+            a["resourceStatus"] = "unknown" # older observation cannot authorize future release
         elif op == "checkpoint":
             keys(req, (*common, "checkpointRef"))
             a["checkpointRef"] = string(req["checkpointRef"], "checkpointRef", 1024)
+        elif op == "mark-pending":
+            keys(req, (*common,"pendingRef"))
+            if a["state"] not in ("attached","stopped"):
+                raise ValueError("pending requires observed worker")
+            a["pendingRef"]=string(req["pendingRef"],"pending observation",1024)
+            a["resourceStatus"]="unknown"
+            a["resourceInventoryRef"]=None
+        elif op == "observe-resources":
+            keys(req,(*common,"resourceStatus","inventoryRef"))
+            if req["resourceStatus"] not in ("clear","live","unknown"):
+                raise ValueError("invalid resource observation")
+            a["resourceStatus"]=req["resourceStatus"]
+            a["resourceInventoryRef"]=string(req["inventoryRef"],"inventory reference",1024)
+            if req["resourceStatus"]=="clear":
+                a["pendingRef"]=None
         elif op == "observe-stop":
             keys(req, (*common, "observation", "observationRef"))
             if a["state"] == "stopped":
@@ -179,22 +245,39 @@ def change(s, op, req, binding):
             if req["observation"] == "never-launched" and a["state"] != "reserved":
                 raise ValueError("attached attempt cannot be never-launched")
             a["state"] = "stopped"
+            a["resourceStatus"] = "unknown" # reconcile effects after termination
             a["stopObservationRef"] = string(req["observationRef"], "observationRef", 1024)
         elif op == "replace":
-            keys(req, (*common, "briefRef"))
+            keys(req, (*common, "briefRef"), ("adoptionRef",))
             if a["state"] != "stopped" or not a["checkpointRef"]:
                 raise ValueError("replacement requires observed stop and checkpoint")
             if a["number"] >= s["maxAttempts"]:
                 raise ValueError("attempt budget exhausted")
-            s["active"] = new_attempt(a["taskId"], a["number"] + 1,
-                                      string(req["briefRef"], "briefRef", 1024), a["checkpointRef"])
+            status=a.get("resourceStatus","unknown")
+            if status=="unknown" or not a.get("resourceInventoryRef"):
+                raise ValueError("replacement requires reconciled resources")
+            if status=="live" and not req.get("adoptionRef"):
+                raise ValueError("live resources require adoption reference")
+            if "adoptionRef" in req:
+                string(req["adoptionRef"],"adoption reference",1024)
+            n = new_attempt(a["taskId"], a["number"] + 1,
+                            string(req["briefRef"], "briefRef", 1024), a["checkpointRef"], a.get("effectDomains",["*"]))
+            n["resourceStatus"]=status
+            n["resourceInventoryRef"]=a["resourceInventoryRef"]
+            n["adoptionRef"]=req.get("adoptionRef")
+            n["pendingRef"]=a.get("pendingRef")
+            s["active"]=n
         elif op == "release":
-            keys(req, (*common, "resultRef"))
+            keys(req, (*common, "resultRef"), ("metricsRef",))
             if a["state"] != "stopped":
                 raise ValueError("cannot release unconfirmed writer")
+            if a.get("resourceStatus")!="clear" or not a.get("resourceInventoryRef") or a.get("pendingRef"):
+                raise ValueError("cannot release unresolved operations")
             s["lastRelease"] = {"taskId": a["taskId"], "attemptId": a["attemptId"],
                                 "resultRef": string(req["resultRef"], "resultRef", 1024),
-                                "stopObservationRef": a["stopObservationRef"]}
+                                "stopObservationRef": a["stopObservationRef"],
+                                "resourceInventoryRef": a["resourceInventoryRef"],
+                                "metricsRef": string(req["metricsRef"],"metrics reference",1024) if "metricsRef" in req else None}
             s["active"] = None
         else:
             raise ValueError("unknown operation")
@@ -218,7 +301,8 @@ def main():
     parser.add_argument("--binding", required=True)
     parser.add_argument("--workspace", required=True)
     parser.add_argument("operation", choices=("read", "start", "claim", "attach", "checkpoint",
-                        "observe-stop", "replace", "release", "supervisor-checkpoint", "finish"))
+                        "observe-stop", "observe-resources", "mark-pending", "replace", "release", "supervisor-checkpoint", "finish",
+                        "claim-steward","attach-steward","observe-steward-stop","release-steward"))
     args = parser.parse_args()
     try:
         if args.operation == "read":

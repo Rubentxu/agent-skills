@@ -40,3 +40,7 @@ motivo: lo que se conserva más allá de su último uso lleva un motivo escrito.
 ## Candidatos siguientes
 
 - Sin candidatos todavía.
+
+## Operaciones vivas al terminar
+
+Por cada operacion que deba continuar: operationKey, origen de intento, identidad del runtime, evidencia/timestamp de estado, efectos, referencia de resultado y siguiente accion. Declarar inventario vacio solo tras observar. La siguiente sesion verifica identidad y adopta; nunca relanzar por falta de resultado ni matar por PID no atribuido.

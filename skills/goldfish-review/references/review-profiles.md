@@ -8,3 +8,7 @@
 Priorizar defectos falsables. Parar en KEEP_AS_IS, REMEDY, EXPERIMENT, NEED_EVIDENCE o BLOCKED. Los nits no abren rondas. Una ronda limpia no certifica seguridad, y una ronda ausente nunca es limpia.
 
 Registrar costo medido (segundos/tokens cuando el host los facilita), número de revisores terminados, defectos confirmados, falsos positivos y retrabajo evitado. No extrapolar desde fixtures.
+
+## Brief y salida rápida
+
+Una pregunta falsable por incertidumbre material, target fijado, fuentes autorizadas y evidencia primaria; no heredar razonamiento, conclusiones ni respuestas del implementador. El host mide coste cuando puede. Parar al resolver la pregunta o agotar presupuesto; no abrir rondas por nits, informes administrativos ni cobertura de rúbricas irrelevantes. Si el riesgo exige una revisión y no hay capacidad confirmada, NOT_RUN y decisión del supervisor; no verde implícito.

@@ -468,6 +468,53 @@ def id_de_tarea_de_la_rama(rama: str) -> str | None:
 # Veredicto
 # --------------------------------------------------------------------------------------
 
+def estado_sesion(session: dict) -> str:
+    if not isinstance(session, dict) or not session:
+        return "MISSING_OR_INVALID"
+    turns = session.get("num_turns")
+    if type(turns) is int and turns == 0:
+        return "STARTUP_FAILED" if session.get("is_error") is True else "NO_TURNS"
+    if type(turns) is int and turns > 0 and isinstance(session.get("session_id"), str) and session["session_id"].strip() and type(session.get("is_error")) is bool:
+        return "COMPLETED"
+    return "INCOMPLETE"
+
+def extracto_resultado(session: dict) -> str:
+    result = session.get("result")
+    if not isinstance(result, str):
+        return ""
+    # Best effort, not a general secret scanner. Never include stderr or tool arguments.
+    result = re.sub(r"(?i)\b(bearer|basic)\s+\S+", r"\1 [REDACTED]", result)
+    result = re.sub(r"(?i)\b(token|password|api[_-]?key|secret|authorization|credential)s?\s*[:=]\s*\S+", r"\1=[REDACTED]", result)
+    result = re.sub(r"(?i)\b(?:sk-[A-Za-z0-9_-]+|gh[pousr]_[A-Za-z0-9]+|github_pat_[A-Za-z0-9_]+)", "[REDACTED]", result)
+    result = re.sub(r"(?i)(https?://)[^/\s@]+@", r"\1[REDACTED]@", result)
+    lines = [re.sub(r"[\x00-\x1f\x7f]", " ", x).strip() for x in result.splitlines() if x.strip()]
+    # Do not copy the whole response to archived reports.
+    return lines[-1][:240] if lines else ""
+
+def diagnostico(session: dict, tablero: dict, handoff: dict, verdict: str, exit_code=None) -> dict:
+    result = str(session.get("result") or "")
+    low = result.lower()
+    if exit_code in (124, 137):
+        category, action = "DEADLINE_OR_SIGNAL", "RECONCILE_OPERATIONS"
+    elif re.search(r"unrecognized_model|model_not_found|unknown model", low):
+        category, action = "MODEL_UNAVAILABLE", "RECHECK_PROVIDER"
+    elif re.search(r"not logged in|authentication_error|unauthorized|invalid.api.key", low):
+        category, action = "AUTH_FAILED", "RECHECK_AUTH"
+    elif estado_sesion(session) != "COMPLETED":
+        category, action = "STARTUP_OR_INCOMPLETE", "RECONCILE_OPERATIONS"
+    elif verdict == PASS:
+        category, action = "DELIVERED", "CONTINUE"
+    elif tablero.get("task_closed") and not handoff.get("updated"):
+        category, action = "HANDOFF_MISSING", "RECOVER_HANDOFF"
+    elif verdict == BLOCKED:
+        category, action = "REPORTED_BLOCKER", "INVESTIGATE"
+    else:
+        category, action = "UNCLASSIFIED", "INSPECT_RESULT"
+    return {"category": category, "nextAction": action, "lastResultLine": extracto_resultado(session),
+            "confidence": "suspected" if category != "DELIVERED" else "observed",
+            "sessionState": estado_sesion(session), "exitCode": exit_code,
+            "retryAuthorized": False}
+
 def decidir_veredicto(session: dict, tablero: dict, handoff: dict,
                        sesion_arrancada: bool) -> tuple[str, str]:
     """(veredicto, razon). El veredicto usa el vocabulario cerrado del workspace."""
@@ -482,7 +529,7 @@ def decidir_veredicto(session: dict, tablero: dict, handoff: dict,
     if not hay_cierre and re.search(r"\b(blocked|bloquead|no puedo|blocked)\b", resultado, re.I):
         return BLOCKED, "el agente declaro que no puede avanzar"
     if error:
-        return FAIL, f"la sesion termino en error: {resultado[:200]}"
+        return FAIL, f"la sesion termino en error: {extracto_resultado(session)}"
     if hay_cierre and not handoff_ok:
         # La guarda: una tarea cerrada sin handoff es una entrega que la siguiente sesion
         # no puede continuar. Falla aunque el codigo este perfecto.
@@ -490,7 +537,7 @@ def decidir_veredicto(session: dict, tablero: dict, handoff: dict,
     if hay_cierre and handoff_ok:
         return PASS, "tarea cerrada y handoff actualizado"
     if not hay_cierre:
-        return FAIL, "la sesion termino sin cerrar ninguna tarea"
+        return FAIL, "la sesion termino sin cerrar ninguna tarea" + (": " + extracto_resultado(session) if extracto_resultado(session) else "")
     return NOT_RUN, "no se pudo determinar el veredicto"
 
 
@@ -519,7 +566,7 @@ def construir(args) -> dict:
     tablero = diff_del_tabulario(antes, despues, terminal)
 
     session = leer_json(args.session)
-    sesion_arrancada = bool(session) or os.path.isfile(args.session)
+    sesion_arrancada = estado_sesion(session) == "COMPLETED"
 
     desde = parsear_hora(session.get("startedAt")) or parsear_hora(args.since)
 
@@ -599,7 +646,8 @@ def construir(args) -> dict:
     sesion = {
         "session_id": session.get("session_id"),
         "is_error": bool(session.get("is_error")),
-        "result": str(session.get("result", ""))[:2000],
+        "result": extracto_resultado(session),
+        "state": estado_sesion(session),
         "duration_s": session.get("duration_ms", 0) / 1000 if session.get("duration_ms") else None,
         "duration_api_s": session.get("duration_api_ms", 0) / 1000
         if session.get("duration_api_ms") else None,
@@ -626,6 +674,7 @@ def construir(args) -> dict:
         "iteration": args.iteration,
         "verdict": veredicto,
         "reason": razon,
+        "diagnostic": diagnostico(session, tablero, handoff, veredicto, getattr(args, "exit_code", None)),
         "board": tablero,
         "session": sesion,
         "transcript": transcript,
@@ -780,6 +829,7 @@ def main() -> int:
                         help="estado terminal del tablero (repetible)")
     parser.add_argument("--since", default="", help="ISO8601: inicio de la sesion")
     parser.add_argument("--iteration", default="", help="numero de iteracion")
+    parser.add_argument("--exit-code", type=int, default=None)
     parser.add_argument("--out", default="", help="fichero de salida JSON")
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args()

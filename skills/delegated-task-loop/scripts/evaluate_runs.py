@@ -12,7 +12,9 @@ from pathlib import Path
 VARIANTS = ("single-agent", "supervised-task-loop", "delegated-task-loop")
 TARGET = VARIANTS[-1]
 METRICS = ("acceptedTasks", "totalTokens", "elapsedMs", "transferBytes", "supervisorPeakContextTokens",
-           "repeatedReads", "interventions", "recoveryMs", "resourceLeaks", "reopenedTasks", "confirmedDefects")
+           "repeatedReads", "interventions", "recoveryMs", "resourceLeaks", "reopenedTasks", "confirmedDefects", "briefPreparationMs", "firstUsefulChangeMs", "contextQuestions",
+           "redundantVerificationMs", "administrativeWorkerMs", "stewardMs", "bureaucracyBlockedMs",
+           "duplicateOperations", "workerOutputTokens", "workerRounds")
 STATUSES = ("completed", "failed", "blocked", "not-run")
 MAX_BYTES = 1048576
 

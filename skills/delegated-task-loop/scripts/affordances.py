@@ -8,16 +8,24 @@ from pathlib import Path
 BACKLOG = "backlog-agile-workflow"
 KNOWLEDGE = "software-knowledge"
 GOLDFISH = "goldfish-review"
+TESTING = "delivery-first-testing"
 PHASES = {"discover", "ready", "running", "verify", "review", "accept", "learn", "release", "interrupted", "stopped"}
 CAPS = {"fresh", "background", "notify", "progress", "steer", "cancel", "resume", "reviewReadOnly"}
-SIGNALS = {"normal", "repeated-failure", "stalled", "budget-exhausted", "context-pressure", "scope-drift", "question", "result"}
+SIGNALS = {"normal", "repeated-failure", "stalled", "budget-exhausted", "context-pressure", "scope-drift", "question", "result", "pending", "silence", "resource-drift"}
 
 def validate(s):
     if not isinstance(s, dict) or type(s.get("schemaVersion")) is not int or s["schemaVersion"] != 1 or s.get("kind") != "delegated-loop-state":
         raise ValueError("expected delegated-loop-state v1")
     required = {"schemaVersion", "kind", "phase", "availableSkills", "capabilities", "budgetRemaining", "taskId", "signal", "ownership", "evidence", "review", "outcome"}
-    if set(s) != required:
+    optional={"preflight","preflightRef","resourceState"}
+    if required-set(s) or set(s)-required-optional:
         raise ValueError("missing or unexpected state fields")
+    preflight=s.get("preflight","unknown")
+    resources=s.get("resourceState","unknown")
+    if preflight not in ("unknown","needs-refinement","prepared") or resources not in ("unknown","clear","live","adoptable"):
+        raise ValueError("invalid preparation or resource state")
+    if preflight=="prepared" and (not isinstance(s.get("preflightRef"),str) or not s["preflightRef"].strip() or len(s["preflightRef"])>1024):
+        raise ValueError("prepared handoff requires reference")
     for name, allowed in (
         ("phase", PHASES), ("signal", SIGNALS),
         ("ownership", {"unknown", "clear", "active", "terminated"}),
@@ -43,6 +51,8 @@ def route(s):
     validate(s)
     skills, caps = set(s["availableSkills"]), s["capabilities"]
     phase, ownership, signal = s["phase"], s["ownership"], s["signal"]
+    prepared=s.get("preflight","unknown")
+    resources=s.get("resourceState","unknown")
     links, lenses, limits = [], [], []
     decision = "READY"
 
@@ -89,12 +99,22 @@ def route(s):
             limits.append("Backlog authority unavailable")
         elif not s["taskId"]:
             provider("select-task", BACKLOG, "ready_candidates")
-        else:
-            lenses.extend(["references/skill-composition.md", "references/delegation.md"])
-            provider("prepare-handoff", BACKLOG, "context_handoff")
-            provider("prepare-context", KNOWLEDGE, "context-pack")
-            # A candidate is not launch authority: host must validate brief and permissions.
+        elif resources!="clear":
+            decision="RECONCILE"
+            lenses.append("references/resource-adoption.md")
+            link("reconcile-live-resources")
+        elif prepared=="prepared":
+            lenses.append("references/handoff-engineering.md")
             native("delegate-after-preflight", "fresh")
+        else:
+            decision="NEEDS_REFINEMENT" if prepared=="needs-refinement" else "PREPARE"
+            lenses.extend(["references/handoff-engineering.md", "references/skill-composition.md"])
+            provider("verify-task-anchors", BACKLOG, "technical_readiness")
+            provider("prepare-handoff", BACKLOG, "context_handoff")
+            provider("prepare-verification-plan", TESTING, "verification_plan")
+            provider("prepare-context", KNOWLEDGE, "context-pack")
+            provider("recover-verified-facts", KNOWLEDGE, "verified_facts")
+            link("validate-versioned-handoff")
     elif phase == "running":
         if ownership != "active":
             reconcile()
@@ -123,6 +143,15 @@ def route(s):
                 link("checkpoint")
                 provider("recover-context", KNOWLEDGE, "context-pack")
                 native("steer", "steer")
+            elif signal == "pending":
+                decision = "WAIT_PENDING"
+                link("reconcile-live-resources")
+                link("await-existing-operation")
+            elif signal in {"silence","resource-drift"}:
+                decision = "RECONCILE"
+                link("observe-liveness")
+                link("reconcile-live-resources")
+                native("steer", "steer")
             elif signal == "result":
                 link("reconcile-result")
             else:
@@ -142,8 +171,12 @@ def route(s):
         elif s["budgetRemaining"] == 0:
             decision = "STOP"
             link("preserve-checkpoint")
+        elif resources not in ("clear","adoptable"):
+            decision="RECONCILE"
+            link("adopt-live-resources-before-resume")
         else:
             link("revalidate-checkpoint")
+            link("adopt-live-resources-before-resume")
             if caps.get("resume"):
                 native("resume-after-revalidation", "resume")
             elif caps.get("fresh"):
@@ -153,8 +186,12 @@ def route(s):
     elif phase in {"verify", "review", "accept"}:
         if ownership not in {"clear", "terminated"}:
             reconcile()
+        elif resources!="clear":
+            decision="RECONCILE"
+            lenses.append("references/resource-adoption.md")
+            link("reconcile-live-resources")
         else:
-            lenses.append("references/skill-composition.md")
+            lenses.append("references/proportional-verification.md")
             if phase == "verify" or s["evidence"] != "sufficient":
                 provider("verify-evidence", BACKLOG, "verify")
                 if s["evidence"] != "sufficient":
@@ -182,6 +219,10 @@ def route(s):
     elif phase == "release":
         if ownership not in {"clear", "terminated"}:
             reconcile()
+        elif resources!="clear":
+            decision="RECONCILE"
+            lenses.append("references/resource-adoption.md")
+            link("reconcile-live-resources")
         else:
             link("release-owned-resources")
             link("checkpoint-supervisor")
@@ -197,7 +238,7 @@ def main():
             raise ValueError("state too large")
         print(json.dumps(route(json.loads(raw)), ensure_ascii=False, sort_keys=True))
         return 0
-    except (OSError, ValueError, UnicodeError) as exc:
+    except (OSError, ValueError, TypeError, UnicodeError) as exc:
         print(str(exc), file=sys.stderr)
         return 2
 

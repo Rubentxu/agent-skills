@@ -131,6 +131,17 @@ class AuthorityTests(unittest.TestCase):
         bad = receive(handoff, validate(a, m, d), revision=rev, task_id="TASK-42")
         self.assertIn("AUTHORITY_CHANGED_OR_MISSING", bad["reasons"])
 
+    def test_handoff_detects_changed_task_content(self):
+        a, m, d = sample()
+        assessment = validate(a, m, d)
+        task = {"schemaVersion": 1, "kind": "task-view", "task": {
+            "id": "TASK-42", "acceptanceCriteria": ["old"], "references": ["decision-14"]}}
+        rev = "a" * 40
+        handoff = prepare(task, assessment, revision=rev, agent="worker")
+        self.assertTrue(receive(handoff, assessment, revision=rev, task_id="TASK-42", task_view=task)["taskContentCompared"])
+        task["task"]["acceptanceCriteria"] = ["changed"]
+        self.assertIn("TASK_CONTENT_CHANGED_OR_UNPINNED", receive(handoff, assessment, revision=rev, task_id="TASK-42", task_view=task)["reasons"])
+
     def test_offline_bundle_contains_only_refs_and_not_a_signature(self):
         a, m, d = sample()
         assessment = validate(a, m, d)

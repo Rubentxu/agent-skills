@@ -18,5 +18,7 @@
   "ownership": "clear",
   "evidence": "unknown",
   "review": "none",
-  "outcome": "unknown"
+  "outcome": "unknown",
+  "preflight": "unknown",
+  "resourceState": "clear"
 }

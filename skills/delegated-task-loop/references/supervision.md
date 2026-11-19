@@ -11,3 +11,5 @@ Goldfish por riesgo: none/lite/focused/deep según la skill proveedora. Solicita
 Self-check del supervisor al finalizar cada tarea: objetivo, evidencias, repeticiones, contexto, presupuesto, bloqueos. La única respuesta normal a un evento rutinario es no intervenir. El host conserva los límites reales y cualquier permiso de cancelación.
 
 Si hay eventos nativos, aplicar el [reductor](event-supervision.md) antes de enviar nuevas señales al LLM; conservar solo la proyección y referencias. No afirmar que el helper despierta por sí mismo a un agente inactivo.
+
+Usar [telemetría y liveness](telemetry.md) para observar sin incorporar transcript al LLM. Silencio prolongado dispara steer/reconciliación, no muerte; mantener PENDING y esperar operación atribuida. Preparar solo la siguiente candidata y revalidarla al delegar; no invertir en lotes de briefs obsoletos. Medir deuda de contexto y coste de intervención.

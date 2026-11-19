@@ -14,4 +14,6 @@ El reductor detecta dos errores equivalentes (reset con avance o hipótesis nuev
 
 Secuencia: observar evento → reducir → guardar projection → si wakeRecommended, recuperar evidencia pertinente y aplicar affordances/flow-recovery → decidir → reconocer alerta. Si hay pendientes al recuperar tras caída, atender signal aunque wakeRecommended sea falso. Las operaciones de host reales siguen siendo explícitas. El host decide cómo notificar un supervisor inactivo; si no puede, reportar capacidad result-only.
 
-El filtro opera con hasta 64 eventos por lote y referencias de tamaño limitado, conserva solo cursor/último digest, último progreso, fingerprint/contador de fallo y hasta siete alertas. Repetición exacta del último evento es idempotente; otros replays/huecos exigen reconciliación. No es un bus de eventos ni certifica la veracidad de inputs.
+El filtro opera con hasta 64 eventos por lote y referencias de tamaño limitado, conserva solo cursor/último digest, último progreso, fingerprint/contador de fallo y un número acotado de alertas. Repetición exacta del último evento es idempotente; otros replays/huecos exigen reconciliación. No es un bus de eventos ni certifica la veracidad de inputs.
+
+Señales adicionales pending, silence y resource-drift proceden de [liveness](telemetry.md) y reconciliación observada; no terminan reservas. Un heartbeat no demuestra avance material.

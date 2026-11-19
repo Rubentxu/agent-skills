@@ -18,9 +18,28 @@ def rels(result):
 class RouterTests(unittest.TestCase):
     def test_ready_composition(self):
         r = route(state())
-        self.assertEqual(rels(r), {"prepare-handoff", "prepare-context", "delegate-after-preflight"})
+        self.assertEqual(rels(r), {"verify-task-anchors", "prepare-handoff", "prepare-context", "recover-verified-facts", "validate-versioned-handoff"})
         self.assertFalse(r["authorized"])
+        self.assertNotIn("delegate-after-preflight",rels(r))
+        launched=route(state(preflight="prepared",preflightRef="private:brief"))
+        self.assertEqual(rels(launched),{"delegate-after-preflight"})
         self.assertLessEqual(len(r["lenses"]), 2)
+
+    def test_testing_provider_and_pending(self):
+        r=route(state(availableSkills=state()["availableSkills"]+["delivery-first-testing"]))
+        self.assertIn("prepare-verification-plan",rels(r))
+        r=route(state(phase="running",ownership="active",signal="pending"))
+        self.assertEqual(r["decision"],"WAIT_PENDING")
+        self.assertNotIn("delegate-after-preflight",rels(r))
+
+    def test_unreconciled_resources_or_preflight_never_launch_or_accept(self):
+        r=route(state(preflight="prepared",preflightRef="brief",resourceState="unknown"))
+        self.assertNotIn("delegate-after-preflight",rels(r))
+        s=state(phase="accept",ownership="terminated",evidence="sufficient",resourceState="live")
+        self.assertNotIn("accept-after-authority-check",rels(route(s)))
+        r=route(state(phase="interrupted",ownership="terminated",resourceState="live",capabilities={"resume":True}))
+        self.assertNotIn("resume-after-revalidation",rels(r))
+        with self.assertRaises(ValueError):route(state(preflight="prepared"))
 
     def test_fail_closed_no_fresh(self):
         r = route(state(capabilities={}))

@@ -48,3 +48,7 @@ Para consultar otros proyectos, usa [federación explícita](references/federati
 Cuando se evalúe utilidad real, usa [evaluación operativa](references/operational-evaluation.md): distinguir relevancia documental, rendimiento de índice y resultados pareados de agente. No cargar métricas en el contexto habitual ni emitir una certificación de agente a partir de tests Python.
 
 Consulta [README](README.md) para uso y límites.
+
+## Hechos reutilizables para delegación
+
+Usar [hechos con procedencia](references/verified-facts.md) cuando el supervisor ya contrastó fuentes. Enviar solo lo necesario, no repetir investigación vigente; un delta de conocimiento se reconcilia con checkpoint existente por actor autorizado.
