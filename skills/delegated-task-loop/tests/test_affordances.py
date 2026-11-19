@@ -18,9 +18,16 @@ def rels(result):
 class RouterTests(unittest.TestCase):
     def test_ready_composition(self):
         r = route(state())
-        self.assertEqual(rels(r), {"prepare-handoff", "prepare-context", "delegate-after-preflight"})
+        self.assertEqual(rels(r), {"verify-task-anchors", "prepare-handoff", "prepare-context", "recover-verified-facts", "validate-versioned-handoff", "delegate-after-preflight"})
         self.assertFalse(r["authorized"])
         self.assertLessEqual(len(r["lenses"]), 2)
+
+    def test_testing_provider_and_pending(self):
+        r=route(state(availableSkills=state()["availableSkills"]+["delivery-first-testing"]))
+        self.assertIn("prepare-verification-plan",rels(r))
+        r=route(state(phase="running",ownership="active",signal="pending"))
+        self.assertEqual(r["decision"],"WAIT_PENDING")
+        self.assertNotIn("delegate-after-preflight",rels(r))
 
     def test_fail_closed_no_fresh(self):
         r = route(state(capabilities={}))

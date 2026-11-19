@@ -22,3 +22,5 @@ Protocolo reproducible: [canaries nativos](../references/host-canaries.md). No c
 Ejecutar [evaluación por pares](../references/evaluation.md) con revisiones y tareas idénticas. El validador de fixtures no mide productividad ni ejecuta agentes; el ejemplo se mantiene not-evaluated.
 
 Fan-out: comprobar que el host permite dos lectores frescos realmente restringidos a snapshots inmutables, notificaciones atribuidas y límites agregados. No validar lectores mediante instrucciones únicamente. Los escritores permanecen serializados. [Contrato de fan-out](../references/parallel-read.md).
+
+Evaluar brief v2 (anclas ausentes, dudas, políticas, delta antiguo), PENDING/adopción, Steward disjunto/capacidad no confirmada, selector proporcional y evidencia obsoleta. Canaries: interrupción durante integración real, adopción sin duplicar, tiempo hasta primer cambio y coste de contexto. Ver [telemetría](../references/telemetry.md), [alcance](../references/proportional-verification.md). Fixture no equivale a prueba de host.

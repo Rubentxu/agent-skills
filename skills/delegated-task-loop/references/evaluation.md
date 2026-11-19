@@ -17,3 +17,5 @@ Guardar esa plantilla y las observaciones reales en estado privado, no en el che
 El informe compara el candidato frente a cada baseline por separado. Registra muestras excluidas, regresiones de completitud/calidad y deltas con tamaño de muestra, incluyendo el coste de fallos. Tokens y tiempo por entrega se calculan solo entre ejecuciones aceptadas. Sin observaciones: not-evaluated, medianas null. No certifica los datos ni permite afirmar superioridad a partir de fixtures. Una muestra pequeña es exploratoria, no significación estadística.
 
 Los resultados no se inyectan al supervisor habitual; consultarlos al evaluar metodología o ajustar presupuestos.
+
+Métricas adicionales opcionales: briefPreparationMs, firstUsefulChangeMs, contextQuestions, redundantVerificationMs, administrativeWorkerMs, stewardMs, bureaucracyBlockedMs, duplicateOperations, workerOutputTokens, workerRounds. Medir solo con evidencia observada, misma unidad y alcance. [Telemetría](telemetry.md) local; coste de todos los agentes incluidas esperas, intentos e intervenciones. Ajustar model routing por coste por entrega aceptada, no por precio/token aislado.

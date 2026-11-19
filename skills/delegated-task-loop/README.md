@@ -31,3 +31,5 @@ python3 -m unittest discover -s skills/delegated-task-loop/tests -p 'test_*.py' 
 [Fan-out de solo lectura](references/parallel-read.md): candidatos nativos acotados por slots, contexto y fuentes inmutables. El paralelismo de escritores sigue deshabilitado.
 
 [Handoff Engineering v2](references/handoff-engineering.md): resolver ambigüedad, asignar criterios, proyección de políticas/hechos, plan de verificación, recursos y deltas versionados. Instalar delivery-first-testing si se desea el compilador público de pruebas: `npx skills add Rubentxu/agent-skills --skill delivery-first-testing`.
+
+[Telemetría](references/telemetry.md) local y [verificación proporcional](references/proportional-verification.md). [Adopción de recursos](references/resource-adoption.md) y [Steward efímero](references/steward.md) conservan reservas hasta reconciliar efectos; requieren permisos y capacidades nativas comprobados.
