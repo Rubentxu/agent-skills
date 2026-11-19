@@ -19,3 +19,10 @@ class ReadinessTests(unittest.TestCase):
     def test_no_observation(self):
         f=task();f["anchors"][0]["evidenceRef"]=None
         with self.assertRaises(ValueError): assess(f)
+
+    def test_sizing_is_not_permission_or_exact_estimate(self):
+        f=task();f['sizing']=dict(band='oversized',rationaleRef='scope:observed',atomicExceptionRef=None)
+        self.assertIn('REFINE_OVERSIZED_TASK',assess(f)['reasons'])
+        f['sizing']['atomicExceptionRef']='decision:atomic'
+        self.assertEqual(assess(f)['status'],'CANDIDATE_READY')
+        self.assertFalse(assess(f)['authorized'])

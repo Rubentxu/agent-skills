@@ -6,7 +6,7 @@
 ## OBJETIVO
 
 Objetivo: cerrar UNA tarea del backlog.md —la siguiente que este lista— y dejarla verificable y
-publicada, usando las skills backlog-agile-workflow, software-knowledge goldfish-review y delivery-first-testing. El
+publicada solo si la política y el permiso efectivo lo autorizan, usando las skills backlog-agile-workflow, software-knowledge goldfish-review y delivery-first-testing. El
 objetivo de fondo es vaciar el backlog, pero en esta sesion el objetivo es exactamente una tarea:
 si dudas entre dos, elige la de mas valor, cierrala y sal. El bucle repite el ciclo en la
 siguiente sesion, con el handoff al dia.
@@ -33,7 +33,7 @@ Has que me sienta orgulloso de tus implementaciones en las tareas.
   integracion solo sobre el codigo afectado.
 - Corregimos defectos en alcance y necesarios para la entrega; registrar otros sin desviarse.
 - Integramos solo con autorizacion efectiva y la politica Git observada; no heredar permisos del prompt.
-- Hacemos limpieza de ramas en local y remoto creados para la tarea.
+- Limpiamos solo ramas propias desechables tras verificar entrega y autorización. Nunca eliminar cambios parciales necesarios para relevo.
 - **Liberamos los recursos que la tarea creo: worktrees de git, ramas locales y remotas, pods de
   Kubernetes, contenedores, clusters kind y procesos auxiliares.** Lo que se usa, se libera, el
   mismo dia que la tarea deja de necesitarlo; no se acumula para una limpieza futura.
@@ -78,26 +78,28 @@ subagentes real. Mide lo que te cuesta; si la tarea es trivial, no lo fuerces.
   - dentro de la slice, y con su propio grupo de procesos, para que el vigilante de la maquina no
     lo mate por estar fuera de su sitio y para que no se lleve por delante nada de lo de mas
     alrededor:
-    `setsid systemd-run --user --scope --slice=dev-jvm.slice --quiet bash -c 'la-puerta > /tmp/x.log 2>&1; rc=$?; echo "PASS rc=$rc" > /tmp/x.verdict' >/dev/null 2>&1 </dev/null & disown`
+    `setsid systemd-run --user --scope --slice=dev-jvm.slice --quiet bash -c 'la-puerta > /tmp/x.log 2>&1; rc=$?; echo "rc=$rc" > /tmp/x.verdict' >/dev/null 2>&1 </dev/null & disown`
   - un trabajo fuera de su slice lo mata el `build-guard` de la maquina: la puerta no acaba, y la
     tarea se queda sin veredicto.
-- PRs: tienes autorizacion implicita para push, PR y merge. Aun asi:
+- PRs: solo si autorizados por políticas efectivas y encargo. No hay autorización implícita:
   - titulo y cuerpo del PR en el estilo del repo, y SIN mencionar herramientas ni agentes (la
     politica del repo lo bloquea; ver `.github/scripts/policy-guard.sh` del repo).
-  - un PR por tarea, sobre su rama, con la puerta local pagada antes de abrirlo.
+  - si la política lo requiere, un PR por tarea y su puerta local proporcionada.
 - RONDA:
 {{RONDA}}
-  - si alguno dice "toca", esa es tu tarea y va antes que cualquier otra.
+  - si alguno dice "toca", esa es tu tarea y va antes que cualquier otra, salvo encargo explícito de relevo con taskId fijado.
 - Si te bloqueas: deja la tarea con evidencia y sal. Es honesto y la siguiente sesion sigue.
 
 ## AL TERMINAR (obligatorio)
+
+A los 45 min aproximadamente evalúa trabajo restante; a 50 min prepara salida, no abras trabajo grande. Si no puedes cerrar, deja taskId, base y revisión/snapshot recuperable, AC pendientes, evidencia vigente, experimentos útiles y operaciones vivas. Sal con estado parcial; no marques Done ni cambies tarea. En un relevo fijado, continúa esa misma tarea con contexto limpio y Fresh Eyes breve.
 
 1. Actualiza el handoff con
    `backlog doc update {{HANDOFF_ID}} --content "<markdown completo>"`.
    `--content` REEMPLAZA el cuerpo entero: manda el documento completo, manteniendo las mismas
    secciones que ya tiene. Debe decir: que cerraste y con que evidencia y SHA; que queda a medias;
    que aprendiste.
-2. Libera lo que la tarea creo, y anotalo en el handoff:
+2. Libera exclusivamente recursos propios desechables ya innecesarios, con autorización. Si hay trabajo pendiente, preserva worktree y operaciones; anota identidad y siguiente acción en el handoff:
    - worktree de git (`git worktree remove`) y ramas locales y remotas de la tarea;
    - pods y namespaces de Kubernetes que levantaste (`kubectl delete pod|ns`, en el cluster
      correcto: mira el contexto activo antes de borrar);

@@ -667,8 +667,12 @@ def construir(args) -> dict:
 
     veredicto, razon = decidir_veredicto(session, tablero, handoff, sesion_arrancada)
 
+    expected=getattr(args,"expected_task",None)
+    if expected and veredicto==PASS and [x["id"] for x in tablero["tasks_closed"]]!=[expected]:
+        veredicto,razon=FAIL,"relevo cerro una tarea ajena o mas de una tarea"
     informe = {
         "kind": "agent-loop-report",
+        "expectedTask": expected,
         "schema_version": 1,
         "generated_at": ahora_iso(),
         "iteration": args.iteration,
@@ -830,6 +834,7 @@ def main() -> int:
     parser.add_argument("--since", default="", help="ISO8601: inicio de la sesion")
     parser.add_argument("--iteration", default="", help="numero de iteracion")
     parser.add_argument("--exit-code", type=int, default=None)
+    parser.add_argument("--expected-task", default=None)
     parser.add_argument("--out", default="", help="fichero de salida JSON")
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args()

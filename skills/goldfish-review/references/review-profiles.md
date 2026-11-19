@@ -12,3 +12,7 @@ Registrar costo medido (segundos/tokens cuando el host los facilita), número de
 ## Brief y salida rápida
 
 Una pregunta falsable por incertidumbre material, target fijado, fuentes autorizadas y evidencia primaria; no heredar razonamiento, conclusiones ni respuestas del implementador. El host mide coste cuando puede. Parar al resolver la pregunta o agotar presupuesto; no abrir rondas por nits, informes administrativos ni cobertura de rúbricas irrelevantes. Si el riesgo exige una revisión y no hay capacidad confirmada, NOT_RUN y decisión del supervisor; no verde implícito.
+
+## Relevo y Fresh Eyes
+
+Fresh Eyes del sucesor es inspección operativa de 2–5 minutos, no Goldfish por defecto. Invocar Goldfish solo si detecta premisa arquitectónica contradictoria, seguridad, contrato público u otra incertidumbre material; pregunta falsable, target fijado y fuentes autorizadas, sin razonamiento heredado. No exigir una revisión adicional al cambiar de agente; conservar evidencia independiente vigente. Si ya se agotó el presupuesto, resolver en supervisor o elevar bloqueo; no esconder sobrecoste creando más revisores.

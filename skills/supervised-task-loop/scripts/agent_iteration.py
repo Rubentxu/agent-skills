@@ -38,6 +38,7 @@ import fcntl
 import datetime as dt
 import shutil
 import uuid
+import re
 import json
 import os
 import select
@@ -139,7 +140,7 @@ def write_json(p,v):
 def deadline_prompt(prompt, seconds):
     now=dt.datetime.now(dt.timezone.utc)
     hard=now+dt.timedelta(seconds=seconds)
-    soft=hard-dt.timedelta(seconds=min(300,max(10,seconds//5)))
+    soft=hard-dt.timedelta(seconds=min(600,max(10,seconds//5)))
     return (prompt+"\n\n## Limite operativo de esta sesion\n"
             f"Soft deadline (UTC): {soft.isoformat()}. Deja de iniciar trabajo, guarda checkpoint/handoff y termina.\n"
             f"Hard deadline (UTC): {hard.isoformat()}. No inicies operaciones que no puedas finalizar o transferir de forma segura.\n"),soft.isoformat(),hard.isoformat()
@@ -243,6 +244,9 @@ def construir_informe(rt: Runtime, dir_iter: Path, handoff: dict[str, str], inic
         "--out",
         str(informe),
     ]
+    relay=report.leer_json(str(dir_iter/"relay-state.json"))
+    if relay.get("taskId"):
+        orden.extend(["--expected-task",relay["taskId"]])
     completion=report.leer_json(str(dir_iter/"completion.json"))
     if type(completion.get("exitCode")) is int:
         orden.extend(["--exit-code",str(completion["exitCode"])])
@@ -310,7 +314,7 @@ def archive_attempt(d, observation):
     archive=d/"attempts"/uuid.uuid4().hex
     archive.mkdir(parents=True,mode=0o700)
     for p in d.iterdir():
-        if p.name!="attempts" and p.is_file():
+        if p.name not in ("attempts","relay-state.json") and p.is_file():
             p.rename(archive/p.name)
     write_json(archive/"recovery.json",{"observationRef":observation})
     return archive
@@ -333,6 +337,35 @@ def ejecutar(rt: Runtime, iteracion: str) -> int:
         return ejecutar_bajo_lock(rt,iteracion)
     finally: os.close(fd)
 
+def relay_remaining(state, stamp):
+    if type(state.get("startedAt")) is not int or type(state.get("attempts")) is not int or not 0<=state["attempts"]<=2 or stamp<state.get("lastObservedAt",state["startedAt"]):
+        raise Negativa("reloj/estado de relevo no reconciliado")
+    return min(3600,state["startedAt"]+7200-stamp)
+
+def prepare_relay(rt,d,iteration,process,recovered,task):
+    """Explicit continuation only: never starts a process or claims another task."""
+    if not recovered or process!="stopped" or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,127}",task):
+        raise Negativa("relevo requiere parada atribuida, taskId y reconciliacion")
+    state=report.leer_json(str(d/"relay-state.json"))
+    stamp=int(time.time())
+    if state.get("attempts")!=1 or relay_remaining(state,stamp)<300 or state.get("taskId") not in (None,task):
+        raise Negativa("presupuesto de relevo agotado o tarea distinta")
+    # Require original baseline and a fresh board observation; never infer
+    # that an unrelated Done is this worker's delivery.
+    before=report.estados_del_tabulario(report.leer_json(str(d/"board-before.json")))
+    if task not in before or before[task]["status"]=="Done":
+        raise Negativa("tarea no atribuible a baseline anterior")
+    snapshot(rt,d/"relay-board.json")
+    current=report.estados_del_tabulario(report.leer_json(str(d/"relay-board.json")))
+    if task not in current or current[task]["status"]!="In Progress" or report.diff_del_tabulario(before,current,{"Done"})["tasks_closed"]:
+        raise Negativa("estado del tablero incompatible con relevo")
+    # The original handoff/checkpoint is an external attestation; do not
+    # auto-retry failed work. Preserve the ledger through archive.
+    state.update(taskId=task,lastObservedAt=stamp,recoveryRef=recovered)
+    write_json(d/"relay-state.json",state)
+    archive_attempt(d,recovered)
+    return state
+
 def ejecutar_bajo_lock(rt: Runtime, iteracion: str) -> int:
     begin=time.monotonic()
     d=rt.state/f"iter-{iteracion}"
@@ -349,8 +382,17 @@ def ejecutar_bajo_lock(rt: Runtime, iteracion: str) -> int:
     if process=="unknown" and pid and vivo(pid):
         print("sesion previa sin identidad comprobable; reconciliar antes de repetir",file=sys.stderr)
         return 2
-    if valid_report(d,iteracion) and process!="running":
+    relay_task=os.environ.get("AGENT_RELAY_TASK","").strip()
+    ledger=report.leer_json(str(d/"relay-state.json"))
+    if valid_report(d,iteracion) and (not relay_task or ledger.get("attempts")==2 or report.leer_json(str(d/"report.json")).get("verdict")=="PASS"):
         return finish_report(rt,d,iteracion)
+    if relay_task:
+        if not any((d/n).exists() for n in ("session.json","launch-intent.json","report.json","sesion.pid")):
+            raise Negativa("relevo sin intento anterior")
+        ledger=prepare_relay(rt,d,iteracion,process,recovery_ref(iteracion),relay_task)
+    elif ledger.get("attempts",0)>0 and process!="never-launched" and report.estado_sesion(report.leer_json(str(d/"session.json")))!="COMPLETED":
+        print("intento incompleto: requiere relevo con taskId fijado y reconciliacion",file=sys.stderr)
+        return 2
     session=report.leer_json(str(d/"session.json"))
     status=report.estado_sesion(session)
     recovered=recovery_ref(iteracion)
@@ -386,10 +428,18 @@ def ejecutar_bajo_lock(rt: Runtime, iteracion: str) -> int:
         snapshot(rt,d/"board-before.json")
         inicio=dt.datetime.now(dt.timezone.utc).isoformat()
         (d/"inicio.txt").write_text(inicio,encoding="utf-8")
-        remaining=int(rt.task_timeout_min*60-(time.monotonic()-begin))-45
+        stamp=int(time.time())
+        if not ledger: ledger={"startedAt":stamp,"lastObservedAt":stamp,"attempts":0,"taskId":None}
+        if ledger.get("attempts",0)>=2:raise Negativa("presupuesto de intentos agotado")
+        remaining=min(relay_remaining(ledger,stamp),int(min(rt.task_timeout_min,60)*60-(time.monotonic()-begin)))-45
         if remaining<20:
             print("presupuesto agotado antes de lanzar",file=sys.stderr)
             return 2
+        if ledger.get("taskId"):
+            with prompt.open("a",encoding="utf-8") as f:
+                f.write("\n\n## Encargo fijado de relevo\nContinua exclusivamente la tarea "+ledger["taskId"]+". No selecciones otra. Recuperacion atestiguada: "+ledger["recoveryRef"]+". Contrasta el handoff y recursos antes de actuar; no borres trabajo parcial.\n")
+        ledger.update(attempts=ledger["attempts"]+1,lastObservedAt=stamp)
+        write_json(d/"relay-state.json",ledger)
         code=lanzar_sesion(rt,prompt,d/"session.json",d/"session.err",remaining)
         print(f"iteracion {iteracion}: fin de sesion rc={code}",file=sys.stderr)
         snapshot(rt,d/"board-after.json")

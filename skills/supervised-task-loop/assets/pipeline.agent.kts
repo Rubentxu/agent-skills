@@ -40,7 +40,7 @@
 // Entorno (esto es comportamiento, no rutas):
 //
 //   AGENT_MAX_TASKS          cuantas sesiones abre este run (por defecto 3)
-//   AGENT_TASK_TIMEOUT_MIN   el techo de una sesion (por defecto 90)
+//   AGENT_TASK_TIMEOUT_MIN   el techo de una sesion (por defecto 60)
 //   AGENT_PROFILE            el perfil de agente que usa cada sesion (por defecto cuenta-6)
 //   AGENT_BARE               1 abre la sesion sin los hooks de plugin (por defecto 0: el flag
 //                            apaga tambien el login de claude.ai con el que se autentican estos
@@ -73,7 +73,7 @@ val config = leerConfig()
 fun valor(clave: String, defecto: String): String = System.getenv(clave) ?: config[clave] ?: defecto
 
 val maxTasks = valor("AGENT_MAX_TASKS", "3").toIntOrNull() ?: 3
-val taskTimeoutMin = valor("AGENT_TASK_TIMEOUT_MIN", "90").toLongOrNull() ?: 90L
+val taskTimeoutMin = valor("AGENT_TASK_TIMEOUT_MIN", "60").toLongOrNull() ?: 60L
 // Donde viven los scripts del runtime. Relativo al workspace de la pipeline.
 val runtime = valor("AGENT_RUNTIME", "./scripts")
 
