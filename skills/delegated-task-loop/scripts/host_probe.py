@@ -13,7 +13,7 @@ CAPABILITIES = {
     "cancel": "confirmed-stop",
     "resume": "native-resume",
 }
-EXTRA = {"read-only-review", "isolated-writer", "supervisor-compaction"}
+EXTRA = {"read-only-review", "read-only-exploration", "isolated-writer", "supervisor-compaction"}
 CASES = set(CAPABILITIES.values()) | EXTRA
 
 def evaluate(report):
@@ -56,6 +56,7 @@ def evaluate(report):
             "host": report["host"], "version": report["version"], "sessionRef": report["sessionRef"],
             "capabilities": capabilities, "level": level,
             "reviewReadOnlyObserved": observations.get("read-only-review") == "PASS",
+            "explorationReadOnlyObserved": observations.get("read-only-exploration") == "PASS",
             "writerIsolationObserved": observations.get("isolated-writer") == "PASS",
             "compactionObserved": observations.get("supervisor-compaction") == "PASS",
             "limitations": limitations, "runtimeVerified": False, "authorized": False}

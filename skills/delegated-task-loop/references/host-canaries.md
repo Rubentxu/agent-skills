@@ -8,7 +8,7 @@ Ejecutar dentro del anfitrión que el usuario está utilizando, en un workspace 
 4. Progress y steering: pedir dos hitos distintos, recibir el primero antes de finalizar, cambiar el segundo con mensajería nativa; constatar que la directiva fue recibida durante ejecución. No confundir mensajes al terminar con progreso en vivo.
 5. Cancel: solo en el canary desechable; comprobar fin del worker y de operaciones que podían escribir. Un acuse de cancelación no es confirmación de parada.
 6. Resume: continuar el mismo handle nativo solo después de comprobar parada; verificar continuidad de una etiqueta de trabajo, no reutilizar autorización.
-7. Read-only-review: comprobar restricciones efectivas del revisor según goldfish-review y su aislamiento; una instrucción de no editar no basta. Isolated-writer: comprobar separación real de workspaces y permisos. No ensayar escrituras fuera de un entorno desechable.
+7. Read-only-review: comprobar restricciones efectivas del revisor según goldfish-review y su aislamiento; una instrucción de no editar no basta. Read-only-exploration: comprobar el perfil de permisos real del worker de investigación, independientemente del revisor. Isolated-writer: comprobar separación real de workspaces y permisos. No ensayar escrituras fuera de un entorno desechable.
 8. Supervisor-compaction: guardar checkpoint, utilizar la recuperación/compactación del host si la expone, verificar que puede continuar y medir contexto antes/después solo si existe contador real.
 
 Guardar únicamente referencias a evidencia local y estado PASS/FAIL/NOT_RUN por caso; no secretos ni logs. El helper proyecta afirmaciones observadas, no verifica las fuentes ni certifica el host.

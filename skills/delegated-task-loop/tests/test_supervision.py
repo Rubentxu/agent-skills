@@ -34,6 +34,15 @@ class SupervisionTests(unittest.TestCase):
         r = call([event(4, "error", fingerprint="f")], r["projection"])
         self.assertFalse(r["wakeRecommended"])
         self.assertEqual(r["signal"], "repeated-failure")
+        self.assertEqual(r["projection"]["pending"]["repeated-failure"]["lastSeq"], 4)
+        with self.assertRaises(ValueError):
+            call([], r["projection"], [{"signal": "repeated-failure", "seq": 2}])
+
+    def test_ack_exposes_other_pending(self):
+        s = call([event(1, "question"), event(2, "budget-exhausted")])["projection"]
+        r = call([], s, [{"signal": "budget-exhausted", "seq": 2}])
+        self.assertEqual(r["signal"], "question")
+        self.assertTrue(r["wakeRecommended"])
 
     def test_fresh_hypothesis_resets(self):
         r = call([event(1, "error", fingerprint="f"), event(2, "new-hypothesis"),

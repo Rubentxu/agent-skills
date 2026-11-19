@@ -27,3 +27,5 @@ python3 -m unittest discover -s skills/delegated-task-loop/tests -p 'test_*.py' 
 [Supervisión por eventos](references/event-supervision.md): proyección compacta, alertas deduplicadas, intervención por señales verificables y detección de degradación. No añade procesos ni polling.
 
 [Evaluación comparativa](references/evaluation.md): tres estrategias, coste total, calidad y recuperación; los datos ausentes no se convierten en cero.
+
+[Fan-out de solo lectura](references/parallel-read.md): candidatos nativos acotados por slots, contexto y fuentes inmutables. El paralelismo de escritores sigue deshabilitado.

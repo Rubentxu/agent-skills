@@ -54,10 +54,13 @@ def validate_projection(s, i):
     if not isinstance(s["pending"], dict) or set(s["pending"]) - set(PRIORITY):
         raise ValueError("invalid pending signals")
     for a in s["pending"].values():
-        fields(a, ("seq", "ref"))
+        fields(a, ("seq", "ref", "lastSeq", "lastRef"))
         if not 1 <= number(a["seq"], "alert sequence") <= s["cursor"]:
             raise ValueError("invalid alert sequence")
         string(a["ref"], "alert reference")
+        string(a["lastRef"], "latest alert reference")
+        if not a["seq"] <= number(a["lastSeq"], "latest alert sequence") <= s["cursor"]:
+            raise ValueError("invalid latest alert sequence")
 
 def project(request):
     fields(request, ("schemaVersion", "kind", "identity", "previous", "events", "acknowledged"))
@@ -78,7 +81,7 @@ def project(request):
     for a in acks:
         fields(a, ("signal", "seq"))
         k = string(a["signal"], "signal")
-        if k in seen or k not in s["pending"] or number(a["seq"], "ack sequence") != s["pending"][k]["seq"]:
+        if k in seen or k not in s["pending"] or number(a["seq"], "ack sequence") != s["pending"][k]["lastSeq"]:
             raise ValueError("stale or unknown acknowledgement")
         seen.add(k)
         del s["pending"][k]
@@ -90,8 +93,10 @@ def project(request):
     def alert(k, e):
         # Coalesce repeated events until an explicit acknowledgement.
         if k not in s["pending"]:
-            s["pending"][k] = {"seq": e["seq"], "ref": e["ref"]}
+            s["pending"][k] = {"seq": e["seq"], "ref": e["ref"], "lastSeq": e["seq"], "lastRef": e["ref"]}
             newly_seen.add(k)
+        else:
+            s["pending"][k] = s["pending"][k] | {"lastSeq": e["seq"], "lastRef": e["ref"]}
     for e in es:
         if not isinstance(e, dict):
             raise ValueError("invalid event")
@@ -134,7 +139,7 @@ def project(request):
     signal = next((k for k in PRIORITY if k in s["pending"]), "normal")
     return {"kind": "supervision-observation", "schemaVersion": 1, "projection": s,
             "signal": signal, "newAlerts": [k for k in PRIORITY if k in newly_seen],
-            "processed": s["cursor"] - initial_cursor, "wakeRecommended": bool(newly_seen),
+            "processed": s["cursor"] - initial_cursor, "wakeRecommended": bool(newly_seen or (acks and s["pending"])),
             "authorized": False, "runtimeVerified": False}
 
 def main():

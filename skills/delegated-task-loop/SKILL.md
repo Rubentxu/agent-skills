@@ -17,7 +17,7 @@ El agente anfitrión es el supervisor Elephant. Una delegación, una tarea, cont
 
 ## Bucle de entrega
 
-- **Seleccionar** una tarea lista de valor, con AC y DoD, desde backlog-agile-workflow. Mantener un worker escritor por defecto; la reserva protege de escritores concurrentes, no impone un gate WIP al tablero.
+- **Seleccionar** una tarea lista de valor, con AC y DoD, desde backlog-agile-workflow. Mantener un trabajador escritor. Para investigaciones independientes y permisos probados, consultar [fan-out de lectura](references/parallel-read.md). La reserva protege de escritores concurrentes, no impone un gate WIP al tablero.
 - **Preparar** el brief mediante handoff de autoridad y context-pack; referencias a fuentes con revisión real, instrucciones mínimas, límites de alcance y resultado esperado. Validar envelope y resultado con [contratos operativos](references/contracts.md). Ver [composición](references/skill-composition.md) y [contexto](references/context-policy.md).
 - **Delegar** con la herramienta nativa del host; pasar solo el brief, no la conversación. Fresh para nuevas tareas, resume para correcciones pequeñas si está disponible, sustitución tras confirmar parada y checkpoint. No delegación recursiva por defecto. Ver [delegación](references/delegation.md).
 - **Supervisar** eventos relevantes del host; no sondear por shell ni releer transcripts. Si solo hay resultado síncrono, declarar esa limitación. Aplicar flow-recovery ante señales reales. Ver [supervisión](references/supervision.md); reducir eventos observados con [filtro compacto](references/event-supervision.md) cuando el host los exponga.

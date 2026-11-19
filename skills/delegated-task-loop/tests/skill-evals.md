@@ -20,3 +20,5 @@ Comparar tres estrategias en tareas emparejadas, revisiones iniciales y presupue
 Protocolo reproducible: [canaries nativos](../references/host-canaries.md). No convertir fixtures de host_probe en ejecuciones reales.
 
 Ejecutar [evaluación por pares](../references/evaluation.md) con revisiones y tareas idénticas. El validador de fixtures no mide productividad ni ejecuta agentes; el ejemplo se mantiene not-evaluated.
+
+Fan-out: comprobar que el host permite dos lectores frescos realmente restringidos a snapshots inmutables, notificaciones atribuidas y límites agregados. No validar lectores mediante instrucciones únicamente. Los escritores permanecen serializados. [Contrato de fan-out](../references/parallel-read.md).

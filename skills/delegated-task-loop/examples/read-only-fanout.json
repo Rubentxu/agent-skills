@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "kind": "read-only-fanout-input",
+  "runId": "example",
+  "capabilities": {
+    "fresh": false,
+    "background": false,
+    "notify": false,
+    "explorationReadOnly": false
+  },
+  "maxAgents": 2,
+  "activeRequests": [],
+  "remainingContextBytes": 8000,
+  "candidates": []
+}
