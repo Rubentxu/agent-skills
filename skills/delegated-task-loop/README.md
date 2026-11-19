@@ -33,3 +33,5 @@ python3 -m unittest discover -s skills/delegated-task-loop/tests -p 'test_*.py' 
 [Handoff Engineering v2](references/handoff-engineering.md): resolver ambigüedad, asignar criterios, proyección de políticas/hechos, plan de verificación, recursos y deltas versionados. Instalar delivery-first-testing si se desea el compilador público de pruebas: `npx skills add Rubentxu/agent-skills --skill delivery-first-testing`.
 
 [Telemetría](references/telemetry.md) local y [verificación proporcional](references/proportional-verification.md). [Adopción de recursos](references/resource-adoption.md) y [Steward efímero](references/steward.md) conservan reservas hasta reconciliar efectos; requieren permisos y capacidades nativas comprobados.
+
+El ejemplo [entrada del router](examples/ready.json) muestra preparación, no autoridad de lanzamiento. Usar preflightRef de un handoff realmente preparado; validar recursos antes de aceptar/liberar. La integración de contratos se comprueba en tests de colección sin imports entre skills.
