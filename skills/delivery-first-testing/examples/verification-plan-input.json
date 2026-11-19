@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "kind": "verification-plan-input",
+  "taskId": "EXAMPLE-1",
+  "repository": "example",
+  "baseRevision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "scope": "bounded",
+  "impactRef": "synthetic:impact",
+  "selector": "manual",
+  "budgetMs": 120000,
+  "guarantees": [
+    {
+      "id": "AC-1",
+      "statement": "Example behavior",
+      "stage": "acceptance"
+    }
+  ],
+  "candidates": [
+    {
+      "id": "check",
+      "argv": [
+        "example-runner",
+        "example-test"
+      ],
+      "cwd": ".",
+      "covers": [
+        "AC-1"
+      ],
+      "stage": "worker",
+      "mandatory": true,
+      "independent": false,
+      "costMs": null,
+      "sourceRef": "synthetic:runner"
+    }
+  ]
+}

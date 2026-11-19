@@ -78,3 +78,7 @@ Si `backlog-agile-workflow` está realmente disponible, recibir como contexto ID
 Relacionar decision-id → garantía → instrumento → resultado/revisión. AC/DoD y rúbricas son criterios verificables, pero no permisos de cambiar política. Una prueba que contradice una decisión aprobada exige revisión del contrato; el agente puede proponer tests, no extender autoridad humana ni declarar PASS documental.
 
 Si `backlog-agile-workflow` está disponible, enlazar IDs de tarea/decisión y su origen. Si no, conservar la incertidumbre sin crear otra autoridad.
+
+## Delegación con plan proporcional
+
+Cuando un supervisor delega, usar [plan de verificación transferible](references/lenses/verification-plan.md) antes de abrir el worker. El mismo plan sirve a agente único. No volver a seleccionar ni repetir pruebas si la revisión, entorno, alcance y evidencia siguen vigentes; ampliar solo por impacto descubierto. Un presupuesto nunca elimina garantías obligatorias.
