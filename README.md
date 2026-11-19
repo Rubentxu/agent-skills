@@ -27,6 +27,8 @@ Colección modular de **skills para agentes de IA**, mantenidas por separado e i
 | [`agent-context-audit`](skills/agent-context-audit/SKILL.md) | Audita el presupuesto de contexto de un harness de agente: mide la carga fija por petición, separa lo always-on de lo on-demand, detecta el bucle de compactación continua y propone recortes reversibles por prioridad. | Disponible (router + medidor) |
 | [`supervised-task-loop`](skills/supervised-task-loop/SKILL.md) | Bucle supervisado de sesiones de agente: una sesión por tarea con contexto en cero, handoff en el tablero como único estado entre sesiones, medición por sesión y liberación de recursos; distingue workspace agéntico, home repo y directorio del run. | Disponible (runtime + pipeline) |
 
+| [`delegated-task-loop`](skills/delegated-task-loop/SKILL.md) | Delegación nativa, supervisión ligera, contexto acotado y composición de Backlog, conocimiento y revisión independiente. | Disponible (primer incremento; canaries pendientes) |
+
 Consulta el README de [la skill genérica de calidad](skills/code-quality-evidence-review/README.md) y la [skill CogniCode](skills/cognicode-diagrams/README.md). **La skill antigua `cognicode-quality-investigator` ha sido retirada**; no usar sus instrucciones, rutas ni fallback de lectura directa. Las herramientas de terceros descritas en sus anexos **no se instalan automáticamente**.
 
 ## Instalación
