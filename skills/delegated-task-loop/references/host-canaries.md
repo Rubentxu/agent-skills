@@ -28,3 +28,7 @@ El resultado se usa en el router como capabilities, junto con limitaciones y el 
 No ejecutar comandos de estos ejemplos como sustitutos de herramientas nativas. No instalar hooks globales automáticamente. Las herramientas concretas y el esquema anunciado por el host prevalecen sobre esta guía.
 
 Canary Steward: confirmar permisos efectivos disjuntos del implementador y Home Repo, notificación independiente y prohibición de publicación indirecta por hooks/autoCommit. Si no se prueba, serializar. Canary handoff: comprobar que preflight desconocido o referencias stale no abren delegación; cambios del plan generan versión nueva, resultados viejos no aceptables. Medir coste de coordinación además del coste de implementación.
+
+## Canarios de infraestructura local
+
+Los tests test_operational_canaries.py ejecutan procesos reales Linux, CAS del journal por CLI y Git contra un remoto bare temporal. El test del watchdog de supervised-task-loop termina un wrapper real y observa un ejecutable inocuo bajo GNU timeout. Son validaciones de infraestructura, no de subagentes nativos ni permisos del host. No representar sus resultados como PASS de host_probe.
