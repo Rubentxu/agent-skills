@@ -9,3 +9,5 @@ Aplicar flow-recovery ante dos intentos estériles o 20–30 minutos de trabajo 
 Goldfish por riesgo: none/lite/focused/deep según la skill proveedora. Solicitar antes de implementar cuando la incertidumbre arquitectónica sea alta; revisar resultado cuando el impacto lo exija. El revisor no escribe código ni estados.
 
 Self-check del supervisor al finalizar cada tarea: objetivo, evidencias, repeticiones, contexto, presupuesto, bloqueos. La única respuesta normal a un evento rutinario es no intervenir. El host conserva los límites reales y cualquier permiso de cancelación.
+
+Si hay eventos nativos, aplicar el [reductor](event-supervision.md) antes de enviar nuevas señales al LLM; conservar solo la proyección y referencias. No afirmar que el helper despierta por sí mismo a un agente inactivo.

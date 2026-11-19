@@ -41,6 +41,7 @@ def evaluate(report):
             raise ValueError("observed outcome requires evidence")
         observations[cid] = status
     capabilities = {cap: observations.get(case) == "PASS" for cap, case in CAPABILITIES.items()}
+    capabilities["reviewReadOnly"] = observations.get("read-only-review") == "PASS"
     limitations = [case for case in sorted(CASES) if observations.get(case) != "PASS"]
     if not capabilities["fresh"]:
         level = "NOT_RUN"

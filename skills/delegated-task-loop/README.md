@@ -23,3 +23,5 @@ python3 -m unittest discover -s skills/delegated-task-loop/tests -p 'test_*.py' 
 ```
 
 [Canaries y perfiles nativos](references/host-canaries.md): capacidades observadas por sesión, no supuestas por marca del host. Estado inicial real: NOT_RUN hasta ejecutar los canaries.
+
+[Supervisión por eventos](references/event-supervision.md): proyección compacta, alertas deduplicadas, intervención por señales verificables y detección de degradación. No añade procesos ni polling.

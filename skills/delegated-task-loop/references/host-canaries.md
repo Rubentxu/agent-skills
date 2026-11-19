@@ -17,7 +17,7 @@ Guardar únicamente referencias a evidencia local y estado PASS/FAIL/NOT_RUN por
 python3 scripts/host_probe.py < examples/host-observations.json
 ```
 
-El resultado se usa en el router como capabilities, junto con limitaciones y el resto de estado observado. No importar capacidades de otro host, versión o sesión sin revalidarlas. Si no se ejecuta un canary, su capacidad queda sin confirmar.
+El resultado se usa en el router como capabilities, junto con limitaciones y el resto de estado observado. reviewReadOnly se proyecta de forma independiente. No importar capacidades de otro host, versión o sesión sin revalidarlas. Si no se ejecuta un canary, su capacidad queda sin confirmar.
 
 ## Cómo delegar según el host
 
