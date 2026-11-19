@@ -68,6 +68,11 @@ class RouterTests(unittest.TestCase):
         self.assertEqual(r["decision"], "REVIEW_PENDING")
         self.assertNotIn("request-independent-review", rels(r))
 
+    def test_goldfish_requires_proven_read_only(self):
+        s = state(phase="review", review="required", ownership="terminated")
+        self.assertNotIn("request-independent-review", rels(route(s)))
+        self.assertIn("request-independent-review", rels(route(s | {"capabilities": {"fresh": True, "reviewReadOnly": True}})))
+
     def test_strict_inputs(self):
         for change in ({"capabilities": {"fresh": "yes"}}, {"phase": []}, {"budgetRemaining": True}, {"taskId": None, "phase": "running"}, {"schemaVersion": True}, {"extra": 1}):
             with self.assertRaises(ValueError):

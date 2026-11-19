@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "kind": "delegated-loop-evaluation",
+  "cases": [
+    {
+      "id": "synthetic-example",
+      "workloadDigest": "0000000000000000000000000000000000000000000000000000000000000000",
+      "maxTasks": 2,
+      "description": "Synthetic schema fixture only. Replace with digest of a real fixed task set, base revisions, acceptance criteria and permissions before use."
+    }
+  ]
+}

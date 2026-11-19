@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "kind": "supervision-input",
+  "identity": {
+    "runId": "demo",
+    "attemptId": "attempt",
+    "taskId": "EXAMPLE-1",
+    "handle": "native:example"
+  },
+  "previous": null,
+  "events": [],
+  "acknowledged": []
+}

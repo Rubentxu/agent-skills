@@ -9,8 +9,8 @@ BACKLOG = "backlog-agile-workflow"
 KNOWLEDGE = "software-knowledge"
 GOLDFISH = "goldfish-review"
 PHASES = {"discover", "ready", "running", "verify", "review", "accept", "learn", "release", "interrupted", "stopped"}
-CAPS = {"fresh", "background", "notify", "progress", "steer", "cancel", "resume"}
-SIGNALS = {"normal", "repeated-failure", "context-pressure", "scope-drift", "question", "result"}
+CAPS = {"fresh", "background", "notify", "progress", "steer", "cancel", "resume", "reviewReadOnly"}
+SIGNALS = {"normal", "repeated-failure", "stalled", "budget-exhausted", "context-pressure", "scope-drift", "question", "result"}
 
 def validate(s):
     if not isinstance(s, dict) or type(s.get("schemaVersion")) is not int or s["schemaVersion"] != 1 or s.get("kind") != "delegated-loop-state":
@@ -100,9 +100,23 @@ def route(s):
             reconcile()
         else:
             lenses.append("references/supervision.md")
-            if signal in {"repeated-failure", "scope-drift", "question"}:
+            if signal in {"repeated-failure", "stalled"}:
                 decision = "INTERVENE"
                 provider("recover-flow", BACKLOG, "stalled-work")
+                native("steer", "steer")
+            elif signal == "scope-drift":
+                decision = "INTERVENE"
+                link("revalidate-scope")
+                native("steer", "steer")
+            elif signal == "question":
+                decision = "INTERVENE"
+                provider("recover-context", KNOWLEDGE, "context-pack")
+                link("answer-question")
+                native("steer", "steer")
+            elif signal == "budget-exhausted":
+                decision = "CHECKPOINT"
+                link("checkpoint")
+                link("stop-or-reconcile")
                 native("steer", "steer")
             elif signal == "context-pressure":
                 decision = "CHECKPOINT"
@@ -146,7 +160,7 @@ def route(s):
                 if s["evidence"] != "sufficient":
                     decision = "NEEDS_EVIDENCE"
             if s["review"] in {"required", "not-run"}:
-                if GOLDFISH in skills and caps.get("fresh"):
+                if GOLDFISH in skills and caps.get("fresh") and caps.get("reviewReadOnly"):
                     provider("request-independent-review", GOLDFISH, "review")
                 else:
                     limits.append("independent review not available")

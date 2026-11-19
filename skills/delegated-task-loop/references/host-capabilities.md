@@ -17,3 +17,5 @@ Claude Code, Codex y OpenCode exponen distintas capacidades según versión, con
 Canary: comprobar aislamiento conversacional y permisos; registrar trazas y limitaciones. Un prompt de solo lectura no impone permisos; para Goldfish exigir restricciones efectivas según su contrato. Si no hay aislamiento suficiente, registrar NOT_RUN o limitación expresa según la skill.
 
 No instalar plugin, daemon, SDK ni adaptador ACP por defecto. Cualquier instrumentación futura será opcional y dependiente del host.
+
+Ejecutar los [canaries nativos](host-canaries.md) en un entorno desechable; el helper host_probe.py proyecta capacidades con evidencias declaradas, sin certificar runtime. Separar disponibilidad de fresh y permisos efectivos Goldfish.
