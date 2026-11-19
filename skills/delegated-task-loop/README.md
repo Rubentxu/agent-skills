@@ -21,3 +21,5 @@ Composición, políticas de contexto, router puro, [reservas y checkpoints priva
 python3 skills/delegated-task-loop/scripts/affordances.py skills/delegated-task-loop/examples/ready.json
 python3 -m unittest discover -s skills/delegated-task-loop/tests -p 'test_*.py' -v
 ```
+
+[Canaries y perfiles nativos](references/host-canaries.md): capacidades observadas por sesión, no supuestas por marca del host. Estado inicial real: NOT_RUN hasta ejecutar los canaries.

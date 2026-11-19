@@ -1,6 +1,6 @@
 # Evaluaciones de comportamiento
 
-Los unit tests solo prueban el router puro. Canaries a ejecutar en cada host real antes de afirmar soporte:
+Los unit tests prueban router, estado operativo, contratos y proyección de observaciones. No certifican ejecuciones LLM. Canaries a ejecutar en cada host real antes de afirmar soporte:
 
 | Caso | Criterio observable |
 | --- | --- |
@@ -16,3 +16,5 @@ Los unit tests solo prueban el router puro. Canaries a ejecutar en cada host rea
 | Supervisor largo | Proyección acotada entre tareas, compactación real medida si disponible |
 
 Comparar tres estrategias en tareas emparejadas, revisiones iniciales y presupuesto equivalentes: agente único, supervised-task-loop, delegated-task-loop. Medir tokens totales incluidos revisores y supervisor (UNKNOWN si no medible), tareas aceptadas, latencia, reaperturas, defectos confirmados, lecturas redundantes, tiempo de recuperación y recursos huérfanos. No extrapolar desde fixtures. No guardar transcripts por defecto. Estado inicial de canaries: NOT_RUN.
+
+Protocolo reproducible: [canaries nativos](../references/host-canaries.md). No convertir fixtures de host_probe en ejecuciones reales.

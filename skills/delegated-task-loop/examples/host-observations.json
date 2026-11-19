@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "kind": "delegation-host-observations",
+  "host": "example",
+  "version": "unobserved",
+  "sessionRef": "example:synthetic",
+  "cases": []
+}
