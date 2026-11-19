@@ -55,6 +55,18 @@ class RouterTests(unittest.TestCase):
         for ownership in ("active", "unknown", "terminated"):
             self.assertEqual(rels(route(state(ownership=ownership))), {"reconcile-ownership"})
 
+    def test_relay_never_resumes_or_launches_before_readiness(self):
+        s=state(phase="interrupted",ownership="terminated",relayRequired=True,resourceState="clear",capabilities={"resume":True,"fresh":True})
+        self.assertEqual(route(s)["decision"],"PREPARE_RELAY")
+        self.assertNotIn("resume-after-revalidation",rels(route(s)))
+        ready=s|{"relayReady":True,"preflight":"prepared","preflightRef":"brief:2"}
+        self.assertIn("delegate-successor",rels(route(ready)))
+        self.assertNotIn("delegate-successor",rels(route(ready|{"resourceState":"live"})))
+        self.assertNotIn("delegate-successor",rels(route(ready|{"capabilities":{"resume":True}})))
+    def test_deadline_no_launch(self):
+        r=route(state(phase="running",ownership="active",signal="relay-deadline"))
+        self.assertEqual(r["decision"],"RECONCILE_RELAY")
+        self.assertNotIn("delegate-successor",rels(r))
     def test_budget(self):
         self.assertEqual(route(state(budgetRemaining=0))["decision"], "STOP")
 

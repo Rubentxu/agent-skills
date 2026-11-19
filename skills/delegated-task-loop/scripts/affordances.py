@@ -11,13 +11,15 @@ GOLDFISH = "goldfish-review"
 TESTING = "delivery-first-testing"
 PHASES = {"discover", "ready", "running", "verify", "review", "accept", "learn", "release", "interrupted", "stopped"}
 CAPS = {"fresh", "background", "notify", "progress", "steer", "cancel", "resume", "reviewReadOnly"}
-SIGNALS = {"normal", "repeated-failure", "stalled", "budget-exhausted", "context-pressure", "scope-drift", "question", "result", "pending", "silence", "resource-drift"}
+SIGNALS = {"normal", "repeated-failure", "stalled", "budget-exhausted", "context-pressure", "scope-drift", "question", "result", "pending", "silence", "resource-drift","relay-assess","relay-checkpoint","relay-deadline"}
 
 def validate(s):
     if not isinstance(s, dict) or type(s.get("schemaVersion")) is not int or s["schemaVersion"] != 1 or s.get("kind") != "delegated-loop-state":
         raise ValueError("expected delegated-loop-state v1")
     required = {"schemaVersion", "kind", "phase", "availableSkills", "capabilities", "budgetRemaining", "taskId", "signal", "ownership", "evidence", "review", "outcome"}
-    optional={"preflight","preflightRef","resourceState"}
+    optional={"preflight","preflightRef","resourceState","relayRequired","relayReady"}
+    for k in ("relayRequired","relayReady"):
+        if k in s and type(s[k]) is not bool:raise ValueError("invalid relay flag")
     if required-set(s) or set(s)-required-optional:
         raise ValueError("missing or unexpected state fields")
     preflight=s.get("preflight","unknown")
@@ -120,7 +122,15 @@ def route(s):
             reconcile()
         else:
             lenses.append("references/supervision.md")
-            if signal in {"repeated-failure", "stalled"}:
+            if signal in ("relay-assess","relay-checkpoint","relay-deadline"):
+                decision={"relay-assess":"ASSESS_RELAY","relay-checkpoint":"PREPARE_RELAY","relay-deadline":"RECONCILE_RELAY"}[signal]
+                lenses.append("references/endurance-relay.md")
+                link("assess-remaining-work")
+                if signal!="relay-assess":
+                    link("checkpoint")
+                    link("reconcile-relay")
+                native("steer", "steer")
+            elif signal in {"repeated-failure", "stalled"}:
                 decision = "INTERVENE"
                 provider("recover-flow", BACKLOG, "stalled-work")
                 native("steer", "steer")
@@ -177,7 +187,18 @@ def route(s):
         else:
             link("revalidate-checkpoint")
             link("adopt-live-resources-before-resume")
-            if caps.get("resume"):
+            if s.get("relayRequired"):
+                if not s.get("relayReady") or prepared!="prepared":
+                    decision="PREPARE_RELAY"
+                    link("compile-baton")
+                    link("validate-fresh-successor")
+                elif caps.get("fresh"):
+                    decision="RELAY_READY"
+                    native("delegate-successor", "fresh")
+                else:
+                    decision="NOT_RUN"
+                    limits.append("fresh successor unavailable; preserve checkpoint")
+            elif caps.get("resume"):
                 native("resume-after-revalidation", "resume")
             elif caps.get("fresh"):
                 native("replace-after-revalidation", "fresh")

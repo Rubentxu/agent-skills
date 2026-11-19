@@ -7,12 +7,12 @@ import sys
 
 MAX_BYTES = 65536
 IDENTITY = ("runId", "attemptId", "taskId", "handle")
-PRIORITY = ("scope-drift", "result", "budget-exhausted", "question",
+PRIORITY = ("scope-drift", "result", "relay-deadline", "budget-exhausted", "relay-checkpoint", "question", "relay-assess",
             "context-pressure", "resource-drift", "silence", "repeated-failure", "stalled", "pending")
 KINDS = {"progress", "error", "new-hypothesis", "routine", "operation-running",
          "active-without-progress", "question", "scope-drift", "context-pressure",
-         "budget-exhausted", "result", "terminal", "pending", "silence", "resource-drift"}
-SIMPLE = {"question", "scope-drift", "context-pressure", "budget-exhausted", "result", "pending", "silence", "resource-drift"}
+         "budget-exhausted", "result", "terminal", "pending", "silence", "resource-drift", "relay-assess", "relay-checkpoint", "relay-deadline"}
+SIMPLE = {"question", "scope-drift", "context-pressure", "budget-exhausted", "result", "pending", "silence", "resource-drift", "relay-assess", "relay-checkpoint", "relay-deadline"}
 
 def fields(v, expected):
     if not isinstance(v, dict) or set(v) != set(expected):
