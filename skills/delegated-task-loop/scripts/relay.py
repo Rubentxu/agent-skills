@@ -46,34 +46,51 @@ def compile_baton(e,v):
     return {"schemaVersion":1,"kind":"endurance-baton","project":e["project"],"runId":e["runId"],"taskId":e["taskId"],
             "previousAttemptId":e["attemptId"],"previousBriefDigest":digest(e),"taskDigest":e["taskDigest"],
             "reason":v["reason"],"checkpointRef":v["checkpointRef"],"checkpointDigest":digest(c),
+            "nextRole":"worker" if any(e["criterionOwners"][cid]=="worker" for cid in remaining) else "supervisor",
             "snapshots":list(snapshots.values()),"completed":list(evidence.values()),"pendingCriteria":remaining,
             "experiments":experiments,"resources":v["resources"],"stopRef":v["stopRef"],"observedAt":v["observedAt"],
             "decisionRef":v["decisionRef"],"nextAction":c["nextAction"],"taskStartedAt":e["pacing"]["taskStartedAt"],
             "taskDeadlineAt":e["pacing"]["taskDeadlineAt"],"authorized":False,"runtimeVerified":False}
-def validate_successor(previous,baton,successor,observation):
+def validate_successor(previous,baton,successor,observation,journal):
     expected=compile_baton(previous,observation)
     if baton!=expected:raise ValueError("baton does not match checkpoint/observation")
+    if baton["nextRole"]!="worker":raise ValueError("only supervisor work remains; do not launch another implementer")
     envelope(successor)
     if successor["schemaVersion"]!=2 or "continuity" not in successor or "pacing" not in successor:raise ValueError("fresh paced successor required")
-    for key in ("project","runId","taskId","taskDigest","objective","criteria","repositories","policyRefs","effectivePolicies","criterionOwners","nonGoals"):
+    for key in ("project","runId","taskId","taskDigest","objective","criteria","repositories","policyRefs","effectivePolicies","criterionOwners","nonGoals","verificationPlan"):
         if previous[key]!=successor[key]:raise ValueError("changed authority or criteria requires explicit replan: "+key)
     if successor["executionPolicy"]["publication"]!=previous["executionPolicy"]["publication"]:raise ValueError("publication authority changed")
     c=successor["continuity"];p=successor["pacing"];validate_schedule(p)
     if c["previousAttemptId"]!=previous["attemptId"] or c["batonDigest"]!=digest(baton) or successor["attemptId"]==previous["attemptId"]:raise ValueError("successor attribution mismatch")
     if p["taskStartedAt"]!=baton["taskStartedAt"] or p["taskDeadlineAt"]!=baton["taskDeadlineAt"] or p["attemptStartedAt"]<baton["observedAt"]:raise ValueError("task clock reset or stale successor")
     if successor["liveResources"]!=baton["resources"]:raise ValueError("resource adoption inventory changed; recompile baton")
+    if not isinstance(journal,dict) or journal.get("kind")!="delegated-loop-journal" or journal.get("runId")!=successor["runId"]:
+        raise ValueError("current journal required")
+    a=journal.get("active")
+    if not isinstance(a,dict) or a.get("state")!="reserved" or a.get("taskId")!=successor["taskId"] or a.get("attemptId")!=successor["attemptId"] or a.get("schedule")!=p or a.get("batonRef")!=c["batonRef"] or a.get("checkpointRef")!=baton["checkpointRef"]:
+        raise ValueError("successor does not match reserved attempt")
+    history=a.get("attemptHistory",[])
+    if not history or history[-1].get("attemptId")!=previous["attemptId"] or history[-1].get("stopObservationRef")!=baton["stopRef"] or history[-1].get("batonRef")!=c["batonRef"]:
+        raise ValueError("prior attempt or stop mismatch")
+    if a.get("resourceStatus") not in ("clear","live") or not a.get("resourceInventoryRef") or (a.get("resourceStatus")=="live" and not a.get("adoptionRef")):
+        raise ValueError("unreconciled operation inventory")
+    if any(r["state"]=="running" for r in baton["resources"]["resources"]) != (a["resourceStatus"]=="live"):
+        raise ValueError("journal and baton live resource state mismatch")
     # Fresh projection never removes the original obligations. Evidence remains
     # candidate, subject to revalidation after future changes.
     return {"kind":"relay-successor-assessment","schemaVersion":1,"status":"STRUCTURE_VALID","attemptId":successor["attemptId"],
             "briefDigest":digest(successor),"batonDigest":digest(baton),"pendingCriteria":baton["pendingCriteria"],
-            "freshRequired":True,"authorized":False,"runtimeVerified":False}
+            "freshRequired":True,"authorized":False,"runtimeVerified":False,
+            "journalVersion":journal["version"],
+            "freshEyes":{"objective":successor["objective"],"criteria":[c for c in successor["criteria"] if c["id"] in baton["pendingCriteria"]],
+                         "snapshots":baton["snapshots"],"pacing":p,"continuityRef":c["batonRef"]}}
 def main():
     try:
         raw=sys.stdin.buffer.read(262145)
         if len(raw)>262144:raise ValueError("input too large")
         v=json.loads(raw)
         if set(v)=={"envelope","observation"}:out=compile_baton(v["envelope"],v["observation"])
-        elif set(v)=={"envelope","observation","baton","successor"}:out=validate_successor(v["envelope"],v["baton"],v["successor"],v["observation"])
+        elif set(v)=={"envelope","observation","baton","successor","journal"}:out=validate_successor(v["envelope"],v["baton"],v["successor"],v["observation"],v["journal"])
         else:raise ValueError("invalid relay input")
         print(json.dumps(out,ensure_ascii=False,sort_keys=True));return 0
     except (ValueError,TypeError,KeyError,OSError) as e:

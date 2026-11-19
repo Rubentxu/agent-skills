@@ -141,7 +141,9 @@ def deadline_prompt(prompt, seconds):
     now=dt.datetime.now(dt.timezone.utc)
     hard=now+dt.timedelta(seconds=seconds)
     soft=hard-dt.timedelta(seconds=min(600,max(10,seconds//5)))
+    assess=now+dt.timedelta(seconds=seconds*3//4)
     return (prompt+"\n\n## Limite operativo de esta sesion\n"
+            f"Assess at (UTC): {assess.isoformat()}. Evalua el trabajo pendiente y prepara relevo si no puedes cerrar.\n"
             f"Soft deadline (UTC): {soft.isoformat()}. Deja de iniciar trabajo, guarda checkpoint/handoff y termina.\n"
             f"Hard deadline (UTC): {hard.isoformat()}. No inicies operaciones que no puedas finalizar o transferir de forma segura.\n"),soft.isoformat(),hard.isoformat()
 
@@ -436,6 +438,8 @@ def ejecutar_bajo_lock(rt: Runtime, iteracion: str) -> int:
             print("presupuesto agotado antes de lanzar",file=sys.stderr)
             return 2
         if ledger.get("taskId"):
+            current=report.estados_del_tabulario(report.leer_json(str(d/"board-before.json")))
+            if current.get(ledger["taskId"],{}).get("status")!="In Progress":raise Negativa("tarea de relevo ya no elegible")
             with prompt.open("a",encoding="utf-8") as f:
                 f.write("\n\n## Encargo fijado de relevo\nContinua exclusivamente la tarea "+ledger["taskId"]+". No selecciones otra. Recuperacion atestiguada: "+ledger["recoveryRef"]+". Contrasta el handoff y recursos antes de actuar; no borres trabajo parcial.\n")
         ledger.update(attempts=ledger["attempts"]+1,lastObservedAt=stamp)

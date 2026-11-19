@@ -172,7 +172,8 @@ def route(s):
                 else:
                     link("await-native-result")
                     limits.append("live progress not confirmed")
-            native("interrupt-if-authorized", "cancel")
+            if signal in ("relay-deadline","budget-exhausted","scope-drift","silence","resource-drift","repeated-failure","stalled"):
+                native("interrupt-if-authorized", "cancel")
     elif phase == "interrupted":
         lenses.append("references/recovery.md")
         if ownership != "terminated":

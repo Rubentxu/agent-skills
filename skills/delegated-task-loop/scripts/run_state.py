@@ -171,6 +171,8 @@ def change(s, op, req, binding):
             raise ValueError("steward effect conflict")
         if a or s["tasksStarted"] >= s["maxTasks"]:
             raise ValueError("writer reserved or task budget exhausted")
+        if s.get("relayPolicy") is not None and (s.get("lastRelease") or {}).get("taskId")==req["taskId"]:
+            raise ValueError("same task cannot reset budget via immediate reclaim; replan")
         s["active"] = new_attempt(string(req["taskId"], "taskId", 128), 1,
                                   string(req["briefRef"], "briefRef", 1024), effect_domains=effects)
         if s.get("relayPolicy") is not None:
@@ -289,7 +291,7 @@ def change(s, op, req, binding):
                 if reason not in ("time-budget","context-pressure","stalled","new-perspective","verification-only","recovery"):
                     raise ValueError("relay reason required")
                 history=list(a["attemptHistory"])
-                history.append({"attemptId":a["attemptId"],"schedule":old,"stoppedAt":a.get("stoppedAt"),"reason":reason,"batonRef":baton,
+                history.append({"attemptId":a["attemptId"],"schedule":old,"stoppedAt":a.get("stoppedAt"),"reason":reason,"batonRef":baton,"stopObservationRef":a["stopObservationRef"],
                                 "metricsRef":string(req["metricsRef"],"metrics",1024) if "metricsRef" in req else None})
                 n.update(schedule=pacing.schedule(p,old["taskStartedAt"],stamp),attemptHistory=history,lastClockAt=stamp,batonRef=baton,relayReason=reason)
             s["active"]=n
@@ -308,6 +310,7 @@ def change(s, op, req, binding):
                 s["lastRelease"]["schedule"]=a["schedule"]
                 s["lastRelease"]["attemptHistory"]=a["attemptHistory"]
                 s["lastRelease"]["stoppedAt"]=a.get("stoppedAt")
+                s["lastRelease"]["releasedAt"]=a["lastClockAt"]
             s["active"] = None
         else:
             raise ValueError("unknown operation")
