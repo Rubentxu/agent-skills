@@ -151,3 +151,7 @@ Backlog.md conserva tareas, documentos y decisiones como autoridad. Los glosario
 ## Trazabilidad oportunista y seguridad de hooks
 
 Un hook de lectura puede añadir al contexto IDs de propietario C4 observados, pero no crea componentes ni enlaza automáticamente la tarea. Una edición observada es candidato a `modifiedFiles`, que reemplaza el conjunto: conservar SIEMPRE la lista previa. Si se descubre trabajo nuevo, comprobar alcance/duplicados y proponer borrador o nueva tarea solo cuando tenga valor independiente. Nunca equiparar `TaskCreated` de Claude con registros Backlog.md. El plugin requiere Node >=22 y estado privado `CLAUDE_PLUGIN_DATA`; la skill sigue funcionando sin él.
+
+## Delegación preparada
+
+Antes de asignar un worker aplicar [readiness técnica](references/lenses/technical-readiness.md) y el handoff de autoridad actual con pin de contenido. Un agente administrativo efímero autorizado registra evidencias/estado decidido sin reexaminar implementación ni alterar AC/DoD unilateralmente; si el estado cambió, reconciliar con el supervisor. Usar delivery-first-testing para planes mínimos con garantías reales.

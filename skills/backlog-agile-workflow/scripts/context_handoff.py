@@ -8,8 +8,16 @@ from __future__ import annotations
 
 import argparse
 import json
-from authority_context import envelope, read, require, ID
+from authority_context import envelope, read, require, ID, sha256
 
+
+def task_digest(task_view: dict) -> str:
+    require(isinstance(task_view, dict) and task_view.get("schemaVersion") == 1
+            and task_view.get("kind") == "task-view" and isinstance(task_view.get("task"), dict),
+            "expected task-view for digest")
+    # Pin the full task payload conservatively. A status/notes change can cause
+    # refresh too; never ignore an unknown field that may affect assignment.
+    return sha256(json.dumps(task_view["task"], ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False))
 
 def prepare(task_view: dict, assessment: dict, *, revision: str,
             agent: str, questions: list[str] | None = None) -> dict:
@@ -35,6 +43,7 @@ def prepare(task_view: dict, assessment: dict, *, revision: str,
                  if r["backlogDecisionId"] in refs]
     return {"schemaVersion": 1, "kind": "authority-handoff",
             "taskId": task["id"], "sourceRevision": revision, "agent": agent,
+            "taskDigest": task_digest(task_view),
             "decisionRefs": decisions, "references": refs[:64],
             "questions": questions, "editAuthorized": False,
             "verification": "RUNTIME_UNVERIFIED",
@@ -42,7 +51,7 @@ def prepare(task_view: dict, assessment: dict, *, revision: str,
 
 
 def receive(handoff: dict, assessment: dict, *, revision: str,
-            task_id: str) -> dict:
+            task_id: str, task_view: dict | None = None) -> dict:
     require(handoff.get("schemaVersion") == 1 and handoff.get("kind") == "authority-handoff",
             "invalid handoff envelope")
     require(isinstance(task_id, str) and ID.fullmatch(task_id),
@@ -52,6 +61,11 @@ def receive(handoff: dict, assessment: dict, *, revision: str,
     reasons = []
     if handoff.get("taskId") != task_id:
         reasons.append("TASK_MISMATCH")
+    if task_view is not None:
+        if task_view.get("task", {}).get("id") != task_id:
+            reasons.append("TASK_MISMATCH")
+        if handoff.get("taskDigest") != task_digest(task_view):
+            reasons.append("TASK_CONTENT_CHANGED_OR_UNPINNED")
     if handoff.get("sourceRevision") != revision:
         reasons.append("REVISION_STALE")
     for pin in handoff.get("decisionRefs", []):
@@ -65,7 +79,8 @@ def receive(handoff: dict, assessment: dict, *, revision: str,
             reasons.append("AUTHORITY_" + str(known["verdict"]))
     return {"schemaVersion": 1, "kind": "handoff-receipt",
             "status": "PAUSED" if reasons else "CONTEXT_MATCHES_RUNTIME_UNVERIFIED",
-            "reasons": sorted(set(reasons)), "editAuthorized": False,
+            "reasons": sorted(set(reasons)), "taskContentCompared": task_view is not None,
+            "editAuthorized": False,
             "next": "Recheck Backlog task, code revision, source attestations and host permissions."}
 
 
@@ -83,13 +98,15 @@ def main() -> int:
     recv.add_argument("assessment")
     recv.add_argument("--revision", required=True)
     recv.add_argument("--task", required=True)
+    recv.add_argument("--task-view", help="current authoritative task-view snapshot")
     args = parser.parse_args()
     try:
         result = (prepare(read(args.task_view), read(args.assessment),
                           revision=args.revision, agent=args.agent,
                           questions=args.question) if args.command == "prepare"
                   else receive(read(args.handoff), read(args.assessment),
-                               revision=args.revision, task_id=args.task))
+                               revision=args.revision, task_id=args.task,
+                            task_view=read(args.task_view) if args.task_view else None))
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
     except (ValueError, OSError, json.JSONDecodeError) as exc:
