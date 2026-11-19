@@ -32,6 +32,12 @@ class HostProbeTests(unittest.TestCase):
         self.assertEqual(evaluate(observed(*names, "live-progress", "live-steering"))["level"], "REACTIVE")
         self.assertFalse(evaluate(observed(*names))["capabilities"]["cancel"])
 
+    def test_steward_requires_native_capabilities_and_own_canary(self):
+        base=("fresh-context","nonblocking-launch","native-notification","isolated-writer")
+        self.assertFalse(evaluate(observed(*base))["stewardIsolationObserved"])
+        self.assertTrue(evaluate(observed(*base,"steward-isolation"))["stewardIsolationObserved"])
+        self.assertFalse(evaluate(observed("steward-isolation"))["stewardIsolationObserved"])
+
     def test_evidence_required(self):
         r = observed("fresh-context")
         r["cases"][0]["evidenceRefs"] = []

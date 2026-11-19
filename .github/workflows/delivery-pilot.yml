@@ -1,0 +1,27 @@
+name: Delivery pilot baseline
+on:
+  pull_request:
+    paths:
+      - 'skills/delegated-task-loop/**'
+      - '.github/workflows/delivery-pilot.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: controller
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 3769b8164186611a590468dad39f923c2b292409
+          path: baseline
+          persist-credentials: false
+      - name: Check pinned code contains discriminating workloads
+        run: python3 controller/skills/delegated-task-loop/scripts/pilot.py baseline-check --checkout baseline
+      - name: Verify preassigned pilot schedule
+        run: python3 controller/skills/delegated-task-loop/scripts/pilot.py plan

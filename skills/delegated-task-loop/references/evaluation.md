@@ -19,3 +19,7 @@ El informe compara el candidato frente a cada baseline por separado. Registra mu
 Los resultados no se inyectan al supervisor habitual; consultarlos al evaluar metodología o ajustar presupuestos.
 
 Métricas adicionales opcionales: briefPreparationMs, firstUsefulChangeMs, contextQuestions, redundantVerificationMs, administrativeWorkerMs, stewardMs, bureaucracyBlockedMs, duplicateOperations, workerOutputTokens, workerRounds. Medir solo con evidencia observada, misma unidad y alcance. [Telemetría](telemetry.md) local; coste de todos los agentes incluidas esperas, intentos e intervenciones. Ajustar model routing por coste por entrega aceptada, no por precio/token aislado.
+
+## Piloto real fijado
+
+Ver [protocolo piloto](pilot-validation.md). El plan v2 fija variantes, pares previamente asignados y orden rotado; distingue ejecución sin registro de NOT_RUN explícito. Incluye baseline delegado anterior. role_cost.py agrega costes por sesiones de todos los roles e intentos, solo si inventario y uso son completos; no suma duraciones solapadas. La evidencia de host y la aceptación independiente permanecen necesarias.

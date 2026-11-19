@@ -24,3 +24,5 @@ Ejecutar [evaluación por pares](../references/evaluation.md) con revisiones y t
 Fan-out: comprobar que el host permite dos lectores frescos realmente restringidos a snapshots inmutables, notificaciones atribuidas y límites agregados. No validar lectores mediante instrucciones únicamente. Los escritores permanecen serializados. [Contrato de fan-out](../references/parallel-read.md).
 
 Evaluar brief v2 (anclas ausentes, dudas, políticas, delta antiguo), PENDING/adopción, Steward disjunto/capacidad no confirmada, selector proporcional y evidencia obsoleta. Canaries: interrupción durante integración real, adopción sin duplicar, tiempo hasta primer cambio y coste de contexto. Ver [telemetría](../references/telemetry.md), [alcance](../references/proportional-verification.md). Fixture no equivale a prueba de host.
+
+Canarios OS reales en test_operational_canaries.py: operación que sobrevive a worker, reserva concurrente CAS y publicación inesperada a remoto bare desechable. No son ejecuciones de LLM ni certificación de aislamiento nativo.

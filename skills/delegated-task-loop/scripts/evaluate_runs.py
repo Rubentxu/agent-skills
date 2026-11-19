@@ -41,8 +41,9 @@ def digest(v):
     return hashlib.sha256(json.dumps(v, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode()).hexdigest()
 
 def cases_from(plan):
-    obj(plan, ("schemaVersion", "kind", "cases"))
-    if type(plan["schemaVersion"]) is not int or plan["schemaVersion"] != 1 or plan["kind"] != "delegated-loop-evaluation":
+    version=plan.get("schemaVersion") if isinstance(plan,dict) else None
+    obj(plan, ("schemaVersion", "kind", "cases") if version==1 else ("schemaVersion","kind","cases","variants","candidate","pairs"))
+    if type(version) is not int or version not in (1,2) or plan["kind"] != "delegated-loop-evaluation":
         raise ValueError("invalid plan")
     if not isinstance(plan["cases"], list) or not 1 <= len(plan["cases"]) <= 64:
         raise ValueError("invalid case list")
@@ -57,7 +58,25 @@ def cases_from(plan):
             raise ValueError("maxTasks must be positive")
         string(c["description"], "description", 2048)
         cases[cid] = c
+    if version==2:
+        variants=plan["variants"]
+        if not isinstance(variants,list) or not 2<=len(variants)<=8 or any(not isinstance(x,str) or not x.strip() or len(x)>128 for x in variants) or len(set(variants))!=len(variants) or plan["candidate"] not in variants:
+            raise ValueError("invalid variants")
+        if not isinstance(plan["pairs"],list) or not plan["pairs"] or len(plan["pairs"])*len(variants)>384:
+            raise ValueError("invalid planned pairs")
+        seen=set()
+        for pair in plan["pairs"]:
+            obj(pair,("case","id","order"))
+            key=(string(pair["case"],"case"),string(pair["id"],"pair"))
+            if key in seen or key[0] not in cases or not isinstance(pair["order"],list) or len(pair["order"])!=len(variants) or set(pair["order"])!=set(variants):
+                raise ValueError("invalid pair or order")
+            seen.add(key)
+        if {k[0] for k in seen}!=set(cases):
+            raise ValueError("each case requires a planned pair")
     return cases
+
+def variants_for(plan):
+    return (tuple(plan["variants"]),plan["candidate"]) if plan["schemaVersion"]==2 else (VARIANTS,TARGET)
 
 def template(plan):
     cases_from(plan)
@@ -70,12 +89,14 @@ def validate_trials(plan, obs):
         raise ValueError("observation plan identity mismatch")
     if not isinstance(obs["trials"], list) or len(obs["trials"]) > 384:
         raise ValueError("invalid trial inventory")
-    groups, run_ids = {}, set()
+    variants,_=variants_for(plan)
+    groups={(p["case"],p["id"]):{} for p in plan["pairs"]} if plan["schemaVersion"]==2 else {}
+    run_ids=set()
     for r in obs["trials"]:
         obj(r, ("case", "pair", "variant", "runId", "workloadDigest", "environmentDigest",
                 "status", "metrics", "acceptance", "reviewerRef", "evidenceRefs"))
         cid, pair, vid, rid = (string(r[k], k) for k in ("case", "pair", "variant", "runId"))
-        if cid not in cases or vid not in VARIANTS or rid in run_ids:
+        if cid not in cases or vid not in variants or rid in run_ids:
             raise ValueError("unassigned case, variant or duplicate run")
         run_ids.add(rid)
         if r["workloadDigest"] != cases[cid]["workloadDigest"]:
@@ -108,6 +129,7 @@ def validate_trials(plan, obs):
                 raise ValueError("acceptance/counts require independent evidence")
             if r["acceptance"] == "pass" and (r["status"] != "completed" or m.get("acceptedTasks") != cases[cid]["maxTasks"]):
                 raise ValueError("passing run must complete all planned tasks")
+        if plan["schemaVersion"]==2 and (cid,pair) not in groups:raise ValueError("unplanned pair")
         g = groups.setdefault((cid, pair), {})
         if vid in g:
             raise ValueError("duplicate variant in pair")
@@ -128,10 +150,12 @@ def observed_metrics(r):
 
 def compare(plan, obs):
     cases, groups = validate_trials(plan, obs)
+    variants,target=variants_for(plan)
+    baselines=[v for v in variants if v!=target]
     rows, excluded = [], []
     for (cid, pair), g in sorted(groups.items()):
-        for baseline in VARIANTS[:-1]:
-            a, b = g.get(baseline), g.get(TARGET)
+        for baseline in baselines:
+            a, b = g.get(baseline), g.get(target)
             ident = {"case": cid, "pair": pair, "baseline": baseline}
             if a is None or b is None:
                 excluded.append(ident | {"reason": "missing-variant"})
@@ -149,7 +173,7 @@ def compare(plan, obs):
                         "qualityComparable": "unknown" not in (a["acceptance"], b["acceptance"]),
                         "deltas": deltas})
     aggregate = {}
-    for baseline in VARIANTS[:-1]:
+    for baseline in baselines:
         pairs = [p for p in rows if p["baseline"] == baseline]
         quality = [p for p in pairs if p["qualityComparable"]]
         measures = {}
@@ -159,10 +183,13 @@ def compare(plan, obs):
         aggregate[baseline] = {"observedPairs": len(pairs), "qualityPairs": len(quality),
                                "completionRegressions": sum(p["baselineStatus"] == "completed" and p["candidateStatus"] != "completed" for p in pairs),
                                "qualityRegressions": sum(p["baselineAcceptance"] == "pass" and p["candidateAcceptance"] == "fail" for p in quality),
+                               "unknownCandidateAfterPass":sum(p["baselineAcceptance"]=="pass" and p["candidateAcceptance"]=="unknown" for p in pairs),
                                "metrics": measures}
     return {"kind": "delegated-loop-evaluation-report", "schemaVersion": 1,
             "status": "observed-pairs" if rows else "not-evaluated", "plannedCases": len(cases),
             "observedRuns": sum(r["status"] != "not-run" for r in obs["trials"]),
+            "plannedRuns":len(groups)*len(variants) if plan["schemaVersion"]==2 else None,
+            "unrecordedRuns":len(groups)*len(variants)-len(obs["trials"]) if plan["schemaVersion"]==2 else None,
             "notRun": sum(r["status"] == "not-run" for r in obs["trials"]),
             "aggregate": aggregate, "pairs": rows, "excluded": excluded,
             "runtimeVerified": False, "warning": "Reported evidence and metrics are not independently verified by this helper."}

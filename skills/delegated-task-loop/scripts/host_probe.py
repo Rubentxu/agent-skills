@@ -13,7 +13,7 @@ CAPABILITIES = {
     "cancel": "confirmed-stop",
     "resume": "native-resume",
 }
-EXTRA = {"read-only-review", "read-only-exploration", "isolated-writer", "supervisor-compaction"}
+EXTRA = {"read-only-review", "read-only-exploration", "isolated-writer", "supervisor-compaction", "steward-isolation", "resource-adoption", "handoff-amendment"}
 CASES = set(CAPABILITIES.values()) | EXTRA
 
 def evaluate(report):
@@ -59,6 +59,9 @@ def evaluate(report):
             "explorationReadOnlyObserved": observations.get("read-only-exploration") == "PASS",
             "writerIsolationObserved": observations.get("isolated-writer") == "PASS",
             "compactionObserved": observations.get("supervisor-compaction") == "PASS",
+            "stewardIsolationObserved": all(observations.get(k)=="PASS" for k in ("steward-isolation","fresh-context","nonblocking-launch","native-notification")),
+            "resourceAdoptionObserved": observations.get("resource-adoption")=="PASS",
+            "handoffAmendmentObserved": observations.get("handoff-amendment")=="PASS",
             "limitations": limitations, "runtimeVerified": False, "authorized": False}
 
 def main():
