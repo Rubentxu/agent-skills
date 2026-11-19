@@ -18,3 +18,5 @@ Los unit tests prueban router, estado operativo, contratos y proyección de obse
 Comparar tres estrategias en tareas emparejadas, revisiones iniciales y presupuesto equivalentes: agente único, supervised-task-loop, delegated-task-loop. Medir tokens totales incluidos revisores y supervisor (UNKNOWN si no medible), tareas aceptadas, latencia, reaperturas, defectos confirmados, lecturas redundantes, tiempo de recuperación y recursos huérfanos. No extrapolar desde fixtures. No guardar transcripts por defecto. Estado inicial de canaries: NOT_RUN.
 
 Protocolo reproducible: [canaries nativos](../references/host-canaries.md). No convertir fixtures de host_probe en ejecuciones reales.
+
+Ejecutar [evaluación por pares](../references/evaluation.md) con revisiones y tareas idénticas. El validador de fixtures no mide productividad ni ejecuta agentes; el ejemplo se mantiene not-evaluated.
