@@ -10,3 +10,5 @@ Presupuestos iniciales experimentales de transferencia (tokens estimados, no ven
 Al finalizar cada tarea: sustituir la proyección operativa del supervisor (rolling checkpoint), no concatenar resúmenes. Si hay presión de contexto, guardar checkpoint antes de usar compactación/reanudación del host. Un fichero no reduce por sí solo el contexto ya cargado. No cargar métricas por defecto ni prometer control de tokens si el host no lo ofrece.
 
 Aprendizaje durable solo mediante software-knowledge: contrastar fuente, aplicabilidad y duplicados antes de persistir. No registrar cada evento como nota.
+
+Los presupuestos son máximos orientativos, no cuotas a rellenar. El contexto se amplía por incertidumbre material; no añadir pack si anclajes/hechos bastan. [Handoff Engineering](handoff-engineering.md) evita transferir prosa y permite deltas con versión/digest. El worker entrega hechos nuevos, no catálogo; el Steward autorizado destila mediante proveedor.

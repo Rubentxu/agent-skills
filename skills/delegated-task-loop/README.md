@@ -29,3 +29,5 @@ python3 -m unittest discover -s skills/delegated-task-loop/tests -p 'test_*.py' 
 [Evaluación comparativa](references/evaluation.md): tres estrategias, coste total, calidad y recuperación; los datos ausentes no se convierten en cero.
 
 [Fan-out de solo lectura](references/parallel-read.md): candidatos nativos acotados por slots, contexto y fuentes inmutables. El paralelismo de escritores sigue deshabilitado.
+
+[Handoff Engineering v2](references/handoff-engineering.md): resolver ambigüedad, asignar criterios, proyección de políticas/hechos, plan de verificación, recursos y deltas versionados. Instalar delivery-first-testing si se desea el compilador público de pruebas: `npx skills add Rubentxu/agent-skills --skill delivery-first-testing`.

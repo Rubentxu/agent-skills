@@ -8,6 +8,7 @@ from pathlib import Path
 BACKLOG = "backlog-agile-workflow"
 KNOWLEDGE = "software-knowledge"
 GOLDFISH = "goldfish-review"
+TESTING = "delivery-first-testing"
 PHASES = {"discover", "ready", "running", "verify", "review", "accept", "learn", "release", "interrupted", "stopped"}
 CAPS = {"fresh", "background", "notify", "progress", "steer", "cancel", "resume", "reviewReadOnly"}
 SIGNALS = {"normal", "repeated-failure", "stalled", "budget-exhausted", "context-pressure", "scope-drift", "question", "result"}
@@ -90,10 +91,14 @@ def route(s):
         elif not s["taskId"]:
             provider("select-task", BACKLOG, "ready_candidates")
         else:
-            lenses.extend(["references/skill-composition.md", "references/delegation.md"])
+            lenses.extend(["references/handoff-engineering.md", "references/skill-composition.md"])
+            provider("verify-task-anchors", BACKLOG, "technical_readiness")
             provider("prepare-handoff", BACKLOG, "context_handoff")
+            provider("prepare-verification-plan", TESTING, "verification_plan")
             provider("prepare-context", KNOWLEDGE, "context-pack")
+            provider("recover-verified-facts", KNOWLEDGE, "verified_facts")
             # A candidate is not launch authority: host must validate brief and permissions.
+            link("validate-versioned-handoff")
             native("delegate-after-preflight", "fresh")
     elif phase == "running":
         if ownership != "active":

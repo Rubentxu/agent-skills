@@ -18,3 +18,5 @@ El resultado devuelve decision, hasta dos lenses y _links con operaciones simbó
 - learn/release: aprendizaje opcional y limpieza segura; interrupted: reconciliar y recuperar, nunca relanzar un escritor de estado desconocido.
 
 La señal se puede obtener del [reductor de eventos](event-supervision.md). Goldfish requiere fresh y reviewReadOnly observados. La capacidad no concede permiso ni verifica un revisor concreto.
+
+Ready prepara anclajes, authority-handoff con taskDigest, plan de verificación y facts; validar el [brief v2](handoff-engineering.md) y permisos antes de utilizar delegate-after-preflight. No es un gate administrativo ni prueba semántica, y la estructura no permite omitir una obligación.

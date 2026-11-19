@@ -12,3 +12,5 @@ El resultado incluye todos los criterios, incluso not-run/unknown, referencias d
 Ver [envelope](../examples/envelope.json) y [resultado](../examples/result.json). El validador comprueba estructura, atribución y tamaño UTF-8 compacto; no inspecciona Git, Backlog, permisos, evidencia ni resultados de herramientas. No acepta SHA abreviados ni resultados de otro intento. El receptor contrasta fuentes reales. Los presupuestos por bytes son orientativos y se informa overBudget; no se cercena evidencia para satisfacer una cifra. El límite técnico de entrada es 256 KiB por documento.
 
 Usar estos contratos únicamente como sobres operativos. Mantener Ghost Context, context-pack y review_contract en sus proveedores originales. No copiar los payloads completos entre agentes; enviar solo campos indispensables y referencias permitidas.
+
+El [envelope v2](handoff-engineering.md) aporta cierre de contexto y atribución por briefRevision/digest, receipt, amendment y PENDING. v1 sigue validándose para artefactos existentes, pero no demuestra readiness ni permite PENDING. Nuevas delegaciones deben usar v2. Verificador estructural no ejecuta ni autoriza.
