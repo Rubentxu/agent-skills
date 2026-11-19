@@ -34,3 +34,5 @@ Canary Steward: confirmar permisos efectivos disjuntos del implementador y Home 
 Los tests test_operational_canaries.py ejecutan procesos reales Linux, CAS del journal por CLI y Git contra un remoto bare temporal. El test del watchdog de supervised-task-loop termina un wrapper real y observa un ejecutable inocuo bajo GNU timeout. Son validaciones de infraestructura, no de subagentes nativos ni permisos del host. No representar sus resultados como PASS de host_probe.
 
 Casos adicionales steward-isolation, resource-adoption y handoff-amendment distinguen capacidades del ciclo evolucionado. PASS requiere evidencia nativa; los canarios Linux no los satisfacen. Ver [piloto](pilot-validation.md).
+
+Canary Relay: preparar trabajo parcial pequeño, obtener checkpoint y parada real, reservar sustitución CAS, verificar que el host lanza contexto nuevo y que la operación previa se adopta; no representar simulación como PASS. Sin control en vivo, deadline cooperativo. Contrastar entrega sin reiniciar plazo acumulado.

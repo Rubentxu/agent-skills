@@ -23,7 +23,7 @@ class OperationalCanaries(unittest.TestCase):
         self.home=self.root/"home";self.home.mkdir()
         self.env=os.environ|{"XDG_STATE_HOME":str(self.root/"state"),"PYTHONDONTWRITEBYTECODE":"1"}
         self.command=[sys.executable,str(ROOT/"scripts/run_state.py"),"--binding","canary","--workspace",str(self.workspace)]
-        self.s=self.call("start",maxTasks=2,maxAttempts=2)
+        self.s=self.call("start",maxTasks=2,maxAttempts=2,relayPolicy="default")
     def call(self,op,ok=True,**values):
         p=subprocess.run([*self.command,op],input=json.dumps(values),text=True,capture_output=True,env=self.env,timeout=10)
         self.assertEqual(p.returncode,0 if ok else 2,p.stderr)
@@ -54,6 +54,8 @@ class OperationalCanaries(unittest.TestCase):
         ticks=int(Path(f"/proc/{operation.pid}/stat").read_text().rsplit(")",1)[1].split()[19])
         self.mutate("claim",taskId="canary-1",briefRef="brief:1",effectDomains=["repo:product"])
         first=self.s["active"]["attemptId"]
+        task_start=self.s["active"]["schedule"]["taskStartedAt"]
+        task_deadline=self.s["active"]["schedule"]["taskDeadlineAt"]
         self.mutate("attach",attempt=True,handle=f"process:{worker.pid}")
         self.mutate("mark-pending",attempt=True,pendingRef=f"process:{operation.pid}")
         self.mutate("checkpoint",attempt=True,checkpointRef="checkpoint:1")
@@ -63,8 +65,11 @@ class OperationalCanaries(unittest.TestCase):
         self.mutate("observe-resources",attempt=True,resourceStatus="live",inventoryRef="os:operation-start-ticks")
         self.mutate("release",attempt=True,ok=False,resultRef="not-authorized")
         self.mutate("replace",attempt=True,ok=False,briefRef="brief:2")
-        self.mutate("replace",attempt=True,briefRef="brief:2",adoptionRef="operation:existing")
+        self.mutate("replace",attempt=True,briefRef="brief:2",adoptionRef="operation:existing",batonRef="baton:observed",relayReason="recovery")
         self.assertNotEqual(first,self.s["active"]["attemptId"])
+        self.assertEqual(self.s["active"]["schedule"]["taskStartedAt"],task_start)
+        self.assertEqual(self.s["active"]["schedule"]["taskDeadlineAt"],task_deadline)
+        self.assertEqual(self.s["active"]["attemptHistory"][0]["attemptId"],first)
         self.assertEqual(self.s["active"]["pendingRef"],f"process:{operation.pid}")
         # No replacement operation is spawned; same PID produces actual result.
         operation.stdin.write("finish\n");operation.stdin.flush()

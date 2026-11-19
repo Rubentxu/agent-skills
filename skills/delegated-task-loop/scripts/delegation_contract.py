@@ -8,6 +8,7 @@ import re
 import sys
 from pathlib import Path
 from pathlib import PurePosixPath
+from pacing import validate_schedule
 
 MAX_INPUT = 262144
 HEX_SHA = re.compile(r"(?:[0-9a-f]{40}|[0-9a-f]{64})\Z")
@@ -60,7 +61,7 @@ def envelope(v):
              "liveResources", "verificationPlan", "executionPolicy", "criterionOwners", "nonGoals",
              "contingencies", "openQuestions") if version == 2 else ()
     header(v, "delegation-envelope", ("objective", "criteria", "repositories", "policyRefs",
-           "authorityHandoffRef", "knowledgePackRef", "reviewProfile", "contextBudgetBytes", "resultBudgetBytes", *extra), version=version)
+           "authorityHandoffRef", "knowledgePackRef", "reviewProfile", "contextBudgetBytes", "resultBudgetBytes", *extra), optional=("pacing","continuity") if version==2 else (), version=version)
     text(v["objective"], "objective", 4096)
     cs = items(v["criteria"], "criteria")
     if not cs:
@@ -99,6 +100,13 @@ def envelope(v):
             raise ValueError("invalid budget " + k)
     if version == 2:
         extended(v, ids, names)
+        if "pacing" in v: validate_schedule(v["pacing"])
+        if "continuity" in v:
+            c=v["continuity"]
+            obj(c,("previousAttemptId","batonRef","batonDigest"))
+            if text(c["previousAttemptId"],"previous attempt")==v["attemptId"]:raise ValueError("fresh attempt required")
+            text(c["batonRef"],"baton reference");hash256(c["batonDigest"])
+            if "pacing" not in v:raise ValueError("continuity requires pacing")
     return ids, {r["id"]: r for r in repos}
 
 def digest(v):

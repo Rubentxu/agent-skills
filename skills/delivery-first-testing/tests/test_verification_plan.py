@@ -49,3 +49,17 @@ class PlanTests(unittest.TestCase):
         self.assertEqual(compile_plan(f)['status'],'NEEDS_REFINEMENT')
         f['candidates'][0].update(globalGate=True,mandatory=True)
         self.assertEqual(compile_plan(f)['status'],'PLANNED')
+
+    def test_evidence_relay_scoped_and_mandatory_not_waived(self):
+        p=compile_plan(fixture())
+        o=dict(schemaVersion=1,kind="verification-observations",planDigest=digest(p),treeDigest="c"*64,environmentDigest="b"*64,receipts=[],scopeProofs=[])
+        for c in p["checks"]:
+            o["receipts"].append(dict(id=c["id"],treeDigest="a"*64,environmentDigest="b"*64,outcome="PASS",runnerRef="run:1",executed=1,failed=0,skipped=0,role="worker"))
+            o["scopeProofs"].append(dict(id=c["id"],checkDigest=digest(c),fromTreeDigest="a"*64,toTreeDigest="c"*64,previousDependencyDigest="d"*64,currentDependencyDigest="d"*64,complete=True,proofRef="impact:observed"))
+        res=receipts(p,o)
+        self.assertEqual(res["checks"]["both"],"REUSABLE_CANDIDATE")
+        self.assertEqual(res["checks"]["critical"],"RECHECK")
+        self.assertEqual([x["id"] for x in res["remainingChecks"]],["critical"])
+        o["scopeProofs"][0]["complete"]=False
+        self.assertEqual(receipts(p,o)["status"],"NEEDS_EVIDENCE")
+        self.assertFalse(receipts(p,o)["authorized"])

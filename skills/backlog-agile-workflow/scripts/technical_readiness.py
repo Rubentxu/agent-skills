@@ -17,13 +17,22 @@ def rows(v):
         raise ValueError("invalid inventory")
     return v
 def assess(v):
-    fields(v,("schemaVersion","kind","taskId","taskDigest","boardReady","objectiveClear","criteriaClear","policyConflicts","materialQuestions","anchors"))
+    sizing=v.get("sizing") if isinstance(v,dict) else None
+    fields(v,("schemaVersion","kind","taskId","taskDigest","boardReady","objectiveClear","criteriaClear","policyConflicts","materialQuestions","anchors",*(("sizing",) if isinstance(v,dict) and "sizing" in v else ())))
     if type(v["schemaVersion"]) is not int or v["schemaVersion"]!=1 or v["kind"]!="technical-readiness-input":
         raise ValueError("invalid input")
     text(v["taskId"])
     if not isinstance(v["taskDigest"],str) or not re.fullmatch(r"sha256:[0-9a-f]{64}",v["taskDigest"]):
         raise ValueError("task digest required")
     reasons=[]
+    band="unknown"
+    if sizing is not None:
+        fields(sizing,("band","rationaleRef","atomicExceptionRef"))
+        band=sizing["band"]
+        if band not in ("sprint","standard","endurance","oversized","unknown"):raise ValueError("invalid sizing band")
+        text(sizing["rationaleRef"])
+        if sizing["atomicExceptionRef"] is not None:text(sizing["atomicExceptionRef"])
+        if band=="oversized" and sizing["atomicExceptionRef"] is None:reasons.append("REFINE_OVERSIZED_TASK")
     for key in ("boardReady","objectiveClear","criteriaClear"):
         if type(v[key]) is not bool:
             raise ValueError("invalid observed flag")
@@ -47,7 +56,7 @@ def assess(v):
             reasons.append("CREATE_TARGET_"+a["state"].upper()+":"+key)
     return {"kind":"technical-readiness-assessment","schemaVersion":1,"taskId":v["taskId"],"taskDigest":v["taskDigest"],
             "status":"NEEDS_REFINEMENT" if reasons else "CANDIDATE_READY",
-            "reasons":reasons,"runtimeVerified":False,"authorized":False}
+            "reasons":reasons,"sizingBand":band,"runtimeVerified":False,"authorized":False}
 def main():
     try:
         raw=sys.stdin.buffer.read(65537)

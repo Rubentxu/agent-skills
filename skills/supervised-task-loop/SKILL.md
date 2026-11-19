@@ -128,3 +128,7 @@ del repositorio en las suyas.
 ## Recuperación y pruebas proporcionales
 
 El runtime no mide JSON vacío, incompleto ni error de arranque como sesión terminada. Reutiliza informe válido sin recalcular. Si hay intento incompleto, reconciliar proceso/operaciones y archivar sin borrar. Ver [recuperación](references/04-failure-modes.md). El supervisor prepara pruebas proporcionales mediante delivery-first-testing si disponible y traslada hechos, políticas y recursos; no se presupone rama ni autorización de publicación.
+
+## Endurance Relay externo
+
+Máximo 60 minutos por sesión, soft deadline antes del hard. El relay externo admite un segundo intento explícitamente reconciliado de la misma tarea (ver [fallos](references/04-failure-modes.md)); conserva presupuesto acumulado de 120 min y evidencia. No confundir bloqueo de pipeline con autorización de retry. La versión nativa sigue en delegated-task-loop y no requiere este driver.

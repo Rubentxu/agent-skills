@@ -45,11 +45,30 @@ def assess(v):
         out.append({"id":fid,"state":state,"fact":f} if state=="REUSE_CANDIDATE" else {"id":fid,"state":state})
     if contradicted-seen: raise ValueError("unknown contradiction")
     return {"schemaVersion":1,"kind":"fact-reuse-assessment","project":v["project"],"facts":out,"runtimeVerified":False,"authorized":False}
+def experiments(v):
+    fields(v,("schemaVersion","kind","project","experiments","currentSources","contradictedIds"))
+    if type(v["schemaVersion"]) is not int or v["schemaVersion"]!=1 or v["kind"]!="experiment-reuse-input":raise ValueError("invalid experiment input")
+    facts=[];by_id={}
+    for x in rows(v["experiments"]):
+        fields(x,("id","hypothesis","outcome","scope","evidenceRef","recheckWhen","sourcePins"))
+        ident=txt(x["id"])
+        if ident in by_id or x["outcome"] not in ("falsified","inconclusive","confirmed"):raise ValueError("invalid experiment")
+        txt(x["recheckWhen"])
+        by_id[ident]=x
+        facts.append({"id":ident,"claim":x["hypothesis"],"scope":x["scope"],"sourcePins":x["sourcePins"],"evidenceRef":x["evidenceRef"],"kind":"static"})
+    assessed=assess({"schemaVersion":1,"kind":"fact-reuse-input","project":v["project"],"facts":facts,"currentSources":v["currentSources"],"contradictedIds":v["contradictedIds"]})
+    out=[]
+    for row in assessed["facts"]:
+        ident=row["id"];experiment=by_id[ident];state=row["state"]
+        if state=="REUSE_CANDIDATE" and experiment["outcome"]=="inconclusive":state="REVALIDATE"
+        out.append({"id":ident,"state":state,"experiment":experiment} if state=="REUSE_CANDIDATE" else {"id":ident,"state":state})
+    return {"schemaVersion":1,"kind":"experiment-reuse-assessment","project":v["project"],"experiments":out,"runtimeVerified":False,"authorized":False}
 def main():
     try:
         raw=sys.stdin.buffer.read(131073)
         if len(raw)>131072: raise ValueError("input too large")
-        print(json.dumps(assess(json.loads(raw)),ensure_ascii=False,sort_keys=True))
+        v=json.loads(raw)
+        print(json.dumps(experiments(v) if isinstance(v,dict) and v.get("kind")=="experiment-reuse-input" else assess(v),ensure_ascii=False,sort_keys=True))
         return 0
     except (ValueError,TypeError,KeyError,OSError) as e:
         print(str(e),file=sys.stderr);return 2

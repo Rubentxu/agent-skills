@@ -15,3 +15,13 @@ class FactTests(unittest.TestCase):
     def test_permissions_live(self):
         f=fixture();f["facts"][0]["kind"]="permission"
         self.assertEqual(assess(f)["facts"][0]["state"],"RECHECK_ON_USE")
+
+    def test_negative_experiment_is_not_universal(self):
+        from verified_facts import experiments
+        v={"schemaVersion":1,"kind":"experiment-reuse-input","project":"demo","experiments":[{"id":"E1","hypothesis":"parser fault","outcome":"falsified","scope":"parser","evidenceRef":"test:1","recheckWhen":"parser changes","sourcePins":[{"ref":"src","digest":"a"*64}]}],"currentSources":[{"ref":"src","digest":"a"*64}],"contradictedIds":[]}
+        self.assertEqual(experiments(v)["experiments"][0]["state"],"REUSE_CANDIDATE")
+        v["currentSources"][0]["digest"]="b"*64
+        self.assertEqual(experiments(v)["experiments"][0]["state"],"REVALIDATE")
+        v["currentSources"][0]["digest"]="a"*64
+        v["experiments"][0]["outcome"]="inconclusive"
+        self.assertEqual(experiments(v)["experiments"][0]["state"],"REVALIDATE")

@@ -54,7 +54,7 @@ DEFECTOS = {
     "AGENT_PROFILE": "cuenta-6",
     "AGENT_BARE": "0",
     "AGENT_MAX_TASKS": "3",
-    "AGENT_TASK_TIMEOUT_MIN": "90",
+    "AGENT_TASK_TIMEOUT_MIN": "60",
     "AGENT_SLICE": "dev-jvm.slice",
 }
 

@@ -14,7 +14,7 @@ TARGET = VARIANTS[-1]
 METRICS = ("acceptedTasks", "totalTokens", "elapsedMs", "transferBytes", "supervisorPeakContextTokens",
            "repeatedReads", "interventions", "recoveryMs", "resourceLeaks", "reopenedTasks", "confirmedDefects", "briefPreparationMs", "firstUsefulChangeMs", "contextQuestions",
            "redundantVerificationMs", "administrativeWorkerMs", "stewardMs", "bureaucracyBlockedMs",
-           "duplicateOperations", "workerOutputTokens", "workerRounds")
+           "duplicateOperations", "workerOutputTokens", "workerRounds", "relayCount", "relayPreparationMs", "successorFirstUsefulChangeMs", "repeatedHypotheses", "lostProgressEvents", "deadlineOverruns", "tasksAcceptedWithinHour")
 STATUSES = ("completed", "failed", "blocked", "not-run")
 MAX_BYTES = 1048576
 

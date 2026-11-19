@@ -13,3 +13,5 @@ Self-check del supervisor al finalizar cada tarea: objetivo, evidencias, repetic
 Si hay eventos nativos, aplicar el [reductor](event-supervision.md) antes de enviar nuevas señales al LLM; conservar solo la proyección y referencias. No afirmar que el helper despierta por sí mismo a un agente inactivo.
 
 Usar [telemetría y liveness](telemetry.md) para observar sin incorporar transcript al LLM. Silencio prolongado dispara steer/reconciliación, no muerte; mantener PENDING y esperar operación atribuida. Preparar solo la siguiente candidata y revalidarla al delegar; no invertir en lotes de briefs obsoletos. Medir deuda de contexto y coste de intervención.
+
+Para presupuestos temporales usar [Endurance Relay](endurance-relay.md). relay-assess/relay-checkpoint/relay-deadline son señales observadas, no temporizador. A deadline no expira reserva; confirmar parada, checkpoint y adopción. Si dos intentos o plazo de tarea se agotan, replanificar, suspender o escalar; no encadenar automáticamente.

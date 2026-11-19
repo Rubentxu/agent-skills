@@ -133,11 +133,25 @@ def compile_plan(v):
 def receipts(plan, observations):
     if not isinstance(plan,dict) or plan.get("kind")!="verification-plan" or plan.get("status")!="PLANNED":
         raise ValueError("requires planned verification")
-    obj(observations, ("schemaVersion","kind","planDigest","treeDigest","environmentDigest","receipts"))
+    proofs=observations.get("scopeProofs",[])
+    obj(observations, ("schemaVersion","kind","planDigest","treeDigest","environmentDigest","receipts",*(("scopeProofs",) if "scopeProofs" in observations else ())))
     if type(observations["schemaVersion"]) is not int or observations["schemaVersion"]!=1 or observations["kind"]!="verification-observations" or observations["planDigest"]!=digest(plan):
         raise ValueError("plan mismatch")
     sha(observations["treeDigest"]);sha(observations["environmentDigest"])
     checks={c["id"]:c for c in plan["checks"]}
+    scoped={}
+    for p in rows(proofs):
+        obj(p,("id","checkDigest","fromTreeDigest","toTreeDigest","previousDependencyDigest","currentDependencyDigest","complete","proofRef"))
+        cid=txt(p["id"])
+        if cid not in checks or cid in scoped:raise ValueError("unknown or duplicate scope proof")
+        for k in ("checkDigest","fromTreeDigest","toTreeDigest","previousDependencyDigest","currentDependencyDigest"):sha(p[k])
+        if type(p["complete"]) is not bool:raise ValueError("invalid proof completeness")
+        txt(p["proofRef"])
+        c=checks[cid]
+        # Scope evidence cannot waive global, mandatory or independent checks after tree change.
+        if (plan.get("scope")=="bounded" and p["checkDigest"]==digest(c) and p["toTreeDigest"]==observations["treeDigest"]
+            and p["previousDependencyDigest"]==p["currentDependencyDigest"] and p["complete"] and not(c["mandatory"] or c["independent"] or c.get("globalGate"))):
+            scoped[cid]=p["fromTreeDigest"]
     seen={}
     for r in rows(observations["receipts"]):
         obj(r,("id","treeDigest","environmentDigest","outcome","runnerRef","executed","failed","skipped","role"))
@@ -150,14 +164,18 @@ def receipts(plan, observations):
             integer(r[k])
         if r["failed"]>r["executed"] or r["outcome"] not in ("PASS","FAIL","BLOCKED","NOT_RUN") or r["role"] not in ("worker","supervisor","ci"):
             raise ValueError("invalid outcome")
-        current=r["treeDigest"]==observations["treeDigest"] and r["environmentDigest"]==observations["environmentDigest"]
+        current=(r["treeDigest"]==observations["treeDigest"] or scoped.get(cid)==r["treeDigest"]) and r["environmentDigest"]==observations["environmentDigest"]
         good=(current and r["outcome"]=="PASS" and r["executed"]>0 and r["failed"]==0 and r["skipped"]==0
               and (not checks[cid]["independent"] or r["role"]=="supervisor"))
         seen[cid]="REUSABLE_CANDIDATE" if good else "RECHECK"
     required=[c["id"] for c in checks.values() if c["stage"]!="integration"]
     return {"kind":"verification-evidence-assessment","schemaVersion":1,
             "status":"EVIDENCE_CANDIDATES" if all(seen.get(k)=="REUSABLE_CANDIDATE" for k in required) else "NEEDS_EVIDENCE",
-            "checks":{k:seen.get(k,"NOT_RUN") for k in checks},"authorized":False,"runtimeVerified":False}
+            "checks":{k:seen.get(k,"NOT_RUN") for k in checks},
+            "planDigest":digest(plan),
+            "remainingChecks":[c for c in plan["checks"] if seen.get(c["id"])!="REUSABLE_CANDIDATE"],
+            "reuseCandidates":[{"id":r["id"],"runnerRef":r["runnerRef"],"scopeProofRequired":r["treeDigest"]!=observations["treeDigest"]} for r in observations["receipts"] if seen.get(r["id"])=="REUSABLE_CANDIDATE"],
+            "authorized":False,"runtimeVerified":False}
 
 def main():
     try:
