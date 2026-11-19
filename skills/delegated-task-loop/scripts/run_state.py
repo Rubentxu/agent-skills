@@ -12,6 +12,7 @@ import tempfile
 import uuid
 from pathlib import Path
 from contextlib import contextmanager
+import pacing
 
 MAX_BYTES = 32768
 
@@ -134,7 +135,7 @@ def new_attempt(task, number, brief, checkpoint=None, effect_domains=None):
 
 def change(s, op, req, binding):
     if op == "start":
-        keys(req, ("maxTasks", "maxAttempts"), ("objectiveRef", "expectedVersion"))
+        keys(req, ("maxTasks", "maxAttempts"), ("objectiveRef", "expectedVersion", "relayPolicy"))
         if s:
             if s["active"] or s.get("steward") or not s["finished"]:
                 raise ValueError("active run exists; reconcile or finish")
@@ -148,6 +149,7 @@ def change(s, op, req, binding):
                 "maxTasks": integer(req["maxTasks"], "maxTasks", 1),
                 "maxAttempts": integer(req["maxAttempts"], "maxAttempts", 1, 20),
                 "tasksStarted": 0, "active": None, "lastRelease": None,
+                "relayPolicy": pacing.policy(req["relayPolicy"]) if "relayPolicy" in req else None,
                 "supervisorCheckpointRef": None, "steward": None, "lastStewardRelease": None, "finished": False}
     if not s or s["binding"] != binding or s["finished"]:
         raise ValueError("no active run")
@@ -156,6 +158,12 @@ def change(s, op, req, binding):
         raise ValueError("run or version conflict")
     a = s["active"]
     steward=s.get("steward")
+    # Preserve observed high-water clock across mutations. Never expire ownership on time.
+    if a and "schedule" in a:
+        stamp=pacing.now()
+        if stamp<a["lastClockAt"]:
+            if op=="replace": raise ValueError("clock regression; reconcile before relay")
+        else: a["lastClockAt"]=stamp
     if op == "claim":
         keys(req, (*common, "taskId", "briefRef"), ("effectDomains",))
         effects=domains(req.get("effectDomains",["*"]))
@@ -165,6 +173,11 @@ def change(s, op, req, binding):
             raise ValueError("writer reserved or task budget exhausted")
         s["active"] = new_attempt(string(req["taskId"], "taskId", 128), 1,
                                   string(req["briefRef"], "briefRef", 1024), effect_domains=effects)
+        if s.get("relayPolicy") is not None:
+            stamp=pacing.now()
+            s["active"]["schedule"]=pacing.schedule(s["relayPolicy"],stamp,stamp)
+            s["active"]["attemptHistory"]=[]
+            s["active"]["lastClockAt"]=stamp
         s["tasksStarted"] += 1
     elif op == "claim-steward":
         keys(req,(*common,"briefRef","effectDomains","isolationObservationRef"))
@@ -247,8 +260,9 @@ def change(s, op, req, binding):
             a["state"] = "stopped"
             a["resourceStatus"] = "unknown" # reconcile effects after termination
             a["stopObservationRef"] = string(req["observationRef"], "observationRef", 1024)
+            if "schedule" in a:a["stoppedAt"]=a["lastClockAt"]
         elif op == "replace":
-            keys(req, (*common, "briefRef"), ("adoptionRef",))
+            keys(req, (*common, "briefRef"), ("adoptionRef","batonRef","relayReason","metricsRef"))
             if a["state"] != "stopped" or not a["checkpointRef"]:
                 raise ValueError("replacement requires observed stop and checkpoint")
             if a["number"] >= s["maxAttempts"]:
@@ -266,6 +280,18 @@ def change(s, op, req, binding):
             n["resourceInventoryRef"]=a["resourceInventoryRef"]
             n["adoptionRef"]=req.get("adoptionRef")
             n["pendingRef"]=a.get("pendingRef")
+            if "schedule" in a:
+                p=s["relayPolicy"]; stamp=pacing.now(); old=a["schedule"]
+                if stamp<a["lastClockAt"] or old["taskDeadlineAt"]-stamp<p["minSuccessorSeconds"]:
+                    raise ValueError("insufficient remaining task budget; replan")
+                baton=string(req.get("batonRef"),"baton reference",1024)
+                reason=req.get("relayReason")
+                if reason not in ("time-budget","context-pressure","stalled","new-perspective","verification-only","recovery"):
+                    raise ValueError("relay reason required")
+                history=list(a["attemptHistory"])
+                history.append({"attemptId":a["attemptId"],"schedule":old,"stoppedAt":a.get("stoppedAt"),"reason":reason,"batonRef":baton,
+                                "metricsRef":string(req["metricsRef"],"metrics",1024) if "metricsRef" in req else None})
+                n.update(schedule=pacing.schedule(p,old["taskStartedAt"],stamp),attemptHistory=history,lastClockAt=stamp,batonRef=baton,relayReason=reason)
             s["active"]=n
         elif op == "release":
             keys(req, (*common, "resultRef"), ("metricsRef",))
@@ -278,6 +304,10 @@ def change(s, op, req, binding):
                                 "stopObservationRef": a["stopObservationRef"],
                                 "resourceInventoryRef": a["resourceInventoryRef"],
                                 "metricsRef": string(req["metricsRef"],"metrics reference",1024) if "metricsRef" in req else None}
+            if "schedule" in a:
+                s["lastRelease"]["schedule"]=a["schedule"]
+                s["lastRelease"]["attemptHistory"]=a["attemptHistory"]
+                s["lastRelease"]["stoppedAt"]=a.get("stoppedAt")
             s["active"] = None
         else:
             raise ValueError("unknown operation")

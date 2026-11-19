@@ -14,3 +14,5 @@ Ver [envelope](../examples/envelope.json) y [resultado](../examples/result.json)
 Usar estos contratos únicamente como sobres operativos. Mantener Ghost Context, context-pack y review_contract en sus proveedores originales. No copiar los payloads completos entre agentes; enviar solo campos indispensables y referencias permitidas.
 
 El [envelope v2](handoff-engineering.md) aporta cierre de contexto y atribución por briefRevision/digest, receipt, amendment y PENDING. v1 sigue validándose para artefactos existentes, pero no demuestra readiness ni permite PENDING. Nuevas delegaciones deben usar v2. Verificador estructural no ejecuta ni autoriza.
+
+Envelope v2 acepta pacing (schedule de journal) y continuity {previousAttemptId,batonRef,batonDigest}; el amendment no puede reiniciar estos campos. [Endurance Relay](endurance-relay.md) valida continuidad y reusa checkpoint/result existentes. No interpretar la versión legacy como plazo garantizado.
