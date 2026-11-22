@@ -121,7 +121,7 @@ def replay(events: list[dict[str, Any]]) -> dict[str, Any]:
     state: dict[str, Any] = {"generation": 0, "owner": None, "claimId": None,
                              "leaseUntil": None, "resources": [], "phase": "AVAILABLE",
                              "lastHeartbeatAt": None, "lastProgressAt": None,
-                             "checkpointRef": None, "requestId": None, "claimAt": None}
+                             "checkpointRef": None, "requestId": None, "claimAt": None, "lastReason": None}
     for obj in events:
         ev = _event(obj)
         t, gen, actor = ev["type"], ev["generation"], ev["actor"]
@@ -132,19 +132,19 @@ def replay(events: list[dict[str, Any]]) -> dict[str, Any]:
             state.update(owner=actor, claimId=ev["claimId"], generation=gen,
                          resources=_resources(ev["resources"]), leaseUntil=ev["leaseUntil"],
                          lastHeartbeatAt=ev["at"], claimAt=ev["at"], lastProgressAt=None,
-                         checkpointRef=None, requestId=None, phase="ACTIVE")
+                         requestId=None, lastReason=None, phase="ACTIVE")
             continue
         if gen != prev:
             raise Conflict("Stale event generation")
         if t == "YIELD_REQUESTED":
             if state["phase"] not in {"ACTIVE", "YIELD_REQUESTED"}:
                 raise Conflict("No active owner for yield request")
-            state.update(phase="YIELD_REQUESTED", requestId=ev["id"])
+            state.update(phase="YIELD_REQUESTED", requestId=ev["id"], lastReason=ev["reason"])
             continue
         if t == "QUARANTINE":
             if state["phase"] not in {"ACTIVE", "YIELD_REQUESTED"}:
                 raise Conflict("Cannot quarantine unowned task")
-            state.update(phase="QUARANTINED", generation=gen + 1, requestId=ev["id"])
+            state.update(phase="QUARANTINED", generation=gen + 1, requestId=ev["id"], lastReason=ev["reason"])
             continue
         if t == "RECOVER":
             if state["phase"] != "QUARANTINED":
@@ -222,7 +222,9 @@ def task_candidate(task: dict[str, Any], state: dict[str, Any], statuses: list[s
     if state["phase"] != "AVAILABLE":
         return "OWNED_OR_QUARANTINED"
     status = str(task.get("status", "")).casefold().replace("_", " ").replace("-", " ")
-    if status in {"in progress", "inprogress", "doing", "review", "done", "complete", "completed", "blocked"}:
+    # Conservative, allow only known unstarted states. Custom boards need a
+    # configured mapping in a future native Backlog claim API, never guessing.
+    if status not in {"to do", "todo", "open", "ready", "not started", "pending"}:
         return "UNMANAGED_ACTIVE_OR_TERMINAL"
     # In the absence of a configured terminal status, be conservative about other assignees.
     if task.get("assignees"):
@@ -250,7 +252,8 @@ def triage(tasks: list[dict[str, Any]], now: str, no_progress_minutes: int = 30)
                   task_candidate(task, state))
         rows.append({"taskId": task["id"], "health": health, "owner": state["owner"],
                      "generation": state["generation"], "leaseExpired": expired,
-                     "lastProgressAt": state["lastProgressAt"], "checkpointRef": state["checkpointRef"]})
+                     "lastProgressAt": state["lastProgressAt"], "checkpointRef": state["checkpointRef"],
+                     "reason": state["lastReason"]})
     return {"kind": "coordination-triage-v1", "total": len(rows), "tasks": rows,
             "notice": "Advisory: lack of heartbeat/progress does not prove the old worker stopped."}
 

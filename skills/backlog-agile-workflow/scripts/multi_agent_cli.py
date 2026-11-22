@@ -108,6 +108,25 @@ def _apply(opts: argparse.Namespace, root: Path) -> dict:
         raise ValueError("Task not found in authoritative Backlog.md")
     task = details[opts.task]
     state = task_state(task)
+    # A failed push may have succeeded remotely. Retried event IDs must not
+    # append a second command or take a second claim. The current generation
+    # remains authoritative; a historical event is not a renewed permission.
+    existing = next((event for event in parse_comments(task.get("comments"))
+                     if event["id"] == opts.event_id), None)
+    if existing is not None:
+        kind = {"claim":"CLAIM", "renew":"HEARTBEAT", "progress":"PROGRESS",
+                "yield-request":"YIELD_REQUESTED", "yield-ack":"YIELD_ACK",
+                "yield-defer":"YIELD_DEFERRED", "checkpoint":"CHECKPOINT_READY",
+                "release":"RELEASE", "quarantine":"QUARANTINE", "recover":"RECOVER"}[opts.action]
+        if (existing["type"] != kind or existing["actor"] != opts.actor
+                or (opts.claim_id and existing.get("claimId") != opts.claim_id)
+                or (opts.evidence_ref and existing.get("evidenceRef") != opts.evidence_ref)
+                or (opts.reason and existing.get("reason") != opts.reason)
+                or (opts.resource and existing.get("resources") != sorted(opts.resource))):
+            raise Conflict("Event ID reuse with incompatible payload")
+        return {"result":"ALREADY_CONFIRMED", "taskId":opts.task,
+                "generation":state["generation"], "phase":state["phase"],
+                "eventId":opts.event_id, "notice":"Revalidate current claim before effects"}
     if opts.generation is not None and opts.generation != state["generation"]:
         raise Conflict("Expected generation differs from authoritative task")
     if opts.action == "claim":
@@ -131,6 +150,10 @@ def _apply(opts: argparse.Namespace, root: Path) -> dict:
         argv.extend(["--add-label", label])
     for label in sorted(old_labels - new_labels):
         argv.extend(["--remove-label", label])
+    if opts.action == "claim" and opts.working_status:
+        argv.extend(["--status", opts.working_status])
+    if opts.action in {"release", "recover"} and opts.ready_status:
+        argv.extend(["--status", opts.ready_status])
     before = cmd(["git", "rev-parse", "HEAD"], root).stdout.strip()
     cmd(argv, root)
     # The CLI may auto-commit. Reject any unexpected side effect in either
@@ -170,6 +193,8 @@ def main() -> None:
     parser.add_argument("--task")
     parser.add_argument("--actor")
     parser.add_argument("--harness")
+    parser.add_argument("--working-status", help="Configured In Progress column for claim")
+    parser.add_argument("--ready-status", help="Configured To Do column for release/recover")
     parser.add_argument("--claim-id")
     parser.add_argument("--event-id")
     parser.add_argument("--generation", type=int)

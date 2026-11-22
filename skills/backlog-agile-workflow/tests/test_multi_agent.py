@@ -86,6 +86,14 @@ class ReducerTests(unittest.TestCase):
         t["assignees"] = ["@someone"]
         self.assertEqual(ma.task_candidate(t, ma.replay([])), "ASSIGNED_WITHOUT_COORDINATION")
 
+    def test_checkpoint_survives_handoff(self):
+        first=claim()
+        cp=ev("CHECKPOINT_READY",1,claimId="c-1",evidenceRef="git:checkpoint")
+        release=ev("RELEASE",1,claimId="c-1",resourcesClear=True,evidenceRef="stop")
+        successor=ev("CLAIM",2,actor="agent-b",claimId="c-2",harness="claude",
+                     leaseUntil="2026-11-22T12:30:00Z",resources=["repo://project/src"])
+        self.assertEqual(ma.task_state(task([first,cp,release,successor]))["checkpointRef"],"git:checkpoint")
+
     def test_resources_conflict_in_hierarchy(self):
         active = task([claim()], id="T-1")
         self.assertEqual(ma.conflict_with_active(["repo://project/src/main.py"], [active], "T-2"), ["T-1"])

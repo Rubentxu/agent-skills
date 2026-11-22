@@ -31,6 +31,7 @@ elif args[:3] == ['task','edit','TASK-1']:
     k = args[i]; v = args[i+1]
     if k == '--comment': d['comments'].append({'body': v})
     if k == '--add-label' and v not in d['labels']: d['labels'].append(v)
+    if k == '--status': d['status'] = v
     if k == '--remove-label' and v in d['labels']: d['labels'].remove(v)
     i+=2
   p.write_text(json.dumps(d,indent=2)+'\n')
@@ -102,6 +103,30 @@ class DistributedSmoke(unittest.TestCase):
                 event_id="e-5", lease_until="2026-11-22T11:30:00Z", resource=["repo://project/src"], generation=1)
         self.assertEqual(other.returncode,0,other.stderr+other.stdout)
         self.assertEqual(json.loads(other.stdout)["generation"],2)
+
+    def test_retry_same_event_id_is_idempotent(self):
+        arguments=dict(task="TASK-1", actor="agent-a", harness="codex", claim_id="c-1",
+                       event_id="evt-1", lease_until="2026-11-22T11:30:00Z",
+                       resource=["repo://project/src"])
+        first=self.cli_call("claim", **arguments)
+        second=self.cli_call("claim", **arguments)
+        self.assertEqual(first.returncode,0,first.stderr)
+        self.assertEqual(second.returncode,0,second.stderr)
+        self.assertEqual(json.loads(second.stdout)["result"],"ALREADY_CONFIRMED")
+
+    def test_explicit_status_restores_ready_after_release(self):
+        first = self.cli_call("claim", task="TASK-1", actor="agent-a", harness="codex", claim_id="c-1",
+                        event_id="evt-1", lease_until="2026-11-22T11:30:00Z",
+                        working_status="In Progress", resource=["repo://project/src"])
+        self.assertEqual(first.returncode,0,first.stderr)
+        release = self.cli_call("release", task="TASK-1", actor="agent-a", claim_id="c-1",
+                          event_id="evt-2", evidence_ref="stop-verified", resources_clear=True,
+                          generation=1, ready_status="To Do")
+        self.assertEqual(release.returncode,0,release.stderr)
+        second = self.cli_call("claim", task="TASK-1", actor="agent-b", harness="claude", claim_id="c-2",
+                        event_id="evt-3", lease_until="2026-11-22T11:30:00Z",
+                        resource=["repo://project/src"])
+        self.assertEqual(second.returncode,0,second.stderr)
 
     def test_parallel_claim_race_only_one_wins(self):
         def worker(idx):
