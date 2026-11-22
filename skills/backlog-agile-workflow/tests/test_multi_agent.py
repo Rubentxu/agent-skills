@@ -61,11 +61,20 @@ class ReducerTests(unittest.TestCase):
 
     def test_yield_negotiation(self):
         request = ev("YIELD_REQUESTED", 1, actor="supervisor", reason="capacity")
-        answer = ev("YIELD_ACK", 1, claimId="c-1")
+        answer = ev("YIELD_ACK", 1, claimId="c-1", inReplyTo=request["id"])
         done = ev("CHECKPOINT_READY", 1, claimId="c-1", evidenceRef="git:sha")
         s = ma.task_state(task([claim(), request, answer, done]))
         self.assertEqual(s["phase"], "YIELD_REQUESTED")
         self.assertEqual(s["checkpointRef"], "git:sha")
+
+    def test_two_supervisors_cannot_overwrite_pending_request(self):
+        request = ev("YIELD_REQUESTED",1,actor="supervisor-a",reason="quota")
+        other = ev("YIELD_REQUESTED",1,actor="supervisor-b",reason="stalled")
+        with self.assertRaises(ma.Conflict):
+            ma.task_state(task([claim(),request,other]))
+        wrong = ev("YIELD_ACK",1,claimId="c-1",inReplyTo="unknown-request")
+        with self.assertRaises(ma.Conflict):
+            ma.task_state(task([claim(),request,wrong]))
 
     def test_nonmaterial_heartbeat_does_not_mask_stalled(self):
         tick = ev("HEARTBEAT", 1, at="2026-11-22T11:40:00Z", claimId="c-1",

@@ -78,6 +78,8 @@ def _event_for(action: str, opts: argparse.Namespace, state: dict, now: str) -> 
         if not opts.claim_id or opts.claim_id != state["claimId"]:
             raise Conflict("Owner must provide the observed claimId")
         fields = {"claimId": opts.claim_id}
+        if action in {"yield-ack", "yield-defer"}:
+            fields["inReplyTo"] = opts.request_id
         if action == "renew":
             fields["leaseUntil"] = opts.lease_until
         if action in {"progress", "checkpoint"}:
@@ -122,6 +124,7 @@ def _apply(opts: argparse.Namespace, root: Path) -> dict:
                 or (opts.claim_id and existing.get("claimId") != opts.claim_id)
                 or (opts.evidence_ref and existing.get("evidenceRef") != opts.evidence_ref)
                 or (opts.reason and existing.get("reason") != opts.reason)
+                or (opts.request_id and existing.get("inReplyTo") != opts.request_id)
                 or (opts.resource and existing.get("resources") != sorted(opts.resource))):
             raise Conflict("Event ID reuse with incompatible payload")
         return {"result":"ALREADY_CONFIRMED", "taskId":opts.task,
@@ -186,7 +189,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=["claim", "renew", "progress", "yield-request",
                                            "yield-ack", "yield-defer", "checkpoint", "release",
-                                           "quarantine", "recover", "triage"])
+                                           "quarantine", "recover", "triage", "verify"])
     parser.add_argument("--remote", required=True, help="Canonical remote for authoritative Home Repo")
     parser.add_argument("--ref", default="main", help="Shared authority branch; NOT a per-worker branch")
     parser.add_argument("--backlog", default="backlog", help="Backlog.md CLI executable")
@@ -197,6 +200,7 @@ def main() -> None:
     parser.add_argument("--ready-status", help="Configured To Do column for release/recover")
     parser.add_argument("--claim-id")
     parser.add_argument("--event-id")
+    parser.add_argument("--request-id", help="Target YIELD_REQUESTED event for ACK/DEFER")
     parser.add_argument("--generation", type=int)
     parser.add_argument("--resource", action="append", default=[])
     parser.add_argument("--lease-until")
@@ -225,6 +229,22 @@ def main() -> None:
             if opts.action == "triage":
                 _, details = read_backlog(root, opts.backlog)
                 out = triage(list(details.values()), opts.at)
+            elif opts.action == "verify":
+                if opts.generation is None or not opts.claim_id:
+                    raise ValueError("verify requires claim ID and expected generation")
+                doc = json.loads(cmd([opts.backlog, "task", "view", opts.task, "--json"], root).stdout)
+                task = doc.get("task")
+                if doc.get("kind") != "task-view" or not isinstance(task, dict) or task.get("id") != opts.task:
+                    raise ValueError("Invalid authoritative task view")
+                state = task_state(task)
+                if (state["phase"] != "ACTIVE" or state["owner"] != opts.actor
+                        or state["claimId"] != opts.claim_id
+                        or state["generation"] != opts.generation
+                        or not state["leaseUntil"] or utc(opts.at) >= utc(state["leaseUntil"])):
+                    raise Conflict("No currently valid confirmed claim for this writer")
+                out = {"result": "VALID_FOR_COOPERATIVE_WRITER", "taskId": opts.task,
+                       "generation": state["generation"], "claimId": state["claimId"],
+                       "notice": "Point-in-time check only; target-side publication must fence again"}
             else:
                 out = _apply(opts, root)
             print(json.dumps(out, ensure_ascii=False, indent=2))

@@ -90,6 +90,8 @@ def _event(obj: Any) -> dict[str, Any]:
     elif t == "YIELD_REQUESTED":
         if not isinstance(obj.get("reason"), str) or not obj["reason"].strip():
             raise ValueError("Yield needs a reason")
+    elif t in {"YIELD_ACK", "YIELD_DEFERRED"}:
+        _id(obj.get("inReplyTo"), "inReplyTo")
     return obj
 
 
@@ -121,7 +123,7 @@ def replay(events: list[dict[str, Any]]) -> dict[str, Any]:
     state: dict[str, Any] = {"generation": 0, "owner": None, "claimId": None,
                              "leaseUntil": None, "resources": [], "phase": "AVAILABLE",
                              "lastHeartbeatAt": None, "lastProgressAt": None,
-                             "checkpointRef": None, "requestId": None, "claimAt": None, "lastReason": None}
+                             "checkpointRef": None, "requestId": None, "claimAt": None, "lastReason": None, "requestStatus": None}
     for obj in events:
         ev = _event(obj)
         t, gen, actor = ev["type"], ev["generation"], ev["actor"]
@@ -132,14 +134,14 @@ def replay(events: list[dict[str, Any]]) -> dict[str, Any]:
             state.update(owner=actor, claimId=ev["claimId"], generation=gen,
                          resources=_resources(ev["resources"]), leaseUntil=ev["leaseUntil"],
                          lastHeartbeatAt=ev["at"], claimAt=ev["at"], lastProgressAt=None,
-                         requestId=None, lastReason=None, phase="ACTIVE")
+                         requestId=None, lastReason=None, requestStatus=None, phase="ACTIVE")
             continue
         if gen != prev:
             raise Conflict("Stale event generation")
         if t == "YIELD_REQUESTED":
-            if state["phase"] not in {"ACTIVE", "YIELD_REQUESTED"}:
-                raise Conflict("No active owner for yield request")
-            state.update(phase="YIELD_REQUESTED", requestId=ev["id"], lastReason=ev["reason"])
+            if state["phase"] != "ACTIVE":
+                raise Conflict("Yield already pending or task not active")
+            state.update(phase="YIELD_REQUESTED", requestId=ev["id"], requestStatus="PENDING", lastReason=ev["reason"])
             continue
         if t == "QUARANTINE":
             if state["phase"] not in {"ACTIVE", "YIELD_REQUESTED"}:
@@ -163,14 +165,16 @@ def replay(events: list[dict[str, Any]]) -> dict[str, Any]:
         elif t == "CHECKPOINT_READY":
             state.update(lastProgressAt=ev["at"], checkpointRef=ev["evidenceRef"])
         elif t == "YIELD_ACK":
-            if state["phase"] != "YIELD_REQUESTED":
-                raise Conflict("No yield request to acknowledge")
+            if state["phase"] != "YIELD_REQUESTED" or ev["inReplyTo"] != state["requestId"]:
+                raise Conflict("Stale or missing yield request to acknowledge")
+            state["requestStatus"] = "ACKNOWLEDGED"
         elif t == "YIELD_DEFERRED":
-            if state["phase"] != "YIELD_REQUESTED":
-                raise Conflict("No yield request to defer")
+            if state["phase"] != "YIELD_REQUESTED" or ev["inReplyTo"] != state["requestId"]:
+                raise Conflict("Stale or missing yield request to defer")
+            state["requestStatus"] = "DEFERRED"
         elif t == "RELEASE":
             state.update(phase="AVAILABLE", owner=None, claimId=None, resources=[],
-                         leaseUntil=None, requestId=None)
+                         leaseUntil=None, requestId=None, requestStatus=None)
     return state
 
 
@@ -253,7 +257,7 @@ def triage(tasks: list[dict[str, Any]], now: str, no_progress_minutes: int = 30)
         rows.append({"taskId": task["id"], "health": health, "owner": state["owner"],
                      "generation": state["generation"], "leaseExpired": expired,
                      "lastProgressAt": state["lastProgressAt"], "checkpointRef": state["checkpointRef"],
-                     "reason": state["lastReason"]})
+                     "reason": state["lastReason"], "requestStatus": state["requestStatus"]})
     return {"kind": "coordination-triage-v1", "total": len(rows), "tasks": rows,
             "notice": "Advisory: lack of heartbeat/progress does not prove the old worker stopped."}
 

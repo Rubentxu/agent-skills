@@ -17,26 +17,29 @@ CLIENT = ROOT / "scripts" / "multi_agent_cli.py"
 FAKE_CLI = r'''#!/usr/bin/env python3
 import json, pathlib, sys
 root = pathlib.Path.cwd()
-p = root/'backlog'/'tasks'/'task-1.json'
-d = json.loads(p.read_text())
 args = sys.argv[1:]
-if args[:3] == ['task','list','--json']:
+if args[:2] == ['task','list']:
+  all_tasks = [json.loads(p.read_text()) for p in sorted((root/'backlog'/'tasks').glob('*.json'))]
   print(json.dumps({'schemaVersion':1,'kind':'task-list','tasks':[{k:d[k] for k in
-       ('id','title','isReady','archived','status','assignees','labels')}] }))
-elif args[:3] == ['task','view','TASK-1']:
-  print(json.dumps({'schemaVersion':1,'kind':'task-view','task':d}))
-elif args[:3] == ['task','edit','TASK-1']:
-  i=3
-  while i < len(args):
-    k = args[i]; v = args[i+1]
-    if k == '--comment': d['comments'].append({'body': v})
-    if k == '--add-label' and v not in d['labels']: d['labels'].append(v)
-    if k == '--status': d['status'] = v
-    if k == '--remove-label' and v in d['labels']: d['labels'].remove(v)
-    i+=2
-  p.write_text(json.dumps(d,indent=2)+'\n')
+       ('id','title','isReady','archived','status','assignees','labels')} for d in all_tasks]}))
 else:
-  print('unknown CLI input: '+repr(args),file=sys.stderr);sys.exit(1)
+  p = root/'backlog'/'tasks'/('task-'+args[2].split('-')[-1]+'.json') if len(args)>2 else None
+  d = json.loads(p.read_text()) if p and p.exists() else {}
+  if args[:2] == ['task','view']:
+    print(json.dumps({'schemaVersion':1,'kind':'task-view','task':d}))
+  elif args[:2] == ['task','edit']:
+    i=3
+    while i < len(args):
+      k = args[i]; v = args[i+1]
+      if k == '--comment': d['comments'].append({'body': v})
+      if k == '--add-label' and v not in d['labels']: d['labels'].append(v)
+      if k == '--status': d['status'] = v
+      if k == '--remove-label' and v in d['labels']: d['labels'].remove(v)
+      i+=2
+    p.write_text(json.dumps(d,indent=2)+'\n')
+  else:
+    print('unknown CLI input: '+repr(args),file=sys.stderr);sys.exit(1)
+
 '''
 
 
@@ -139,6 +142,41 @@ class DistributedSmoke(unittest.TestCase):
         self.assertEqual(len(successes),1,[(v.returncode,v.stderr,v.stdout) for v in [x,y]])
         failed = next(v for v in [x,y] if v.returncode)
         self.assertIn(failed.returncode, [2,3])
+
+    def test_writer_verify_fails_after_yield_request(self):
+        first=self.cli_call("claim",task="TASK-1",actor="agent-a",harness="codex",claim_id="c-1",
+                   event_id="evt-1",lease_until="2026-11-22T11:30:00Z",resource=["repo://project/src"])
+        self.assertEqual(first.returncode,0,first.stderr)
+        good=self.cli_call("verify",task="TASK-1",actor="agent-a",claim_id="c-1",generation=1)
+        self.assertEqual(good.returncode,0,good.stderr)
+        req=self.cli_call("yield-request",task="TASK-1",actor="supervisor",event_id="evt-2",
+                          generation=1,reason="quota_exhausted")
+        self.assertEqual(req.returncode,0,req.stderr)
+        blocked=self.cli_call("verify",task="TASK-1",actor="agent-a",claim_id="c-1",generation=1)
+        self.assertNotEqual(blocked.returncode,0)
+
+    def test_cross_task_shared_resource_is_globally_exclusive(self):
+        # Two separate task records contend for one effect scope in the same
+        # authority branch; git CAS serializes the entire decision.
+        base=self.root/"initial"/"backlog"/"tasks"
+        second=json.loads((base/"task-1.json").read_text())
+        second.update(id="TASK-2",title="Other work",path="backlog/tasks/task-2.json")
+        (base/"task-2.json").write_text(json.dumps(second,indent=2)+'\n')
+        git("add", ".", cwd=self.root/"initial")
+        git("commit", "-m", "second", cwd=self.root/"initial")
+        git("push", "origin", "main", cwd=self.root/"initial")
+        def worker(task_id):
+            return self.cli_call("claim", task=task_id, actor="agent-"+task_id,
+                    harness="codex", claim_id="c-"+task_id,
+                    event_id="evt-"+task_id, lease_until="2026-11-22T11:30:00Z",
+                    resource=["repo://project/shared"])
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            x,y=list(pool.map(worker,["TASK-1","TASK-2"]))
+        self.assertEqual(sum(z.returncode==0 for z in [x,y]),1,[(z.returncode,z.stderr,z.stdout) for z in [x,y]])
+        loser="TASK-1" if x.returncode else "TASK-2"
+        rerun=worker(loser)
+        self.assertEqual(rerun.returncode,2,rerun.stdout+rerun.stderr)
+        self.assertIn("Resource scopes conflict",rerun.stderr)
 
     def test_quarantine_requires_expired_lease(self):
         one=self.cli_call("claim", task="TASK-1", actor="agent-a", harness="codex",
