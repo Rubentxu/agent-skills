@@ -44,7 +44,7 @@ def candidates(payload: dict[str, Any], limit: int = 5) -> dict[str, Any]:
     return {"status": "NAVIGATION_ONLY", "source_kind": "task-list", "total_in_snapshot": len(items),
             "ready_in_snapshot": len(result), "candidates": result[:limit],
             "truncated_candidates": len(result) > limit,
-            "notice": "Mantiene el orden del CLI. La instantánea puede estar filtrada/paginada; priorización de valor y selección final requieren revisión."}
+            "notice": "Mantiene el orden del CLI. isReady solo acredita dependencias: ni claim ni exclusividad. Confirmar estado operativo con la lente multi-agent-coordination; la instantánea puede estar filtrada/paginada."}
 
 
 def main() -> None:
