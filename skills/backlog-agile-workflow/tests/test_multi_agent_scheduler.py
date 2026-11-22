@@ -47,6 +47,13 @@ class SchedulerTests(unittest.TestCase):
         self.assertEqual([(x['taskId'],x['agentId']) for x in result['assignments']],
                          [('B','worker-b'),('A','worker-a')])
 
+    def test_custom_claimable_column(self):
+        task=row("A",status="Pendiente")
+        packet=plan([task],{"A":["repo://p/a"]})
+        self.assertEqual(schedule(packet)["assignments"], [])
+        packet["claimableStatuses"]=["Pendiente"]
+        self.assertEqual(len(schedule(packet)["assignments"]),1)
+
     def test_dependency_cycle_detected(self):
         a,b=row('A',['B'],ready=False),row('B',['A'],ready=False)
         result=schedule(plan([a,b],{}))

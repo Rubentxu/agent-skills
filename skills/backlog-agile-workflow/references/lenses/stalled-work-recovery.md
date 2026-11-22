@@ -10,6 +10,8 @@
 
 ## Señales estructuradas de harnesses heterogéneos
 
+[Bridge de eventos de Claude Code, Qwen, Codex y ACP](../harness-interop.md): `scripts/harness_bridge.py` filtra eventos del host y los proyecta al contrato. El fin de turno o sesión no prueba parada.
+
 `scripts/harness_signal.py` recibe una observación JSON `harness-observation-v1` del adaptador del host y devuelve `harness-advice-v1`, con enlaces `yield`/`recover`. Solo clasifica códigos **estructurados** observados (cuota explícita, HTTP 429 genérico, autenticación, parada con inventario); no lee prompts, transcripciones ni deduce cuotas a partir de texto libre. El resultado no es permiso para liberar: el supervisor usa `multi_agent_cli.py yield-request` o conciliación de forma autorizada. Sin eventos, la ausencia de heartbeat queda como SUSPECT, nunca como parada confirmada.
 
 ## Triage por demanda

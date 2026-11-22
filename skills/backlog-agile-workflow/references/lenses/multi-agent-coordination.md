@@ -16,7 +16,7 @@
 2. Con observaciones completas, `scripts/multi_agent_scheduler.py snapshot.json` propone lotes por prioridad de producto, desbloqueos inmediatos, profundidad y compatibilidad de skills/recursos. **No** inicia workers ni guarda estado.
 3. Leer `_links` del planificador, comprobar recursos y utilizar `scripts/multi_agent_cli.py claim --remote ... --task ... --actor ... --claim-id ... --harness ... --lease-until ... --resource repo://...`. Sin `CONFIRMED`, no modificar recursos compartidos.
 4. Volver a validar claim/generación antes de publicar, desplegar o cerrar; la integración debe imponer la misma regla en una frontera que el worker no pueda omitir. Un agente externo que no cumple el protocolo invalida la garantía.
-5. Antes de publicar, el trabajador cooperativo invoca `multi_agent_cli.py verify --remote ... --task ... --actor ... --claim-id ... --generation ...`; si pierde la generación, detiene escrituras. Es una comprobación puntual; el destino de publicación necesita validar de nuevo para cerrar la ventana TOCTOU. Si el board usa estados explícitos, indicar `--working-status` al adquirir y `--ready-status` al liberar. `--resource` es obligatorio; `--event-id` estable permite reintentos idempotentes tras un push de resultado incierto.
+5. Antes de publicar, el trabajador cooperativo invoca `multi_agent_cli.py verify --remote ... --task ... --actor ... --claim-id ... --generation ...`; si pierde la generación, detiene escrituras. Es una comprobación puntual; el destino de publicación necesita validar de nuevo para cerrar la ventana TOCTOU. Para columnas personalizadas indicar `--claimable-status` y `--working-status` al adquirir; `release/recover` restaura el estado original registrado en el claim, salvo cambios externos que exigen conciliación. `--resource` es obligatorio; `--event-id` estable permite reintentos idempotentes tras un push de resultado incierto.
 6. En cada checkpoint, renovar lease **sin** falsear progreso; registrar progreso `PROGRESS` solo con evidencia; cesión con el flujo de [yield-negotiation](yield-negotiation.md); recuperación tras bloqueo con [stalled-work-recovery](stalled-work-recovery.md).
 
 **Atención:** el adaptador Git v1 usa un clon efímero de la autoridad por operación, por lo que prioriza corrección sobre rendimiento y no reemplaza un backend de claims transaccionales de Backlog.md. Los timestamps locales no prueban parada; el remote de Git tampoco ofrece aislamiento para efectos externos. No publicar tokens, paths privados o credenciales en comentarios.
@@ -29,6 +29,8 @@
 - `recover` → [stalled-work-recovery](stalled-work-recovery.md).
 - `delegate` → `delegated-task-loop` **solo si** figura en `available_skills`; el router ajeno sigue siendo dueño de su journal y relay.
 - `supervise` → `supervised-task-loop` **solo si** está instalada y dispone de una señal/host observados.
+- `observe-harness` → [bridge de eventos](../harness-interop.md), sin lectura de transcripciones ni liberación automática.
+- `protect-publication` → [gate del destino](../harness-interop.md); `verify` es solo preflight.
 - `verify` → [verification](verification.md) y `delivery-first-testing` si disponible.
 
 **Nunca** confundir el claim de Git con un permiso del host ni suprimir gates de seguridad funcional del proyecto.

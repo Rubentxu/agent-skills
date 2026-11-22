@@ -107,6 +107,11 @@ def schedule(payload: dict[str, Any]) -> dict[str, Any]:
     details = payload.get("details")
     resources = payload.get("resources")
     agents = payload.get("agents")
+    claimable_statuses = payload.get("claimableStatuses")
+    if claimable_statuses is not None:
+        # Validate even if no tasks are currently ready.
+        task_candidate({"archived": False, "isReady": True, "status": "__validation__",
+                        "assignees": []}, {"phase": "AVAILABLE"}, claimable_statuses)
     if (not isinstance(tasks, list) or not isinstance(details, dict) or not isinstance(resources, dict)
             or not isinstance(agents, list) or len(tasks) > 20000 or len(agents) > 100):
         raise InvalidPlan("Malformed or oversized snapshot")
@@ -138,7 +143,7 @@ def schedule(payload: dict[str, Any]) -> dict[str, Any]:
     for rank, task in enumerate(tasks):
         tid = task["id"]
         state = task_state(details[tid])
-        eligible = task_candidate(task, state)
+        eligible = task_candidate(task, state, claimable_statuses)
         if eligible != "CANDIDATE":
             skipped.append({"taskId": tid, "reason": eligible})
             continue
