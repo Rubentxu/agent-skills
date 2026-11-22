@@ -76,6 +76,10 @@ def _event(obj: Any) -> dict[str, Any]:
         _resources(obj.get("resources"))
         _id(obj.get("harness"), "harness")
         utc(obj.get("leaseUntil"))
+        if "originalStatus" in obj or "workingStatus" in obj:
+            for field in ("originalStatus", "workingStatus"):
+                if not isinstance(obj.get(field), str) or not obj[field].strip() or len(obj[field]) > 120:
+                    raise ValueError("Invalid claim status: " + field)
     elif t == "HEARTBEAT":
         utc(obj.get("leaseUntil"))
     elif t in {"RELEASE", "RECOVER"}:
@@ -123,7 +127,8 @@ def replay(events: list[dict[str, Any]]) -> dict[str, Any]:
     state: dict[str, Any] = {"generation": 0, "owner": None, "claimId": None,
                              "leaseUntil": None, "resources": [], "phase": "AVAILABLE",
                              "lastHeartbeatAt": None, "lastProgressAt": None,
-                             "checkpointRef": None, "requestId": None, "claimAt": None, "lastReason": None, "requestStatus": None}
+                             "checkpointRef": None, "requestId": None, "claimAt": None, "lastReason": None, "requestStatus": None,
+                             "originalStatus": None, "workingStatus": None}
     for obj in events:
         ev = _event(obj)
         t, gen, actor = ev["type"], ev["generation"], ev["actor"]
@@ -134,7 +139,8 @@ def replay(events: list[dict[str, Any]]) -> dict[str, Any]:
             state.update(owner=actor, claimId=ev["claimId"], generation=gen,
                          resources=_resources(ev["resources"]), leaseUntil=ev["leaseUntil"],
                          lastHeartbeatAt=ev["at"], claimAt=ev["at"], lastProgressAt=None,
-                         requestId=None, lastReason=None, requestStatus=None, phase="ACTIVE")
+                         requestId=None, lastReason=None, requestStatus=None, phase="ACTIVE",
+                         originalStatus=ev.get("originalStatus"), workingStatus=ev.get("workingStatus"))
             continue
         if gen != prev:
             raise Conflict("Stale event generation")
@@ -152,7 +158,8 @@ def replay(events: list[dict[str, Any]]) -> dict[str, Any]:
             if state["phase"] != "QUARANTINED":
                 raise Conflict("Recovery requires quarantine")
             state.update(phase="AVAILABLE", owner=None, claimId=None,
-                         leaseUntil=None, resources=[], requestId=None)
+                         leaseUntil=None, resources=[], requestId=None,
+                         originalStatus=None, workingStatus=None)
             continue
         if state["phase"] not in {"ACTIVE", "YIELD_REQUESTED"} or actor != state["owner"] or ev.get("claimId") != state["claimId"]:
             raise Conflict("Not current claim owner")
@@ -174,7 +181,8 @@ def replay(events: list[dict[str, Any]]) -> dict[str, Any]:
             state["requestStatus"] = "DEFERRED"
         elif t == "RELEASE":
             state.update(phase="AVAILABLE", owner=None, claimId=None, resources=[],
-                         leaseUntil=None, requestId=None, requestStatus=None)
+                         leaseUntil=None, requestId=None, requestStatus=None,
+                         originalStatus=None, workingStatus=None)
     return state
 
 
@@ -225,10 +233,16 @@ def task_candidate(task: dict[str, Any], state: dict[str, Any], statuses: list[s
         return "NOT_READY"
     if state["phase"] != "AVAILABLE":
         return "OWNED_OR_QUARANTINED"
-    status = str(task.get("status", "")).casefold().replace("_", " ").replace("-", " ")
-    # Conservative, allow only known unstarted states. Custom boards need a
-    # configured mapping in a future native Backlog claim API, never guessing.
-    if status not in {"to do", "todo", "open", "ready", "not started", "pending"}:
+    # Configured columns are explicit: no guessing from arbitrary In Progress,
+    # Done or archived statuses. Default is a conservative compatibility set.
+    if statuses is not None:
+        if (not isinstance(statuses, list) or not 1 <= len(statuses) <= 16
+                or any(not isinstance(x, str) or not x.strip() or len(x) > 120 for x in statuses)
+                or len(set(x.casefold().strip() for x in statuses)) != len(statuses)):
+            raise ValueError("Invalid configured claimable status names")
+    claimable = statuses if statuses is not None else ["To Do", "Todo", "Open", "Ready", "Not Started", "Pending"]
+    status = str(task.get("status", "")).casefold().strip().replace("_", " ").replace("-", " ")
+    if status not in {x.casefold().strip().replace("_", " ").replace("-", " ") for x in claimable}:
         return "UNMANAGED_ACTIVE_OR_TERMINAL"
     # In the absence of a configured terminal status, be conservative about other assignees.
     if task.get("assignees"):

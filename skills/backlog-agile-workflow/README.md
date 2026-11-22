@@ -10,7 +10,11 @@ Nuevas intenciones `coordinate-work|schedule-work|claim-task|yield-task|inspect-
 
 [Coordinación y claims](references/lenses/multi-agent-coordination.md) · [Cesión negociada](references/lenses/yield-negotiation.md) · [Triage y recuperación](references/lenses/stalled-work-recovery.md). La planificación es pura y la adquisición real necesita Git CAS y Backlog CLI; sin remoto compartido, ejecutar en serie. No hay daemon ni tracker alternativo.
 
-Clasificador de fallos del harness: `scripts/harness_signal.py` (observaciones estructuradas → consejos con enlaces HATEOAS, sin mutaciones).\n\nEjecutar pruebas: `python3 -m unittest discover -s skills/backlog-agile-workflow/tests -p 'test_multi_agent*.py' -v`. El smoke Git utiliza un doble de la CLI: no sustituye una validación E2E de la CLI de Backlog.md antes de uso productivo.
+Clasificador de fallos del harness: `scripts/harness_signal.py` (observaciones estructuradas → consejos con enlaces HATEOAS, sin mutaciones). [Integraciones Claude Code, Qwen, Codex y ACP](references/harness-interop.md): `scripts/harness_bridge.py` valida los eventos y descarta texto sensible. La señal puede solicitar un yield, pero nunca libera un claim por sí misma.
+
+El claim recuerda su estado original para restaurarlo al ceder. Los tableros personalizados especifican `--claimable-status`; no hay suposiciones sobre columnas de otros proyectos. En escritura ordinaria sin claim se consulta solo una tarea; claim y triage comprueban la autoridad global.
+
+Pruebas: `python3 -m unittest discover -s skills/backlog-agile-workflow/tests -p 'test_multi_agent*.py' -v` y `-p 'test_harness_*.py'`. La CI ejecuta también un canary efímero con la CLI real de Backlog.md. La exclusividad exige un destino que imponga el fencing, no solo `verify` en el cliente.
 
 ## Activaciones
 

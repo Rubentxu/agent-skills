@@ -28,7 +28,7 @@ def classify(payload: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(value, str) or not value.strip() or len(value) > 200:
             raise ValueError("Missing or invalid " + key)
     signal = payload.get("signal")
-    if signal not in {"provider_error", "process_stopped", "no_progress", "external_wait", "heartbeat_lost"}:
+    if signal not in {"provider_error", "process_stopped", "no_progress", "external_wait", "heartbeat_lost", "turn_completed", "session_ending", "tool_failure"}:
         raise ValueError("Unknown signal")
     code = payload.get("code")
     if code is not None and (not isinstance(code, str) or len(code) > 100):
@@ -45,6 +45,8 @@ def classify(payload: dict[str, Any]) -> dict[str, Any]:
     if signal == "provider_error":
         if code in QUOTA:
             health, action = "CAPACITY_BLOCKED", "REQUEST_YIELD"
+        elif code == "billing_error":
+            health, action = "BILLING_BLOCKED", "REQUEST_YIELD"
         elif code in AUTH or status in {401, 403}:
             health, action = "AUTH_BLOCKED", "REQUEST_YIELD"
         elif code in RATE or status == 429:
@@ -58,6 +60,12 @@ def classify(payload: dict[str, Any]) -> dict[str, Any]:
             health, action = "STOPPED_RESOURCES_CLEAR", "RECONCILE_AND_YIELD"
         else:
             health, action = "STOPPED_OPERATIONS_UNKNOWN", "QUARANTINE_AND_RECONCILE"
+    elif signal == "turn_completed":
+        health, action = "TURN_COMPLETED", "CHECK_PROGRESS_NO_AUTO_RELEASE"
+    elif signal == "session_ending":
+        health, action = "SESSION_ENDING", "OBSERVE_HOST_STOP_NO_AUTO_RELEASE"
+    elif signal == "tool_failure":
+        health, action = "TOOL_FAILED", "INSPECT_TOOL_FAILURE"
     elif signal == "no_progress":
         health, action = "STALLED", "REQUEST_DIAGNOSIS_OR_YIELD"
     elif signal == "external_wait":

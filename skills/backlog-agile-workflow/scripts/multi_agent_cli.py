@@ -59,7 +59,53 @@ def read_backlog(root: Path, binary: str) -> tuple[list[dict], dict[str, dict]]:
     return rows, details
 
 
-def _event_for(action: str, opts: argparse.Namespace, state: dict, now: str) -> str:
+def read_task(root: Path, binary: str, task_id: str) -> dict:
+    """Single-task path for non-claim transitions. Claim still scans all owners."""
+    doc = json.loads(cmd([binary, "task", "view", task_id, "--json"], root).stdout)
+    task = doc.get("task")
+    if (doc.get("kind") != "task-view" or doc.get("schemaVersion") != 1
+            or not isinstance(task, dict) or task.get("id") != task_id):
+        raise ValueError("Invalid authoritative task view")
+    return task
+
+
+def _retry_matches(existing: dict, action: str, opts: argparse.Namespace) -> bool:
+    """Retry only the *same* event semantics; never accept merely the same ID."""
+    kinds = {"claim": "CLAIM", "renew": "HEARTBEAT", "progress": "PROGRESS",
+             "yield-request": "YIELD_REQUESTED", "yield-ack": "YIELD_ACK",
+             "yield-defer": "YIELD_DEFERRED", "checkpoint": "CHECKPOINT_READY",
+             "release": "RELEASE", "quarantine": "QUARANTINE", "recover": "RECOVER"}
+    if existing["type"] != kinds[action] or existing["actor"] != opts.actor:
+        return False
+    required = {
+        "claim": {"claimId": opts.claim_id, "harness": opts.harness,
+                  "leaseUntil": opts.lease_until, "resources": sorted(opts.resource)},
+        "renew": {"claimId": opts.claim_id, "leaseUntil": opts.lease_until},
+        "progress": {"claimId": opts.claim_id, "evidenceRef": opts.evidence_ref},
+        "yield-request": {"reason": opts.reason},
+        "yield-ack": {"claimId": opts.claim_id, "inReplyTo": opts.request_id},
+        "yield-defer": {"claimId": opts.claim_id, "inReplyTo": opts.request_id},
+        "checkpoint": {"claimId": opts.claim_id, "evidenceRef": opts.evidence_ref},
+        "release": {"claimId": opts.claim_id, "evidenceRef": opts.evidence_ref,
+                    "resourcesClear": opts.resources_clear},
+        "quarantine": {"reason": opts.reason, "evidenceRef": opts.evidence_ref},
+        "recover": {"evidenceRef": opts.evidence_ref, "resourcesClear": opts.resources_clear},
+    }[action]
+    if (any(v is None or v is False or (isinstance(v, list) and not v)
+            for v in required.values()) or
+            any(existing.get(k) != v for k, v in required.items())):
+        return False
+    expected_generation = opts.generation
+    if (expected_generation is not None and
+            expected_generation != existing["generation"] - (1 if action == "claim" else 0)):
+        return False
+    if action == "claim" and opts.working_status and existing.get("workingStatus") != opts.working_status:
+        return False
+    return True
+
+
+def _event_for(action: str, opts: argparse.Namespace, state: dict, now: str,
+               task: dict) -> str:
     kind = {"claim": "CLAIM", "renew": "HEARTBEAT", "progress": "PROGRESS",
             "yield-request": "YIELD_REQUESTED", "yield-ack": "YIELD_ACK",
             "yield-defer": "YIELD_DEFERRED", "checkpoint": "CHECKPOINT_READY",
@@ -73,7 +119,9 @@ def _event_for(action: str, opts: argparse.Namespace, state: dict, now: str) -> 
         if utc(opts.lease_until) <= utc(now):
             raise ValueError("Claim lease must extend past observation time")
         fields = {"claimId": opts.claim_id, "harness": opts.harness,
-                  "resources": opts.resource, "leaseUntil": opts.lease_until}
+                  "resources": opts.resource, "leaseUntil": opts.lease_until,
+                  "originalStatus": task["status"],
+                  "workingStatus": opts.working_status or task["status"]}
     elif action in {"renew", "progress", "yield-ack", "yield-defer", "checkpoint", "release"}:
         if not opts.claim_id or opts.claim_id != state["claimId"]:
             raise Conflict("Owner must provide the observed claimId")
@@ -105,10 +153,16 @@ def _event_for(action: str, opts: argparse.Namespace, state: dict, now: str) -> 
 
 def _apply(opts: argparse.Namespace, root: Path) -> dict:
     binary = opts.backlog
-    _, details = read_backlog(root, binary)
-    if opts.task not in details:
-        raise ValueError("Task not found in authoritative Backlog.md")
-    task = details[opts.task]
+    # Only a new claim must examine every other task's resources. Renew,
+    # checkpoint, release and takeover transitions are task-local.
+    if opts.action == "claim":
+        _, details = read_backlog(root, binary)
+        if opts.task not in details:
+            raise ValueError("Task not found in authoritative Backlog.md")
+        task = details[opts.task]
+    else:
+        details = None
+        task = read_task(root, binary, opts.task)
     state = task_state(task)
     # A failed push may have succeeded remotely. Retried event IDs must not
     # append a second command or take a second claim. The current generation
@@ -116,16 +170,7 @@ def _apply(opts: argparse.Namespace, root: Path) -> dict:
     existing = next((event for event in parse_comments(task.get("comments"))
                      if event["id"] == opts.event_id), None)
     if existing is not None:
-        kind = {"claim":"CLAIM", "renew":"HEARTBEAT", "progress":"PROGRESS",
-                "yield-request":"YIELD_REQUESTED", "yield-ack":"YIELD_ACK",
-                "yield-defer":"YIELD_DEFERRED", "checkpoint":"CHECKPOINT_READY",
-                "release":"RELEASE", "quarantine":"QUARANTINE", "recover":"RECOVER"}[opts.action]
-        if (existing["type"] != kind or existing["actor"] != opts.actor
-                or (opts.claim_id and existing.get("claimId") != opts.claim_id)
-                or (opts.evidence_ref and existing.get("evidenceRef") != opts.evidence_ref)
-                or (opts.reason and existing.get("reason") != opts.reason)
-                or (opts.request_id and existing.get("inReplyTo") != opts.request_id)
-                or (opts.resource and existing.get("resources") != sorted(opts.resource))):
+        if not _retry_matches(existing, opts.action, opts):
             raise Conflict("Event ID reuse with incompatible payload")
         return {"result":"ALREADY_CONFIRMED", "taskId":opts.task,
                 "generation":state["generation"], "phase":state["phase"],
@@ -133,14 +178,27 @@ def _apply(opts: argparse.Namespace, root: Path) -> dict:
     if opts.generation is not None and opts.generation != state["generation"]:
         raise Conflict("Expected generation differs from authoritative task")
     if opts.action == "claim":
-        if task_candidate(task, state) != "CANDIDATE":
+        if task_candidate(task, state, opts.claimable_status or None) != "CANDIDATE":
             raise Conflict("Task is not available for exclusive claim")
         colliding = conflict_with_active(opts.resource, list(details.values()), opts.task)
         if colliding:
             raise Conflict("Resource scopes conflict with tasks: " + ", ".join(colliding))
     if opts.action == "renew" and utc(opts.lease_until) <= utc(opts.at):
         raise ValueError("Lease renewal must extend past observation time")
-    event = _event_for(opts.action, opts, state, opts.at)
+    # Captures original column in CLAIM and restores it automatically on
+    # RELEASE/RECOVER, even for localized or customized boards.
+    restore_status = opts.ready_status
+    if opts.action in {"release", "recover"} and state["originalStatus"]:
+        expected = {state["originalStatus"], state["workingStatus"]}
+        if task.get("status") not in expected:
+            raise Conflict("Status changed outside coordination; investigate before release")
+        if restore_status and restore_status != state["originalStatus"]:
+            raise Conflict("Requested ready status differs from claim baseline")
+        restore_status = state["originalStatus"]
+    if opts.action in {"claim", "renew"}:
+        if utc(opts.lease_until) > utc(opts.at) + timedelta(minutes=opts.max_lease_minutes):
+            raise ValueError("Requested lease exceeds configured maximum duration")
+    event = _event_for(opts.action, opts, state, opts.at, task)
     next_state = replay(parse_comments(task.get("comments") + [{"body": event}]))
     if opts.dry_run:
         return {"result": "PROPOSED_ONLY", "taskId": opts.task,
@@ -157,8 +215,8 @@ def _apply(opts: argparse.Namespace, root: Path) -> dict:
         argv.extend(["--label", ",".join(sorted(desired_labels))])
     if opts.action == "claim" and opts.working_status:
         argv.extend(["--status", opts.working_status])
-    if opts.action in {"release", "recover"} and opts.ready_status:
-        argv.extend(["--status", opts.ready_status])
+    if opts.action in {"release", "recover"} and restore_status and restore_status != task.get("status"):
+        argv.extend(["--status", restore_status])
     before = cmd(["git", "rev-parse", "HEAD"], root).stdout.strip()
     cmd(argv, root)
     # The CLI may auto-commit. Reject any unexpected side effect in either
@@ -199,6 +257,9 @@ def main() -> None:
     parser.add_argument("--actor")
     parser.add_argument("--harness")
     parser.add_argument("--working-status", help="Configured In Progress column for claim")
+    parser.add_argument("--claimable-status", action="append", default=[],
+                        help="Explicit Backlog.md claimable column; repeat for each allowed status")
+    parser.add_argument("--max-lease-minutes", type=int, default=120)
     parser.add_argument("--ready-status", help="Configured To Do column for release/recover")
     parser.add_argument("--claim-id")
     parser.add_argument("--event-id")
@@ -222,8 +283,8 @@ def main() -> None:
         parser.error("Mutations need --task and --actor")
     if opts.action in {"claim", "renew"} and not opts.lease_until:
         parser.error("Lease operations need --lease-until")
-    if opts.grace_minutes < 0:
-        parser.error("Invalid grace")
+    if opts.grace_minutes < 0 or not 1 <= opts.max_lease_minutes <= 1440:
+        parser.error("Invalid grace or max lease duration")
     try:
         with tempfile.TemporaryDirectory(prefix="backlog-coordination-") as tmp:
             root = Path(tmp) / "home"
@@ -234,15 +295,13 @@ def main() -> None:
             elif opts.action == "verify":
                 if opts.generation is None or not opts.claim_id:
                     raise ValueError("verify requires claim ID and expected generation")
-                doc = json.loads(cmd([opts.backlog, "task", "view", opts.task, "--json"], root).stdout)
-                task = doc.get("task")
-                if doc.get("kind") != "task-view" or not isinstance(task, dict) or task.get("id") != opts.task:
-                    raise ValueError("Invalid authoritative task view")
+                task = read_task(root, opts.backlog, opts.task)
                 state = task_state(task)
                 if (state["phase"] != "ACTIVE" or state["owner"] != opts.actor
                         or state["claimId"] != opts.claim_id
                         or state["generation"] != opts.generation
-                        or not state["leaseUntil"] or utc(opts.at) >= utc(state["leaseUntil"])):
+                        or not state["leaseUntil"] or utc(opts.at) >= utc(state["leaseUntil"])
+                        or (opts.resource and any(x not in state["resources"] for x in opts.resource))):
                     raise Conflict("No currently valid confirmed claim for this writer")
                 out = {"result": "VALID_FOR_COOPERATIVE_WRITER", "taskId": opts.task,
                        "generation": state["generation"], "claimId": state["claimId"],

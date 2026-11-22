@@ -132,6 +132,52 @@ class DistributedSmoke(unittest.TestCase):
                         resource=["repo://project/src"])
         self.assertEqual(second.returncode,0,second.stderr)
 
+    def test_custom_status_recovers_without_manual_ready_status(self):
+        path=self.root/"initial"/"backlog"/"tasks"/"task-1.json"
+        d=json.loads(path.read_text());d["status"]="Pendiente"
+        path.write_text(json.dumps(d,indent=2)+"\n")
+        git("add", ".", cwd=self.root/"initial")
+        git("commit", "-m", "custom-column", cwd=self.root/"initial")
+        git("push", "origin", "main", cwd=self.root/"initial")
+        claim=self.cli_call("claim",task="TASK-1",actor="agent-a",harness="codex",claim_id="c-1",
+             event_id="e-1",lease_until="2026-11-22T11:30:00Z",resource=["repo://p/a"],
+             claimable_status=["Pendiente"],working_status="En curso")
+        self.assertEqual(claim.returncode,0,claim.stderr)
+        release=self.cli_call("release",task="TASK-1",actor="agent-a",claim_id="c-1",
+             event_id="e-2",evidence_ref="stop-verified",resources_clear=True,generation=1)
+        self.assertEqual(release.returncode,0,release.stderr)
+        clone=self.root/"check"
+        git("clone",str(self.remote),str(clone))
+        row=json.loads((clone/"backlog/tasks/task-1.json").read_text())
+        self.assertEqual(row["status"],"Pendiente")
+        next_claim=self.cli_call("claim",task="TASK-1",actor="agent-b",harness="claude",claim_id="c-2",
+             event_id="e-3",lease_until="2026-11-22T11:30:00Z",resource=["repo://p/a"],
+             claimable_status=["Pendiente"])
+        self.assertEqual(next_claim.returncode,0,next_claim.stderr)
+
+    def test_retry_same_id_but_different_lease_or_harness_refused(self):
+        kw=dict(task="TASK-1",actor="agent-a",harness="codex",claim_id="c-1",
+             event_id="evt-1",lease_until="2026-11-22T11:30:00Z",resource=["repo://p/a"])
+        self.assertEqual(self.cli_call("claim",**kw).returncode,0)
+        other=dict(kw,lease_until="2026-11-22T11:31:00Z")
+        self.assertNotEqual(self.cli_call("claim",**other).returncode,0)
+        other=dict(kw,harness="qwen")
+        self.assertNotEqual(self.cli_call("claim",**other).returncode,0)
+
+    def test_lease_maximum_enforced_and_verify_checks_scopes(self):
+        far=self.cli_call("claim",task="TASK-1",actor="agent-a",harness="codex",claim_id="c-1",
+             event_id="e-1",lease_until="2026-11-22T19:30:00Z",resource=["repo://p/a"])
+        self.assertNotEqual(far.returncode,0)
+        good=self.cli_call("claim",task="TASK-1",actor="agent-a",harness="codex",claim_id="c-1",
+             event_id="e-2",lease_until="2026-11-22T11:30:00Z",resource=["repo://p/a"])
+        self.assertEqual(good.returncode,0,good.stderr)
+        denied=self.cli_call("verify",task="TASK-1",actor="agent-a",claim_id="c-1",generation=1,
+                   resource=["repo://p/b"])
+        self.assertNotEqual(denied.returncode,0)
+        allowed=self.cli_call("verify",task="TASK-1",actor="agent-a",claim_id="c-1",generation=1,
+                   resource=["repo://p/a"])
+        self.assertEqual(allowed.returncode,0,allowed.stderr)
+
     def test_parallel_claim_race_only_one_wins(self):
         def worker(idx):
             return self.cli_call("claim", task="TASK-1", actor=f"agent-{idx}", harness="codex",

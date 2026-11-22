@@ -31,6 +31,8 @@ Las intenciones `coordinate-work|schedule-work|claim-task|yield-task|inspect-sta
 - `claim-atomically` → [coordinación](lenses/multi-agent-coordination.md): `multi_agent_cli.py` y Git fast-forward CAS sobre Backlog autoritativo.
 - `yield-negotiation` → [cesión](lenses/yield-negotiation.md): solicitud, checkpoint, parada observada y release.
 - `triage-and-reconcile` → [estancamiento y recuperación](lenses/stalled-work-recovery.md): liveness distinto de progreso, cuarentena sin liberación por timeout.
+- `observe-harness` → [bridge interoperable](harness-interop.md): normalizar hooks tipados sin leer transcripciones ni inferir cuota por silencio.
+- `protect-publication` → [frontera de publicación](harness-interop.md): verificar claim y revalidar en destino protegido (no basta una comprobación local).
 - `delegate-skill` → `delegated-task-loop` o `supervised-task-loop` **solo si** figuran en `available_skills`; de otro modo se conserva la navegación local.
 
 Las lentes de [dependencias](lenses/dependency-management.md), [readiness](lenses/technical-readiness.md) y [recuperación del flujo](lenses/flow-recovery.md) se abren únicamente por necesidad contextual. Backlog.md continúa siendo la única autoridad y no se crea un segundo planificador persistente.

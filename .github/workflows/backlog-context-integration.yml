@@ -63,6 +63,11 @@ jobs:
           node -e 'const a=require("./tasks-before.json");if(a.kind!=="task-list"||a.tasks.length<1)process.exit(1)'
           backlog task list --json > tasks-after.json
           diff -u tasks-before.json tasks-after.json
+      - name: Validate hardened multiagent planner and structured harness bridges
+        run: |
+          python3 -m unittest discover -s skills/backlog-agile-workflow/tests -p 'test_multi_agent.py' -v
+          python3 -m unittest discover -s skills/backlog-agile-workflow/tests -p 'test_multi_agent_scheduler.py' -v
+          python3 -m unittest discover -s skills/backlog-agile-workflow/tests -p 'test_harness_*.py' -v
       - name: Validate multiagent claims, handoff and fencing against real Backlog.md
         run: python3 skills/backlog-agile-workflow/scripts/smoke_real_backlog.py
       - name: Validate WIP preflight against real Backlog task-list JSON

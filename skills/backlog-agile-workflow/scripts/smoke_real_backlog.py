@@ -78,7 +78,7 @@ def main():
                                                      "--evidence-ref", "git:checkpoint"])
         command("release", "agent-a", "evt-8", ["--claim-id", "claim-1", "--generation", "1",
                                                   "--resources-clear", "--evidence-ref", "stop-verified",
-                                                  "--ready-status", "To Do"])
+                                                  ])
         second = command("claim", "agent-b", "evt-9", ["--harness", "claude", "--claim-id", "claim-2",
                  "--lease-until", lease, "--resource", "repo://canary/src"])
         assert second["result"] == "CONFIRMED" and second["generation"] == 2, second
