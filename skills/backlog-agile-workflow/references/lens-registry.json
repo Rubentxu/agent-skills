@@ -35,6 +35,33 @@
       "playbook": "references/lenses/flow-recovery.md"
     },
     {
+      "id": "multi-agent-coordination",
+      "status": "ready",
+      "intents": [
+        "coordinate-work",
+        "schedule-work",
+        "claim-task"
+      ],
+      "playbook": "references/lenses/multi-agent-coordination.md"
+    },
+    {
+      "id": "yield-negotiation",
+      "status": "ready",
+      "intents": [
+        "yield-task"
+      ],
+      "playbook": "references/lenses/yield-negotiation.md"
+    },
+    {
+      "id": "stalled-work-recovery",
+      "status": "ready",
+      "intents": [
+        "inspect-stalled",
+        "recover-task"
+      ],
+      "playbook": "references/lenses/stalled-work-recovery.md"
+    },
+    {
       "id": "refinement",
       "status": "ready",
       "intents": [
