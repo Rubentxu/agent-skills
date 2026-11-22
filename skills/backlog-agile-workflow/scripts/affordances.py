@@ -10,7 +10,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 INTENTS = frozenset({"discover", "capture", "triage", "refine", "plan", "execute",
-                     "verify", "close", "review", "maintain", "specify", "decompose", "sync-specs", "document-code", "git-hygiene", "trace", "architecture", "curate-architecture", "map-task", "create-task", "move-task", "archive-task", "restore-task", "delete-task", "align-work", "unplanned-work", "manage-dependencies", "manage-epic", "catalog", "decide", "authority-check", "recall", "handoff", "memory-feedback", "context-exchange", "ubiquitous-language", "semantic-tagging", "okf-documentation", "semantic-consistency", "research-orchestration", "emergent-architecture", "independent-review", "review-resolution", "context-drift", "stalled-work"})
+                     "verify", "close", "review", "maintain", "specify", "decompose", "sync-specs", "document-code", "git-hygiene", "trace", "architecture", "curate-architecture", "map-task", "create-task", "move-task", "archive-task", "restore-task", "delete-task", "align-work", "unplanned-work", "manage-dependencies", "manage-epic", "catalog", "decide", "authority-check", "recall", "handoff", "memory-feedback", "context-exchange", "ubiquitous-language", "semantic-tagging", "okf-documentation", "semantic-consistency", "research-orchestration", "emergent-architecture", "independent-review", "review-resolution", "context-drift", "stalled-work", "coordinate-work", "schedule-work", "claim-task", "yield-task", "inspect-stalled", "recover-task"})
 BASIS = frozenset({"observed", "unknown", "stale"})
 CLI = frozenset({"available", "missing", "unknown"})
 PROJECT = frozenset({"initialized", "absent", "unknown"})
@@ -20,7 +20,7 @@ GROMA_INTENTS = frozenset({"architecture", "curate-architecture", "map-task"})
 KNOWLEDGE_INTENTS = frozenset({"ubiquitous-language", "semantic-tagging", "okf-documentation", "semantic-consistency", "research-orchestration", "emergent-architecture"})
 CONFIG = ("autoCommit", "remoteOperations", "bypassGitHooks", "onStatusChange")
 TASK_ID = re.compile(r"[A-Za-z][A-Za-z0-9_.-]{0,63}")
-NEEDS_TASK = frozenset({"plan", "execute", "verify", "close", "map-task", "move-task", "archive-task", "restore-task", "delete-task", "manage-dependencies"})
+NEEDS_TASK = frozenset({"plan", "execute", "verify", "close", "map-task", "move-task", "archive-task", "restore-task", "delete-task", "manage-dependencies", "claim-task", "yield-task", "recover-task"})
 BOARD_INTENTS = frozenset({"create-task", "move-task", "archive-task", "restore-task", "delete-task"})
 WRITE_INTENTS = frozenset({"capture", "refine", "plan", "execute", "verify", "close", "review", "maintain", "map-task", "align-work", "unplanned-work", "manage-dependencies", "manage-epic", "decide", "ubiquitous-language", "semantic-tagging"})
 
@@ -143,7 +143,7 @@ def affordances(state: dict[str, Any]) -> dict[str, Any]:
         if groma == "missing":
             result["warnings"].append("Groma opcional y ausente; Backlog.md puede seguir funcionando sin mapa")
         return result
-    offline_spec = intent in {"specify", "decompose", "git-hygiene", "trace", "architecture", "curate-architecture", "authority-check", "handoff", "memory-feedback", "context-exchange", "document-code", "okf-documentation", "semantic-consistency", "research-orchestration", "emergent-architecture", "independent-review", "review-resolution", "context-drift", "stalled-work"}
+    offline_spec = intent in {"specify", "decompose", "git-hygiene", "trace", "architecture", "curate-architecture", "authority-check", "handoff", "memory-feedback", "context-exchange", "document-code", "okf-documentation", "semantic-consistency", "research-orchestration", "emergent-architecture", "independent-review", "review-resolution", "context-drift", "stalled-work", "coordinate-work", "inspect-stalled"}
     if cli != "available" and not offline_spec:
         result["decision"] = "DISCOVER"
         result["_links"].append(_notice("inspect-cli", "Verificar backlog --version y backlog --help, sin instalar automáticamente"))
@@ -179,6 +179,38 @@ def affordances(state: dict[str, Any]) -> dict[str, Any]:
         result["_links"].append(_notice("inspect-specifications", "Solo para migración solicitada: examinar fuentes heredadas sin crear tracking paralelo"))
     elif intent == "decompose":
         result["_links"].append(_notice("inspect-backlog-milestones", "Descomponer tareas/hitos nativos de Backlog.md en incrementos útiles"))
+    if intent in {"coordinate-work", "schedule-work", "claim-task", "yield-task", "inspect-stalled", "recover-task"}:
+        task_intents = {"claim-task", "yield-task", "recover-task"}
+        if intent in task_intents and not task.get("id"):
+            result["decision"] = "INSPECT_MORE"
+            result["_links"].append(_notice("select-task", "Leer un ID real de Backlog.md antes de coordinar"))
+            return result
+        if cli == "available" and project == "initialized":
+            result["suggested_reads"].append(["backlog", "task", "list", "--json"])
+            if task.get("id"):
+                result["suggested_reads"].append(["backlog", "task", "view", task["id"], "--json"])
+        if intent in {"coordinate-work", "schedule-work", "claim-task"}:
+            result["_links"].append(_notice("plan-compatible-work",
+                "Proyección pura de DAG, capacidades y recursos, no asignación autorizada",
+                href=_local("scripts/multi_agent_scheduler.py")))
+            result["_links"].append(_notice("claim-atomically",
+                "Claim confirmado por el remoto autoritativo para escritura cooperativa",
+                href=_local("references/lenses/multi-agent-coordination.md")))
+        if intent == "yield-task":
+            result["_links"].append(_notice("yield-negotiation",
+                "Pedir cesión, checkpoint, parada observada y liberación comprobada",
+                href=_local("references/lenses/yield-negotiation.md")))
+        if intent in {"inspect-stalled", "recover-task"}:
+            result["_links"].append(_notice("triage-and-reconcile",
+                "Distinguir liveness, progreso y propiedad: no recuperar por timeout",
+                href=_local("references/lenses/stalled-work-recovery.md")))
+        for skill in skills:
+            if skill["id"] in available and intent in skill["intents"]:
+                result["_links"].append(_notice("delegate-skill", skill["reason"], skill_id=skill["id"]))
+        result["decision"] = "READY" if mode == "read" else "PROPOSE_ONLY"
+        result["warnings"].append(
+            "El router no adquiere claims ni concede permisos: revalidar generación, autoridad Git y recursos en operación atómica")
+        return result
     if intent == "stalled-work":
         if cli == "available" and project == "initialized" and task.get("id"):
             result["suggested_reads"].append(["backlog", "task", "view", task["id"], "--json"])
