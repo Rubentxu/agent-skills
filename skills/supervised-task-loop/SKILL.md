@@ -114,6 +114,10 @@ del repositorio en las suyas.
 | [`references/03-measurement.md`](references/03-measurement.md) | cómo se mide y cómo se decide el veredicto |
 | [`references/04-failure-modes.md`](references/04-failure-modes.md) | las eventualidades y cómo se corrigen |
 
+## Triage entre harnesses (opt-in)
+
+Con `backlog-agile-workflow` confirmado en el inventario del host, abrir [global-supervision](references/global-supervision.md): consultar eventos del Home Repo, solicitar `YIELD` y recuperar solo tras parada/inventario verificados y generación CAS. Esta skill supervisa sus sesiones sin considerarse autoridad global ni instalar otro monitor.
+
 ## Los límites
 
 - El bucle es un **driver, no una puerta**: no juzga código, no concede estados, no
