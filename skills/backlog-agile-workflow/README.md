@@ -4,6 +4,14 @@ Skill portable para **trabajo ágil ligero** con [Backlog.md](https://github.com
 
 **Política principal:** **entrega de valor continuo, sin horas de trabajo estéril**. Terminar capacidades funcionales verificadas, cerrar tareas pequeñas y reaccionar pronto ante el estancamiento investigando y decidiendo cómo desbloquearlo. **Backlog.md es la única fuente de seguimiento:** no exigir ROADMAP.md, CHANGELOG.md de progreso, tareas Markdown, ADR/SPEC administrativos ni recibos de gates. WIP es asesoramiento, nunca permiso. Calidad significa implementación, pruebas pertinentes, seguridad y contratos reales.
 
+## Multiagente interoperable y navegación HATEOAS
+
+Nuevas intenciones `coordinate-work|schedule-work|claim-task|yield-task|inspect-stalled|recover-task` en el [router](references/navigation.md), con lentes descubribles vía `lens-registry.json`. El agente consulta únicamente los `_links` relevantes y descubre otras skills por inventario `available_skills`, sin importar el contexto de otro harness.
+
+[Coordinación y claims](references/lenses/multi-agent-coordination.md) · [Cesión negociada](references/lenses/yield-negotiation.md) · [Triage y recuperación](references/lenses/stalled-work-recovery.md). La planificación es pura y la adquisición real necesita Git CAS y Backlog CLI; sin remoto compartido, ejecutar en serie. No hay daemon ni tracker alternativo.
+
+Ejecutar pruebas: `python3 -m unittest discover -s skills/backlog-agile-workflow/tests -p 'test_multi_agent*.py' -v`. El smoke Git utiliza un doble de la CLI: no sustituye una validación E2E de la CLI de Backlog.md antes de uso productivo.
+
 ## Activaciones
 
 - «Convierte esta necesidad en tareas pequeñas de alto valor directamente en Backlog.md»
