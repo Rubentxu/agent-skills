@@ -63,6 +63,8 @@ jobs:
           node -e 'const a=require("./tasks-before.json");if(a.kind!=="task-list"||a.tasks.length<1)process.exit(1)'
           backlog task list --json > tasks-after.json
           diff -u tasks-before.json tasks-after.json
+      - name: Validate multiagent claims, handoff and fencing against real Backlog.md
+        run: python3 skills/backlog-agile-workflow/scripts/smoke_real_backlog.py
       - name: Validate WIP preflight against real Backlog task-list JSON
         run: |
           set -euo pipefail

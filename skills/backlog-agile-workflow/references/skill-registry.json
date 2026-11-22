@@ -103,6 +103,26 @@
         "context-drift"
       ],
       "reason": "Delegar al router de software-knowledge por intención y estado observado; navegar identidad, pirámide, grafo y procedencia con presupuesto, sin duplicar autoridad ni asumir instalación."
+    },
+    {
+      "id": "delegated-task-loop",
+      "intents": [
+        "coordinate-work",
+        "schedule-work",
+        "claim-task",
+        "yield-task",
+        "recover-task"
+      ],
+      "reason": "Delegar workers nativos con claim global, adopción de recursos y Endurance Relay"
+    },
+    {
+      "id": "supervised-task-loop",
+      "intents": [
+        "coordinate-work",
+        "inspect-stalled",
+        "recover-task"
+      ],
+      "reason": "Supervisión y triage por demanda sin presumir supervisor único"
     }
   ]
 }

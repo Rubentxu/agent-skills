@@ -7,6 +7,10 @@ description: "Coordina tareas Backlog.md mediante subagentes nativos, contexto m
 
 El agente anfitrión es el supervisor Elephant. Una delegación, una tarea, contexto suficiente; el supervisor no implementa rutinariamente ni acumula conversaciones. Los workers son sustituibles; el conocimiento y la evidencia no.
 
+## Compatibilidad opcional con claims globales
+
+Si el host descubre `backlog-agile-workflow` en `available_skills`, consultar [global-claims](references/global-claims.md) y el contrato de `multi-agent-coordination` antes de iniciar workers escritores en distintos harnesses. El journal local sigue controlando intentos y Endurance Relay, pero no concede exclusividad entre máquinas. No liberar reservas por timeout ni duplicar el protocolo global.
+
 ## Entrada: observar antes de actuar
 
 1. Fijar objetivo, alcance, autorización y límite de tareas/intentos. Aplicar [Endurance Relay](references/endurance-relay.md): nuevos runs start con relayPolicy="default", maxAttempts=2, objetivo de tarea <=60 min. Si se pide vaciar el tablero, acordar un límite de ejecución o detenerse al agotar el presupuesto del host; nunca interpretar autonomía como permiso ilimitado.

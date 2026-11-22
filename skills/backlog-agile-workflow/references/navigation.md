@@ -23,6 +23,18 @@ Orden de decisión: validar entrada → resolver capacidades/proyecto → escoge
 
 Resultados: `DISCOVER`, `INSPECT_MORE`, `READY`, `PROPOSE_ONLY`, `AUTHORIZED_ACTION`, `KEEP_AS_IS`, `BLOCKED`. Ninguno significa `PASS` de tests ni que se haya escrito una tarea. Los cambios de fase y objetivo se reevalúan; no se conserva un estado de conversación en archivos.
 
+## Navegación multiagente — HATEOAS
+
+Las intenciones `coordinate-work|schedule-work|claim-task|yield-task|inspect-stalled|recover-task` siguen el mismo router y catálogo de lentes. Los `_links` muestran opciones, **no** permisos ni instrucciones de escribir.
+
+- `plan-compatible-work` → [coordinación](lenses/multi-agent-coordination.md): `multi_agent_scheduler.py` (propuesta sin efectos).
+- `claim-atomically` → [coordinación](lenses/multi-agent-coordination.md): `multi_agent_cli.py` y Git fast-forward CAS sobre Backlog autoritativo.
+- `yield-negotiation` → [cesión](lenses/yield-negotiation.md): solicitud, checkpoint, parada observada y release.
+- `triage-and-reconcile` → [estancamiento y recuperación](lenses/stalled-work-recovery.md): liveness distinto de progreso, cuarentena sin liberación por timeout.
+- `delegate-skill` → `delegated-task-loop` o `supervised-task-loop` **solo si** figuran en `available_skills`; de otro modo se conserva la navegación local.
+
+Las lentes de [dependencias](lenses/dependency-management.md), [readiness](lenses/technical-readiness.md) y [recuperación del flujo](lenses/flow-recovery.md) se abren únicamente por necesidad contextual. Backlog.md continúa siendo la única autoridad y no se crea un segundo planificador persistente.
+
 ## Importación excepcional de planificación heredada
 
 `specify` y `sync-specs` solo se usan ante una migración expresamente solicitada de fuentes antiguas; `decompose` puede organizar hitos nativos de Backlog.md sin roadmap externo. El proyector de legado solo emite propuestas, nunca sustituye la autoridad de Backlog.md ni impide entregas ordinarias. Ver [contrato](spec-contract.md).

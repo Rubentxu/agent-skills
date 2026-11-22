@@ -1,0 +1,26 @@
+{
+  "kind": "multi-agent-plan-v1",
+  "taskList": {
+    "schemaVersion": 1,
+    "kind": "task-list",
+    "tasks": [
+      {"id":"TASK-1","title":"API contract","status":"To Do","archived":false,"isReady":true,"assignees":[],"dependencies":[],"priority":"high"},
+      {"id":"TASK-2","title":"Metrics","status":"To Do","archived":false,"isReady":true,"assignees":[],"dependencies":[],"priority":"medium"},
+      {"id":"TASK-3","title":"Integration","status":"To Do","archived":false,"isReady":false,"assignees":[],"dependencies":["TASK-1","TASK-2"],"priority":"high"}
+    ]
+  },
+  "details": {
+    "TASK-1": {"id":"TASK-1","status":"To Do","archived":false,"isReady":true,"assignees":[],"comments":[]},
+    "TASK-2": {"id":"TASK-2","status":"To Do","archived":false,"isReady":true,"assignees":[],"comments":[]},
+    "TASK-3": {"id":"TASK-3","status":"To Do","archived":false,"isReady":false,"assignees":[],"comments":[]}
+  },
+  "resources": {
+    "TASK-1": ["repo://sample/api"],
+    "TASK-2": ["repo://sample/metrics"],
+    "TASK-3": ["repo://sample/integration", "test://sample/ci"]
+  },
+  "agents": [
+    {"id":"worker-codex","capacity":1,"skills":["python"]},
+    {"id":"worker-claude","capacity":1,"skills":["rust"]}
+  ]
+}
