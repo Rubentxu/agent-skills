@@ -10,7 +10,7 @@ Nuevas intenciones `coordinate-work|schedule-work|claim-task|yield-task|inspect-
 
 [Coordinación y claims](references/lenses/multi-agent-coordination.md) · [Cesión negociada](references/lenses/yield-negotiation.md) · [Triage y recuperación](references/lenses/stalled-work-recovery.md). La planificación es pura y la adquisición real necesita Git CAS y Backlog CLI; sin remoto compartido, ejecutar en serie. No hay daemon ni tracker alternativo.
 
-Ejecutar pruebas: `python3 -m unittest discover -s skills/backlog-agile-workflow/tests -p 'test_multi_agent*.py' -v`. El smoke Git utiliza un doble de la CLI: no sustituye una validación E2E de la CLI de Backlog.md antes de uso productivo.
+Clasificador de fallos del harness: `scripts/harness_signal.py` (observaciones estructuradas → consejos con enlaces HATEOAS, sin mutaciones).\n\nEjecutar pruebas: `python3 -m unittest discover -s skills/backlog-agile-workflow/tests -p 'test_multi_agent*.py' -v`. El smoke Git utiliza un doble de la CLI: no sustituye una validación E2E de la CLI de Backlog.md antes de uso productivo.
 
 ## Activaciones
 
