@@ -8,6 +8,10 @@
 - **Progress:** `PROGRESS` y `CHECKPOINT_READY` llevan `evidenceRef` de un resultado material; commits o llamadas vacíos no son avance.
 - **Ownership:** un `CLAIM` confirmado y no revocado indica escritor cooperativo. La expiración del lease es solo motivo de investigación.
 
+## Señales estructuradas de harnesses heterogéneos
+
+`scripts/harness_signal.py` recibe una observación JSON `harness-observation-v1` del adaptador del host y devuelve `harness-advice-v1`, con enlaces `yield`/`recover`. Solo clasifica códigos **estructurados** observados (cuota explícita, HTTP 429 genérico, autenticación, parada con inventario); no lee prompts, transcripciones ni deduce cuotas a partir de texto libre. El resultado no es permiso para liberar: el supervisor usa `multi_agent_cli.py yield-request` o conciliación de forma autorizada. Sin eventos, la ausencia de heartbeat queda como SUSPECT, nunca como parada confirmada.
+
 ## Triage por demanda
 
 `multi_agent_cli.py triage --remote <home-repo-remoto> --ref main --at <UTC>` lee el backlog de una rama autoritativa. Categorías: `ACTIVE`, `STALLED` (sin avance útil), `SUSPECT` (lease expirado), `YIELD_REQUESTED`, `QUARANTINED`, `CANDIDATE` o las causas de indisponibilidad. No requiere daemon ni LLM para el cálculo. Un supervisor puede ejecutarlo a demanda o desde un job externo opcional; no prometer detección continua cuando nadie lo ejecuta.
