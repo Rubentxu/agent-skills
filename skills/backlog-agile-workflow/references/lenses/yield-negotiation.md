@@ -4,6 +4,7 @@
 
 **Protocolo:** `YIELD_REQUESTED` (supervisor) → `YIELD_ACK` o `YIELD_DEFERRED` (propietario vigente) → `CHECKPOINT_READY` (propietario, referencia recuperable) → **parada comprobada del escritor y conciliación de efectos** → `RELEASE` con inventario `resourcesClear` y evidencia. El sucesor adquiere un nuevo `CLAIM` con generación superior; no reutiliza el intento previo.
 
+- Solo hay **una solicitud YIELD pendiente por tarea/generación**. `YIELD_ACK` y `YIELD_DEFERRED` deben indicar `inReplyTo` (opción `--request-id`) del evento solicitado; peticiones duplicadas o respuestas a solicitudes antiguas se rechazan por CAS.
 - Solicitar `YIELD_REQUESTED` por cuota agotada, autenticación, falta de progreso, conflicto de recursos, deadline o espera humana. La petición no autoriza quitar el claim. El receptor la lee al iniciar y en checkpoints naturales, sin comunicación entre harnesses.
 - `YIELD_DEFERRED` es válido si el propietario tiene un proceso remoto vivo o una sección crítica; indicar evidencia y momento observable de re-evaluación. No renovar indefinidamente si no hay avance útil.
 - Con cuota agotada y adaptador fuera del LLM, permitir que el harness emita la petición y publique último checkpoint recuperable aunque el modelo no pueda responder.
