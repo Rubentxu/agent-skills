@@ -32,6 +32,7 @@ else:
     while i < len(args):
       k = args[i]; v = args[i+1]
       if k == '--comment': d['comments'].append({'body': v})
+      if k == '--label': d['labels'] = [x for x in v.split(',') if x]
       if k == '--add-label' and v not in d['labels']: d['labels'].append(v)
       if k == '--status': d['status'] = v
       if k == '--remove-label' and v in d['labels']: d['labels'].remove(v)

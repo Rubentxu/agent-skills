@@ -145,14 +145,16 @@ def _apply(opts: argparse.Namespace, root: Path) -> dict:
     if opts.dry_run:
         return {"result": "PROPOSED_ONLY", "taskId": opts.task,
                 "current": state, "next": next_state, "event": event}
-    old_labels = COORD_LABELS.intersection(task.get("labels") or [])
-    new_labels = labels_for_phase(next_state["phase"])
+    original_labels = task.get("labels")
+    if not isinstance(original_labels, list) or not all(isinstance(x, str) for x in original_labels):
+        raise ValueError("Malformed task labels")
+    desired_labels = (set(original_labels) - COORD_LABELS) | labels_for_phase(next_state["phase"])
     argv = [binary, "task", "edit", opts.task, "--comment", event,
             "--comment-author", opts.actor]
-    for label in sorted(new_labels - old_labels):
-        argv.extend(["--add-label", label])
-    for label in sorted(old_labels - new_labels):
-        argv.extend(["--remove-label", label])
+    if desired_labels != set(original_labels):
+        # --label is supported in older Backlog.md releases too; avoid assuming
+        # incremental --add-label/--remove-label options exist on every host.
+        argv.extend(["--label", ",".join(sorted(desired_labels))])
     if opts.action == "claim" and opts.working_status:
         argv.extend(["--status", opts.working_status])
     if opts.action in {"release", "recover"} and opts.ready_status:
