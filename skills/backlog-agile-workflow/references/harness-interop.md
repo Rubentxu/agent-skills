@@ -31,7 +31,7 @@ Para un harness externo ACP, emitir `{"event":"provider_error","error":{"code":"
 
 Antes de publicar resultados o cerrar una tarea, el escritor debe invocar `multi_agent_cli.py verify --remote ... --task ... --actor ... --claim-id ... --generation ... --resource repo://...` y comprobar salida correcta. La comprobación es de un **instante**: GitHub/GitLab, la rama protegida o el receptor de despliegues deben imponer nuevamente la autorización en el momento efectivo de la publicación, sin que el agente pueda omitirla. Si se permite `git push` directo o credenciales de Kubernetes amplias, ningún script cliente puede garantizar fencing distribuido. Instalar como required check solo después de proteger la rama, limitar quien puede cambiar la configuración y vincular la verificación al commit/actor/ámbitos exactos.
 
-No hay commit atómico multi-repositorio entre el Home Repo y el código: el gate del destino debe tratar la pérdida de lease, cambios de generación y particiones como denegación y solicitar revalidación. Para operaciones externas, [adopción de recursos](../../delegated-task-loop/references/resource-adoption.md) e identidades nativas del proveedor.
+No hay commit atómico multi-repositorio entre el Home Repo y el código: el gate del destino debe tratar la pérdida de lease, cambios de generación y particiones como denegación y solicitar revalidación. Para operaciones externas, descubrir la skill `delegated-task-loop` (si aparece en `available_skills`) y navegar a `references/resource-adoption.md` desde su propio router; usar siempre identidades nativas del proveedor.
 
 ## Rendimiento y descubrimiento
 

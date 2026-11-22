@@ -2,7 +2,7 @@
 
 El bucle de esta skill conserva una tarea por sesión y contexto limpio. No es autoridad global exclusiva ni debe reclamar una segunda copia del tablero. Cuando el `available_skills` del host incluye `backlog-agile-workflow`, abrir la lente `inspect-stalled`: `multi_agent_cli.py triage` detecta tareas con lease vencido, sin progreso real, solicitudes de yield y cuarentena mediante comentarios nativos de Backlog.
 
-Para proveedores heterogéneos, consultar el [bridge de eventos](../../backlog-agile-workflow/references/harness-interop.md) únicamente cuando exista un evento observable; el agente no debe inferir cuota de mensajes libres.
+Para proveedores heterogéneos, consultar el bridge de eventos `backlog-agile-workflow/references/harness-interop.md` (descubierto mediante `available_skills`) únicamente cuando exista un evento observable; el agente no debe inferir cuota de mensajes libres.
 
 Cada revisión es puntual, sin nuevo daemon. Varios supervisores pueden leer simultáneamente; toda escritura necesita un claim/generación verificados y publicación Git CAS. Si aparece `SUSPECT`, no reiniciar automáticamente otro proceso: solicitar cesión si el host responde, o cuarentena y observación de recursos. `QUARANTINED` conserva sus recursos hasta prueba de parada/adopción.
 
