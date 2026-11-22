@@ -201,6 +201,9 @@ def affordances(state: dict[str, Any]) -> dict[str, Any]:
                 "Pedir cesión, checkpoint, parada observada y liberación comprobada",
                 href=_local("references/lenses/yield-negotiation.md")))
         if intent in {"inspect-stalled", "recover-task"}:
+            result["_links"].append(_notice("classify-harness-signal",
+                "Normalizar errores estructurados de cuotas, autenticación y procesos sin exponer logs",
+                href=_local("scripts/harness_signal.py")))
             result["_links"].append(_notice("triage-and-reconcile",
                 "Distinguir liveness, progreso y propiedad: no recuperar por timeout",
                 href=_local("references/lenses/stalled-work-recovery.md")))
