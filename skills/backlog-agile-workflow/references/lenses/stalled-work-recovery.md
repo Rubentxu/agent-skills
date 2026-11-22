@@ -17,7 +17,8 @@
 3. Sin respuesta y vencidos lease + gracia: `QUARANTINE` con razón y evidencia observada. Incrementa la generación y **conserva** reserva de recursos; no permite un segundo escritor. Si el propietario reaparece, su vieja generación queda invalidada en la frontera de publicación.
 4. Observar handle nativo, operaciones con `operationKey`, Kubernetes UID, contenedor, jobs remotos, worktree y checkpoint. No inferir parada por PID genérico, silencio, mtime ni falta de crédito.
 5. Solo con evidencia verificable de cese/adopción y recursos libres: `RECOVER --resources-clear --evidence-ref ...`; únicamente entonces la tarea vuelve a ser candidata. Si hay UNKNOWN, mantener QUARANTINED y permitir trabajo ajeno sin conflicto.
-6. Tras sucesión, `Fresh Eyes` verifica AC/DoD, pruebas, base SHA y recursos; no repetir operaciones no idempotentes ni reiniciar presupuesto acumulado de tarea. Aplicar [flow-recovery](flow-recovery.md) ante dos hipótesis estériles.
+6. Antes de integraciones de código, comprobar `claimId`/generación actual mediante `multi_agent_cli.py verify`. La comprobación local no sustituye un gate autoritativo de servidor para recursos externos.
+7. Tras sucesión, `Fresh Eyes` verifica AC/DoD, pruebas, base SHA y recursos; no repetir operaciones no idempotentes ni reiniciar presupuesto acumulado de tarea. Aplicar [flow-recovery](flow-recovery.md) ante dos hipótesis estériles.
 
 **Límites recomendados:** intervalo 5–10 min de heartbeat, 30 min de lease, revisión 20–30 min sin progreso, relevo ordinario ≤60 min. Son parámetros, no SLA ni permisos de reclamación. La hora de la máquina es un indicio; con reloj sesgado, partición o remoto inaccesible, fallar de forma conservadora.
 
