@@ -67,3 +67,7 @@ Para cada caso: `validate`, positivo real, negativo discriminante, y evidencia d
 | Secretos de menos de 8 caracteres | durable strict rechaza binding; best-effort nunca recomendado para CI |
 | Recursos/métricas del inicio | distinguir recursos *disponibles* de *consumidos*; sin observación = no medido |
 | Pipeline sin terminal observado | parcial/incompleto; no inventar duración de cierre |
+
+| Progresión temporal del CI | se comparan medianas de duraciones de stages entre runs sin sumar tiempos superpuestos ni inventar tiempos de runs incompletos |
+| Recursos iniciales | XDG State, CPU/afinidad/cuota/carga, RAM/cgroup/disco y timestamp; snapshot tardío no se etiqueta como de arranque |
+| Dashboard seguro | HTML offline, nombres de fases omitidos por defecto, sin campos libres de eventos/secretos, directorios 0700 |
