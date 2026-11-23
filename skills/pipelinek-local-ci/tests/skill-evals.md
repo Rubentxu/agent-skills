@@ -71,3 +71,20 @@ Para cada caso: `validate`, positivo real, negativo discriminante, y evidencia d
 | Progresión temporal del CI | se comparan medianas de duraciones de stages entre runs sin sumar tiempos superpuestos ni inventar tiempos de runs incompletos |
 | Recursos iniciales | XDG State, CPU/afinidad/cuota/carga, RAM/cgroup/disco y timestamp; snapshot tardío no se etiqueta como de arranque |
 | Dashboard seguro | HTML offline, nombres de fases omitidos por defecto, sin campos libres de eventos/secretos, directorios 0700 |
+
+## Canarios de recuperación tras caída (independientes del proyecto)
+
+| Caso | Exigencia |
+|---|---|
+| Kill del parent tras LaunchReceipt | persistencia de sesión y `runId`; consulta con `--status` |
+| Reinicio con journal y control root preservados | `--resume` usa exactamente el mismo run, sin nueva identidad |
+| Dos procesos que intentan reanudar | lease/fencing del runtime, lock local y rechazo del segundo |
+| Run ya terminal pero manifiesto stale | no reejecutar pasos; `--new` solo tras comprobar terminal |
+| Operación de publicación en estado ambiguo | bloqueo; no inferir idempotencia ni repetir side effect |
+| Identidad de script, runtime o args diferente | rechazo antes del replay |
+| Dos sesiones pendientes | rechazo hasta seleccionar explícitamente `--session` |
+| `run-state unobservable` | diagnóstico obligatorio, no autorresume |
+| Proyecto sin Git | requiere `--accept-unverified-inputs` y deja limitación explícita |
+| `--resume-or-new` tras apagón | reanuda si hay una sesión válida; jamás crea run duplicado cuando existe pendiente |
+| Credenciales caducadas | volver a resolver provider con scopes; no guardar secretos en el manifiesto |
+| Tiempo de parada de máquina | identificar downtime posible; no clasificarlo como CPU activa |
