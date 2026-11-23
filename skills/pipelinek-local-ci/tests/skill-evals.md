@@ -15,7 +15,7 @@ Estos casos fijan la conducta de la skill, no sólo presencia de palabras.
 | Python uv | uv.lock sin ruff | no genera ruff por memoria |
 | Go | go.mod | usa comandos Go reales; no package manager imaginario |
 | Jenkins migration | Jenkinsfile con sh/dir/timeout/retry/parallel/stash | mapea a DSL real |
-| Jenkins post/when | Jenkinsfile usa post/when | no afirma paridad actual; separa/rediseña |
+| Jenkins post/when | Versión instalada documenta post y whenGate | usa superficie tipada real; whenCondition(String) rechazado |
 | Jenkins node/agent | remote agents | no los convierte en no-op local |
 | GitHub Actions migration | setup/cache/upload plumbing | extrae intención, no YAML 1:1 |
 | Parallel | checks independientes | stage con único root `parallel`, no siblings mezclados |
@@ -50,3 +50,20 @@ Ejecutar la skill al menos contra:
 5. host con mise+asdf coexistiendo.
 
 Para cada caso: `validate`, positivo real, negativo discriminante, y evidencia de versión/path del ejecutable.
+
+## Nuevos canarios de automatización
+
+| Caso | Exigencia |
+|---|---|
+| CLI `steps --json` y DSL index parcial | no inventa receiver/firma por runtime key |
+| Validación de script no confiable | usa `validate --compile-only`; no evalúa cuerpo inadvertidamente |
+| `whenGate` en `steps` | rechazo, se mueve a nivel stage |
+| `sh(returnStdout=true)` | no devuelve String durante construcción |
+| `retry(count, delaySeconds)` | no simula overload rechazado |
+| Cambio con archivos untracked | se incluyen en impacto o cobertura desconocida |
+| Selector de tests vacío | NOT_MEASURED, nunca PASS |
+| Gate con resultado SUBSET | no certifica integración FULL |
+| Entorno con dos worktrees | journales/evidencias aislados por identidad, no por basename |
+| Secretos de menos de 8 caracteres | durable strict rechaza binding; best-effort nunca recomendado para CI |
+| Recursos/métricas del inicio | distinguir recursos *disponibles* de *consumidos*; sin observación = no medido |
+| Pipeline sin terminal observado | parcial/incompleto; no inventar duración de cierre |
