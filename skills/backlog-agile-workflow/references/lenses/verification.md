@@ -3,10 +3,10 @@
 1. Leer tarea y AC/DoD mediante la CLI oficial; verificar **comportamientos entregados**, invariantes, seguridad y compatibilidad afectados con pruebas proporcionadas al riesgo.
 2. Actualizar documentación técnica de API/contratos cuando el código los modifique. No exigir README, ROADMAP, CHANGELOG, ADR, informes ni recibos de gates como criterio de cierre.
 3. Si existe un workflow local pertinente, descubrirlo con `pipelinek-local-ci` y consultar evidencias actuales con alcance y procedencia. Aplicar `SUBSET` en tarea y `FULL`/`CERTIFICATION` solo cuando la política del proyecto lo exija; no duplicar pruebas del worker ni suponer que PipelineK está instalado. No crear gates administrativos para finalizar la tarjeta.
-4. Registrar solo evidencia real: `PASS/FAIL/NOT_RUN`, pruebas, revisión o demostración concreta. Una prueba no ejecutada no es PASS; un fallo pertinente requiere corrección o alcance claramente acotado.
-5. Marcar AC/DoD verdaderos con `--check-ac` y `--check-dod` utilizando índices observados. Escribir un `--final-summary` breve sobre valor entregado y limitaciones técnicas.
-6. Pasar al estado final configurado **tan pronto como se satisfagan aceptación y calidad pertinentes**. Nunca esperar certificaciones administrativas, documentos de tracking, reuniones, snapshots o gates ajenos a la entrega.
-7. La publicación o despliegue puede exigir verificaciones técnicas/regulatorias obligatorias; no falsearlas ni saltarlas. Si son una entrega distinta, gestionarlas aparte sin retener artificialmente una tarea de implementación ya verificada.
-8. No archivar automáticamente y no borrar sin autorización.
+4. Si una ejecución se interrumpió, leer el journal y el estado de la sesión mediante la skill PipelineK (si está instalada); no computar un run sin terminal como PASS ni reejecutar un publish/deploy de estado incierto. Reanudar con garantías, o declarar bloqueo técnico.\n5. Registrar solo evidencia real: `PASS/FAIL/NOT_RUN`, pruebas, revisión o demostración concreta. Una prueba no ejecutada no es PASS; un fallo pertinente requiere corrección o alcance claramente acotado.
+6. Marcar AC/DoD verdaderos con `--check-ac` y `--check-dod` utilizando índices observados. Escribir un `--final-summary` breve sobre valor entregado y limitaciones técnicas.
+7. Pasar al estado final configurado **tan pronto como se satisfagan aceptación y calidad pertinentes**. Nunca esperar certificaciones administrativas, documentos de tracking, reuniones, snapshots o gates ajenos a la entrega.
+8. La publicación o despliegue puede exigir verificaciones técnicas/regulatorias obligatorias; no falsearlas ni saltarlas. Si son una entrega distinta, gestionarlas aparte sin retener artificialmente una tarea de implementación ya verificada.
+9. No archivar automáticamente y no borrar sin autorización.
 
 **Resultado:** tarea terminada con evidencia o problema técnico pendiente descrito. Nunca declarar DONE sin garantía suficiente ni BLOCKED solo por burocracia.
