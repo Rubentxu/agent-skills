@@ -2,13 +2,13 @@
 
 ## Qué medir
 
-PipelineK ya ofrece `pipelinek inspect <runId> --db <journal> --profile` y telemetría opcional. Para histórico de duración y recursos iniciales, `pipeline-kotlin/scripts/pipelinek-local-report.py` añade un **adaptador offline** que consume `pipelinek events ... --typed`. No necesita OpenTelemetry Collector ni servicios externos.
+PipelineK ya ofrece `pipelinek inspect <runId> --db <journal> --profile` y telemetría opcional. Para histórico de duración y recursos iniciales, la herramienta **instalada en `tools/`** añade un **adaptador offline** que consume `pipelinek events ... --typed`. No necesita OpenTelemetry Collector ni servicios externos.
 
 - `CompilationStarted/CompilationFinished`: compilación de la DSL; también se mide extremo a extremo desde la compilación hasta RunFinished cuando existen ambos hechos.
 - `RunStarted/RunFinished`: duración del run **solo cuando hay terminal**. No confundirla con el tiempo total incluyendo compilación.
 - `StageStarted/StageFinished`: tiempos por stage, sucesivas ejecuciones y regresiones entre ventanas temporales.
 - `StepStarted/StepFinished/StepFailed`: tiempos de steps emparejados de forma conservadora. Un evento sin pareja no tiene duración ficticia.
-- Snapshot anterior al lanzamiento: CPU lógicos, afinidad CPU, cuota cgroup, carga 1/5/15, RAM host y límite cgroup, disco disponible. Se mide capacidad/carga del entorno, **no consumo real de CPU/RAM del proceso**.
+- Snapshot anterior al lanzamiento: CPU lógicos, afinidad CPU, cuota cgroup, carga 1/5/15, RAM host y límite cgroup, disco disponible; el wrapper registra por separado CPU user/system del proceso hijo reaped y RSS máximo de un proceso cuando es observable. El snapshot **no** mide consumo acumulado.
 - `coverage`: COMPLETE o PARTIAL; run sin terminal o con stage abierto no se presenta como éxito de tiempo medido.
 - Tendencia: histórico de hasta 50 muestras por stage y delta de medianas de los últimos cinco runs contra los cinco anteriores. Una muestra ausente nunca se imputa a cero.
 
@@ -26,28 +26,30 @@ reports/
 
 Los snapshots previos se guardan donde el supervisor lo indique con permisos restringidos. Puede exportarse `dashboard.html` a `reports/pipelinek/` del proyecto solo por petición expresa, revisión de sensibilidad y exclusión o inclusión intencional en Git.
 
-## Receta local de extremo a extremo
+## Uso directo desde cualquier repositorio
+
+**Preferir la distribución instalada sobre scripts del checkout del motor.** La distribución de PipelineK lleva en `tools/` los helpers `pipelinek-run-with-metrics.py`, `pipelinek-local-report.py` y `pipelinek-resume-state.py`. Resuelven cualquier directorio de proyecto y script `.pipeline.kts`, sin necesitar fuentes, builds de PipelineK ni GitHub Actions.
 
 ```bash
-# Desde el proyecto consumidor, usando la copia/version de script instalada:
-REPORTER=/ruta/confiable/pipelinek-local-report.py
-REPORTS="${XDG_STATE_HOME:-$HOME/.local/state}/pipelinek/my-project/reports"
-python3 "$REPORTER" snapshot --workspace . --out "$REPORTS/before-run.json"
+PIPELINEK_BIN="$(command -v pipelinek)"
+PIPELINEK_HOME="$(cd "$(dirname "$(readlink -f "$PIPELINEK_BIN")")/.." && pwd)"
+RUNNER="$PIPELINEK_HOME/tools/pipelinek-run-with-metrics.py"
 
-# Ejecutar el pipeline local real con journal persistido (obtener runId del recibo):
-pipelinek run --db "$REPORTS/../journal.db" --control-root "$REPORTS/../control" pipeline.kts
+# Ejecuta con journal durable y registra tiempos, recursos, estado y HTML
+python3 "$RUNNER" --project . --script pipeline.kts --workflow ci --resume-or-new
 
-# Una vez observado RunFinished, establecer RUN_ID con el ID real:
-# RUN_ID=<identidad emitida por PipelineK>
-pipelinek events "$RUN_ID" --db "$REPORTS/../journal.db" --typed --limit 1000000 \
-  | python3 "$REPORTER" ingest --events - --snapshot "$REPORTS/before-run.json" \
-      --workflow ci --history-dir "$REPORTS"
+# Inspección local de sesiones tras un apagón (sin volver a ejecutar)
+python3 "$RUNNER" --project . --script pipeline.kts --workflow ci --status
 
-python3 "$REPORTER" dashboard --history-dir "$REPORTS"
-# Abrir localmente $REPORTS/dashboard.html
+# Continuación estricta de una sesión pendiente
+python3 "$RUNNER" --project . --script pipeline.kts --workflow ci --resume
 ```
 
-No ejecutar la captura contra un run aún no terminado si se pretende un resultado final; una lectura parcial queda marcada como incompleta. `events` tiene límite por defecto de 100: usar `--limit` suficiente y comprobar terminal y rechazos. La captura `--typed` puede incluir payloads sensibles: pasarla directamente al proyector, no guardar JSONL bruto. El proyector solo persiste campos seleccionados y omite nombres de steps/stages por defecto. `--include-names` es una decisión de confianza explícita para nombres estáticos que no contienen datos sensibles.
+Para scripts bajo `pipelines/` usar la misma opción `--script` con su ruta. El helper guarda sesiones privadas por UUID, un snapshot de recursos inicial por intento y `process-usage-attempt-N.json` con wall time de la invocación, CPU de los hijos reaped y una estimación de RSS máximo de proceso cuando el sistema operativo permite medirlo. Estos datos **no equivalen** a muestreo continuo ni al pico agregado del cgroup. Las métricas de stages/steps salen exclusivamente del journal de PipelineK y el dashboard no es autoridad sobre estado del run.
+
+Si el helper no está disponible en una instalación antigua, es posible usar directamente `pipelinek run --db ... --control-root ...` y `pipelinek events --typed` con el proyector local; en ese caso el supervisor es responsable de conservar la identidad y los paths durables. Consultar [reanudación tras caída](15-crash-resume.md).
+
+Los eventos tipados pueden contener payloads sensibles y el reportero debe consumirlos por un pipe, no archivarlos como JSONL bruto. Persistir solo campos permitidos y omitir nombres de steps/stages salvo consentimiento explícito. No mezclar históricos de proyectos, worktrees o máquinas con toolchains/coberturas distintas.
 
 ## Interpretación
 
