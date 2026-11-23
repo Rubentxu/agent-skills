@@ -40,9 +40,18 @@
         "plan",
         "execute",
         "verify",
-        "close"
+        "close",
+        "refine",
+        "review",
+        "maintain",
+        "analyze-performance",
+        "certify",
+        "automate",
+        "recover-run",
+        "resume-ci",
+        "resume-workflow"
       ],
-      "reason": "Ejecutar y verificar PipelineK CI local únicamente si el proyecto usa PipelineK y la skill está disponible"
+      "reason": "Descubrir y usar automatizaciones PipelineK offline con testing progresivo, evidencias, métricas y reanudación de runs durables tras fallo del agente o del equipo; no duplicar pasos ni efectos externos"
     },
     {
       "id": "agent-secretless",

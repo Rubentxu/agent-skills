@@ -1,8 +1,8 @@
 ---
 name: pipelinek-local-ci
-description: "Adopta PipelineK como CI/CD local agent-first: instala y fija PipelineK con mise/asdf, crea y revisa pipeline.kts reales, migra Jenkins/GitHub Actions/GitLab CI, ejecuta gates locales, diagnostica fallos con eventos tipados y aplica patrones Jenkins-familiar sólo cuando la versión instalada los soporta. Úsala para bootstrap, scaffold, review, run, migrate o diagnose de PipelineK."
+description: "Diseña y ejecuta automatizaciones CI, testing progresivo, gates, certificaciones y métricas locales con PipelineK. Descubre firmas de DSL y workflows reales, gestiona evidencias y secretos seguros sin depender de plataformas CI remotas. Úsala para discover, bootstrap, scaffold, review, plan, run, resume, diagnose, evidence, certify, automate o metrics."
 metadata:
-  version: "2.0.0"
+  version: "2.2.0"
 ---
 
 # PipelineK local CI — agent-first
@@ -22,6 +22,13 @@ PipelineK debe convertirse en la **autoridad local ejecutable** de CI del reposi
 | `migrate` | Sustituir Jenkins/GitHub Actions/GitLab CI | `03-migration-hosted-ci.md`, `06-jenkins-familiar-dsl.md` |
 | `diagnose` | Fallo de DSL, ejecución, toolchain, shim o evento | `04-version-resolution.md`, `05-events-and-troubleshooting.md` |
 | `publish` | Ejecutar packaging y publicación por canal de productos confirmados | `09-artifact-publishing.md`, y `distribution-first-release` si está disponible |
+| `discover` | Encontrar workflows del repo y consultar firmas exactas disponibles | `10-dsl-discovery.md`, `11-project-automation-layout.md` |
+| `plan` | Elegir checks afectados por un cambio sin falsear cobertura | `12-progressive-verification.md` |
+| `evidence` | Validar procedencia, alcance y frescura del resultado de un worker | `13-evidence-contract.md` |
+| `certify` | Certificar artefacto/consumidor con evidencia independiente | `13-evidence-contract.md`, `09-artifact-publishing.md` |
+| `automate` | Promover un procedimiento recurrente a workflow reproducible | `11-project-automation-layout.md`, `12-progressive-verification.md` |
+| `metrics` | Capturar recursos iniciales y comparar duración de fases/steps en un dashboard HTML offline | `14-local-metrics.md` |
+| `resume` | Reanudar un run durable tras caída o reinicio sin duplicar efectos | `15-crash-resume.md`, `05-events-and-troubleshooting.md` |
 
 Si el usuario no nombra modo, infiérelo por intención. Una adopción desde cero normalmente ejecuta `bootstrap → scaffold → run`.
 
@@ -30,14 +37,15 @@ Si el usuario no nombra modo, infiérelo por intención. Una adopción desde cer
 1. **Identidad exacta.** Antes de acreditar CI conoce `command → realpath → pipelinek version`. Si se pidió `V` y runtime reporta otra versión, es `IDENTITY_MISMATCH`.
 2. **Cero comandos ficticios.** Nunca generes `project-wrapper`, `run-tests-here` ni placeholders ejecutables. Detecta comandos reales del repo.
 3. **Proyecto primero.** Prefiere `./gradlew`, `./mvnw`, scripts de `package.json`, `uv`, `cargo`, `go`, `make` o `just` realmente presentes.
-4. **DSL observada.** `pipelinek validate` es obligatorio después de editar DSL. La tabla Jenkins-familiar de esta skill es orientación; la instalación real manda.
+4. **DSL observada.** Descubre la composición instalada con `pipelinek steps --json`, `pipelinek describe` y `pipelinek capabilities`. Para scripts no confiables, utiliza `pipelinek validate --compile-only`; `validate` sin esa opción evalúa el cuerpo del script. Solo valida funcionalmente código autorizado y confiable. Ver `10-dsl-discovery.md`.
 5. **Fallos visibles.** No añadas `|| true`, `--quiet`, `/dev/null` ni redirecciones que oculten el comando causal. Si usas `tee`, conserva el exit con `pipefail`.
-6. **Estado fuera del repo.** Journal/control-root bajo XDG state salvo política explícita del proyecto.
-7. **No duplicar política.** Si PipelineK es autoridad CI, un workflow remoto puede ser trigger/matrix/distribución, pero no una segunda definición divergente de tests/gates.
+6. **Estado fuera del repo.** Journal/control-root bajo XDG state salvo política explícita; identifica repositorio y worktree, nunca solamente `basename` en entornos con clones homónimos.
+7. **Sin dependencia remota.** El CI, gates, certificaciones y reportes funcionan offline con dependencias locales fijadas. No crear GitHub Actions ni servicios remotos de CI como prerrequisito. El sistema de build y los pipelines del proyecto son la única autoridad de sus verificaciones.
 8. **No rebajar gates para obtener verde.** Clasifica el fallo y corrige causa o contrato.
-9. **Distribución multi-producto.** `pipelinek-local-ci` ejecuta gates; `distribution-first-release` decide productos y destinos. `archiveArtifacts` conserva artefactos locales, no equivale a Maven Central, GitHub Packages, GHCR ni Github Releases. Publicar solo tras autorización, sin duplicar gates remotos.
-10. **Credenciales no se imprimen.** Usa bindings soportados y comandos que consuman variables sin volcarlas.
-11. **Jenkins-familiar ≠ Jenkins mágico.** Mantén nombres/patrones familiares donde tengan semántica real; fail-closed para lo aún no soportado.
+9. **Distribución opcional.** `pipelinek-local-ci` ejecuta gates; `distribution-first-release` decide productos y destinos si aplica. `archiveArtifacts` guarda artefactos locales y no acredita publicación externa. Ningún canal remoto es requisito de automatización local.
+10. **Credenciales no se imprimen.** Usa bindings soportados; para runs durables con secretos exige `PIPELINE_CREDENTIALS_MASKING=required`, sin permitir `best-effort` en CI/certificación. Esa política rechaza secretos demasiado cortos, pero no garantiza seguridad frente a cualquier proceso malicioso. Consulta `07-security.md`.
+11. **Recuperación conservadora.** Los runs durables usan journal, control root, lease y cursor persistentes. Consultar `15-crash-resume.md` antes de iniciar de nuevo tras fallo del proceso: nunca reejecutar un efecto externo incierto, ni considerar un manifiesto de sesión autoridad sobre el journal.
+12. **Jenkins-familiar ≠ Jenkins mágico.** Mantén nombres/patrones familiares donde tengan semántica real; fail-closed para lo aún no soportado.
 
 ## Flujo por defecto
 
@@ -51,19 +59,19 @@ Si PipelineK falta o la resolución es ambigua, usa `04-version-resolution.md`. 
 
 ### 3. Diseñar o revisar
 
-Construye stages por responsabilidad observable: validate/static → build → unit/contract → integration/UAT → package. Usa templates de `examples/` sólo después de comprobar que sus comandos existen en el repo.
+Descubre primero los pipelines existentes en `pipeline.kts` y `pipelines/**/*.pipeline.kts`; no crea otro si ya hay un entrypoint autoritativo. Construye stages por responsabilidad observable: validate/static → build → unit/contract → integration/UAT → package. Usa templates de `examples/` sólo después de comprobar que sus comandos existen en el repo.
 
 ### 4. Validar DSL
 
 ```bash
-pipelinek validate pipeline.kts
+pipelinek validate --compile-only pipeline.kts
 ```
 
-Una feature Jenkins-familiar que no valida o cuya semántica no está soportada se rediseña; no se simula.
+La compilación no certifica efectos ni políticas de runtime. Ejecuta `pipelinek validate pipeline.kts` sin `--compile-only` solo en un entorno confiable y autorizado; después exige un run real y un negativo discriminante cuando corresponda. Una feature no soportada se rediseña, no se simula.
 
 ### 5. Ejecutar como gate agentic
 
-Usa `02-agentic-loop.md`: tests afectados primero durante desarrollo; pipeline completa en frontera de integración/release según política del repo.
+Usa `02-agentic-loop.md` y `12-progressive-verification.md`: inspecciona cambios staged/unstaged/untracked, selecciona pruebas afectadas y expande conservadoramente cuando no puedas demostrar cobertura. Las ejecuciones filtradas son SUBSET, jamás un PASS global. Pipeline completa solamente en la frontera que establezca la política de cada repositorio.
 
 ### 6. Publicar cuando el objetivo sea distribución
 
@@ -77,19 +85,23 @@ Reporta: HEAD, path real de PipelineK, versión, pipeline, comando, exit, `RunFi
 
 - [ ] No quedan placeholders ejecutables ni comandos inventados.
 - [ ] PipelineK resuelto y versión exacta verificada.
-- [ ] `pipeline.kts` valida con la instalación seleccionada.
+- [ ] La DSL compila con la instalación seleccionada y cualquier evaluación del script fue explícitamente autorizada.
 - [ ] Existe al menos un run positivo real.
 - [ ] Si se creó/migró pipeline, existe un negativo discriminante que falla donde debe.
 - [ ] Los comandos de build/test proceden del proyecto, no de memoria.
 - [ ] Los eventos/outcome y exit no se contradicen; si lo hacen, queda reportado.
 - [ ] No se dejó estado operativo dentro del repo sin política explícita.
-- [ ] Si se sustituyó CI alojado, las responsabilidades remotas restantes están delimitadas.
+- [ ] El workflow funciona en local sin servicio remoto obligatorio; cualquier dependencia externa está declarada y autorizada.
 - [ ] La superficie Jenkins-familiar usada figura como soportada o fue validada explícitamente.
-- [ ] Si hubo `publish`, todos los productos/canales obligatorios constan publicados y consumibles desde remoto; si no, estado parcial y bloqueo explícito.
+- [ ] Si hubo `publish`, solo se acredita lo realmente publicado en los destinos autorizados, sin dar PASS a entregas pendientes.
+
+## Automatizaciones reutilizables
+
+La convención de carpetas y el alcance de cada perfil están en [layout](references/11-project-automation-layout.md). Consulta [firmas y directivas](references/10-dsl-discovery.md) antes de autorar DSL, y [testing progresivo](references/12-progressive-verification.md) antes de ejecutar. El formato de [evidencia](references/13-evidence-contract.md) distingue una prueba local de certificación de un artefacto. [Las métricas](references/14-local-metrics.md) ofrecen tiempos históricos y recursos iniciales por run sin servicios externos. Para **continuidad tras caída**, consultar [reanudación durable](references/15-crash-resume.md) y usar el helper distribuido con PipelineK. No añadir manifiestos duplicados en el proyecto consumidor, un segundo scheduler ni dependencias cloud.
 
 ## Colaboración opcional con backlog-agile-workflow
 
-Cuando `backlog-agile-workflow` esté disponible, asociar cada gate local a IDs de tarea, hito ROADMAP y ADR/SPEC; registrar run/outcome, evidencia y SHA reales antes de marcar DoD. Auditar archivos de gestión y ZIP privados antes de la publicación: no deben versionarse en aplicaciones consumidoras. No excluir ZIP de binarios de distribución por su extensión. PipelineK no modifica automáticamente el backlog ni declara DONE por un run verde sin contrato verificado.
+Cuando `backlog-agile-workflow` esté disponible, asociar cada gate local a las tareas pertinentes y decisiones existentes; registrar run/outcome, evidencia y SHA reales antes de marcar DoD, sin exigir ROADMAP/ADR/SPEC paralelos. Auditar archivos de gestión y ZIP privados antes de la publicación: no deben versionarse en aplicaciones consumidoras. No excluir ZIP de binarios de distribución por su extensión. PipelineK no modifica automáticamente el backlog ni declara DONE por un run verde sin contrato verificado.
 
 
 ## Procedencia inter-agente y Ghost Context

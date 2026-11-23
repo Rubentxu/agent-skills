@@ -10,3 +10,9 @@
 **Salida:** comportamiento entregado y tarea cerrada cuando proceda; si no, causa observable, hipótesis probada, decisión de desbloqueo y próxima acción concreta reflejadas en Backlog.md. El commit puede vincular el ID de tarea, sin trailers documentales obligatorios.
 
 **Groma y hooks:** solo si aclaran ownership o progreso. No exigir `groma view` ni actualización de `modifiedFiles` después de cada edición. Ningún hook de lectura ordena bloquear trabajo ni crea un Done automático.
+
+## Automatizaciones de proyecto (optativas)
+Antes de improvisar comandos repetitivos, buscar `pipeline.kts`, `pipelines/**/*.pipeline.kts` y scripts nativos; si `pipelinek-local-ci` está disponible, usar su ruta `discover → plan → run → evidence`. Solo acoplarse a versiones y firmas reales. Mantener el trabajo del agente en cortes breves; un full gate costoso se hace cuando lo prescribe la política de integración, no por reflejo en cada tarjeta. No instalar PipelineK automáticamente ni inventar su presencia. Para seguridad, usar `PIPELINE_CREDENTIALS_MASKING=required` en runs durables con secretos y no emitir credenciales en el backlog.
+
+## Continuidad de pipelines tras caída (solo si se usan)
+Si un agente retoma una tarea y existe una ejecución PipelineK durable anterior, consultar `pipelinek-local-ci` modo `resume` antes de lanzar de nuevo el gate. `--status` del ejecutor distribuido lee sesiones por repo/worktree y su estado durable; `--resume` solo continúa un run elegible con mismos inputs y autorización. Un `RunFinished` anterior se reutiliza como evidencia si sigue vigente; no se vuelve a ejecutar por reflejo. Nunca forzar `--new` para saltarse un efecto incierto. El supervisor puede reasignar la tarea sin duplicar el trabajo externo. Registrar solo el `runId`/evidencia en Backlog cuando afecte a la aceptación, no un nuevo protocolo de seguimiento.
