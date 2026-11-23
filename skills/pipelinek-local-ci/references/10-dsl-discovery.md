@@ -9,6 +9,10 @@
 5. Compilar con `pipelinek validate --compile-only <archivo>`. El `validate` sin esa opción EVALÚA el cuerpo del script: ejecutarlo solo si el código es confiable, en un contexto autorizado. La compilación no certifica semántica runtime.
 6. Para confirmar efectos, validar con run positivo y un negativo discriminante en workspace desechable, sin credenciales reales, respetando el presupuesto del proyecto.
 
+## Índice fuente implementado en PipelineK
+
+La rama de PipelineK incluye `scripts/pipelinek-dsl-index.py`: genera JSON `pipelinek.dsl-signatures/v1` desde las fuentes Kotlin, sus receptores y resúmenes KDoc. Se puede filtrar con `--name sh` y combinar `--runtime-json` con la salida de `pipelinek steps --json`. La relación por nombre se marca como candidata, NO equivalente a un binding de Kotlin probado. Es una herramienta de checkout, **no un comando disponible en cada instalación binaria**; comprobar su presencia antes de usarla. La verificación final sigue en `validate --compile-only` y el runtime.
+
 ## Contratos que deben leerse junto a cada firma
 
 - **Contexto**: `pipeline`, `stage`, `steps`, `script`, `post`, `branch`, `plugin body`. Una directiva de stage dentro de `steps`/un wrapper no tiene autoridad y se rechaza.
