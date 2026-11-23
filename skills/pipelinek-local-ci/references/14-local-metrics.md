@@ -4,7 +4,8 @@
 
 PipelineK ya ofrece `pipelinek inspect <runId> --db <journal> --profile` y telemetría opcional. Para histórico de duración y recursos iniciales, `pipeline-kotlin/scripts/pipelinek-local-report.py` añade un **adaptador offline** que consume `pipelinek events ... --typed`. No necesita OpenTelemetry Collector ni servicios externos.
 
-- `RunStarted/RunFinished`: duración del run **solo cuando hay terminal**.
+- `CompilationStarted/CompilationFinished`: compilación de la DSL; también se mide extremo a extremo desde la compilación hasta RunFinished cuando existen ambos hechos.
+- `RunStarted/RunFinished`: duración del run **solo cuando hay terminal**. No confundirla con el tiempo total incluyendo compilación.
 - `StageStarted/StageFinished`: tiempos por stage, sucesivas ejecuciones y regresiones entre ventanas temporales.
 - `StepStarted/StepFinished/StepFailed`: tiempos de steps emparejados de forma conservadora. Un evento sin pareja no tiene duración ficticia.
 - Snapshot anterior al lanzamiento: CPU lógicos, afinidad CPU, cuota cgroup, carga 1/5/15, RAM host y límite cgroup, disco disponible. Se mide capacidad/carga del entorno, **no consumo real de CPU/RAM del proceso**.
