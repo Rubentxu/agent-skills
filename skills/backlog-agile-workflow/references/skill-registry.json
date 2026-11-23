@@ -40,9 +40,15 @@
         "plan",
         "execute",
         "verify",
-        "close"
+        "close",
+        "refine",
+        "review",
+        "maintain",
+        "analyze-performance",
+        "certify",
+        "automate"
       ],
-      "reason": "Ejecutar y verificar PipelineK CI local únicamente si el proyecto usa PipelineK y la skill está disponible"
+      "reason": "Descubrir y usar workflows/gates locales reproducibles, testing progresivo, evidencias y métricas de PipelineK solo cuando esté instalado; no crear CI remoto ni duplicar tests"
     },
     {
       "id": "agent-secretless",
