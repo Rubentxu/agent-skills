@@ -10,3 +10,6 @@
 **Salida:** comportamiento entregado y tarea cerrada cuando proceda; si no, causa observable, hipótesis probada, decisión de desbloqueo y próxima acción concreta reflejadas en Backlog.md. El commit puede vincular el ID de tarea, sin trailers documentales obligatorios.
 
 **Groma y hooks:** solo si aclaran ownership o progreso. No exigir `groma view` ni actualización de `modifiedFiles` después de cada edición. Ningún hook de lectura ordena bloquear trabajo ni crea un Done automático.
+
+## Automatizaciones de proyecto (optativas)
+Antes de improvisar comandos repetitivos, buscar `pipeline.kts`, `pipelines/**/*.pipeline.kts` y scripts nativos; si `pipelinek-local-ci` está disponible, usar su ruta `discover → plan → run → evidence`. Solo acoplarse a versiones y firmas reales. Mantener el trabajo del agente en cortes breves; un full gate costoso se hace cuando lo prescribe la política de integración, no por reflejo en cada tarjeta. No instalar PipelineK automáticamente ni inventar su presencia. Para seguridad, usar `PIPELINE_CREDENTIALS_MASKING=required` en runs durables con secretos y no emitir credenciales en el backlog.
