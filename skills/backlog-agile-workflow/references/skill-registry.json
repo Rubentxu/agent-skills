@@ -46,9 +46,12 @@
         "maintain",
         "analyze-performance",
         "certify",
-        "automate"
+        "automate",
+        "recover-run",
+        "resume-ci",
+        "resume-workflow"
       ],
-      "reason": "Descubrir y usar workflows/gates locales reproducibles, testing progresivo, evidencias y métricas de PipelineK solo cuando esté instalado; no crear CI remoto ni duplicar tests"
+      "reason": "Descubrir y usar automatizaciones PipelineK offline con testing progresivo, evidencias, métricas y reanudación de runs durables tras fallo del agente o del equipo; no duplicar pasos ni efectos externos"
     },
     {
       "id": "agent-secretless",
