@@ -1,8 +1,8 @@
 ---
 name: pipelinek-local-ci
-description: "Diseña y ejecuta automatizaciones CI, testing progresivo, gates, certificaciones y métricas locales con PipelineK. Descubre firmas de DSL y workflows reales, gestiona evidencias y secretos seguros sin depender de plataformas CI remotas. Úsala para discover, bootstrap, scaffold, review, plan, run, diagnose, evidence, certify, automate o metrics."
+description: "Diseña y ejecuta automatizaciones CI, testing progresivo, gates, certificaciones y métricas locales con PipelineK. Descubre firmas de DSL y workflows reales, gestiona evidencias y secretos seguros sin depender de plataformas CI remotas. Úsala para discover, bootstrap, scaffold, review, plan, run, resume, diagnose, evidence, certify, automate o metrics."
 metadata:
-  version: "2.1.0"
+  version: "2.2.0"
 ---
 
 # PipelineK local CI — agent-first
@@ -28,6 +28,7 @@ PipelineK debe convertirse en la **autoridad local ejecutable** de CI del reposi
 | `certify` | Certificar artefacto/consumidor con evidencia independiente | `13-evidence-contract.md`, `09-artifact-publishing.md` |
 | `automate` | Promover un procedimiento recurrente a workflow reproducible | `11-project-automation-layout.md`, `12-progressive-verification.md` |
 | `metrics` | Capturar recursos iniciales y comparar duración de fases/steps en un dashboard HTML offline | `14-local-metrics.md` |
+| `resume` | Reanudar un run durable tras caída o reinicio sin duplicar efectos | `15-crash-resume.md`, `05-events-and-troubleshooting.md` |
 
 Si el usuario no nombra modo, infiérelo por intención. Una adopción desde cero normalmente ejecuta `bootstrap → scaffold → run`.
 
@@ -43,7 +44,8 @@ Si el usuario no nombra modo, infiérelo por intención. Una adopción desde cer
 8. **No rebajar gates para obtener verde.** Clasifica el fallo y corrige causa o contrato.
 9. **Distribución opcional.** `pipelinek-local-ci` ejecuta gates; `distribution-first-release` decide productos y destinos si aplica. `archiveArtifacts` guarda artefactos locales y no acredita publicación externa. Ningún canal remoto es requisito de automatización local.
 10. **Credenciales no se imprimen.** Usa bindings soportados; para runs durables con secretos exige `PIPELINE_CREDENTIALS_MASKING=required`, sin permitir `best-effort` en CI/certificación. Esa política rechaza secretos demasiado cortos, pero no garantiza seguridad frente a cualquier proceso malicioso. Consulta `07-security.md`.
-11. **Jenkins-familiar ≠ Jenkins mágico.** Mantén nombres/patrones familiares donde tengan semántica real; fail-closed para lo aún no soportado.
+11. **Recuperación conservadora.** Los runs durables usan journal, control root, lease y cursor persistentes. Consultar `15-crash-resume.md` antes de iniciar de nuevo tras fallo del proceso: nunca reejecutar un efecto externo incierto, ni considerar un manifiesto de sesión autoridad sobre el journal.
+12. **Jenkins-familiar ≠ Jenkins mágico.** Mantén nombres/patrones familiares donde tengan semántica real; fail-closed para lo aún no soportado.
 
 ## Flujo por defecto
 
@@ -95,7 +97,7 @@ Reporta: HEAD, path real de PipelineK, versión, pipeline, comando, exit, `RunFi
 
 ## Automatizaciones reutilizables
 
-La convención de carpetas y el alcance de cada perfil están en [layout](references/11-project-automation-layout.md). Consulta [firmas y directivas](references/10-dsl-discovery.md) antes de autorar DSL, y [testing progresivo](references/12-progressive-verification.md) antes de ejecutar. El formato de [evidencia](references/13-evidence-contract.md) distingue una prueba local de certificación de un artefacto. [Las métricas](references/14-local-metrics.md) ofrecen tiempos históricos y recursos iniciales por run sin servicios externos. No añadir manifiestos duplicados, un segundo scheduler ni dependencias cloud.
+La convención de carpetas y el alcance de cada perfil están en [layout](references/11-project-automation-layout.md). Consulta [firmas y directivas](references/10-dsl-discovery.md) antes de autorar DSL, y [testing progresivo](references/12-progressive-verification.md) antes de ejecutar. El formato de [evidencia](references/13-evidence-contract.md) distingue una prueba local de certificación de un artefacto. [Las métricas](references/14-local-metrics.md) ofrecen tiempos históricos y recursos iniciales por run sin servicios externos. Para **continuidad tras caída**, consultar [reanudación durable](references/15-crash-resume.md) y usar el helper distribuido con PipelineK. No añadir manifiestos duplicados en el proyecto consumidor, un segundo scheduler ni dependencias cloud.
 
 ## Colaboración opcional con backlog-agile-workflow
 
