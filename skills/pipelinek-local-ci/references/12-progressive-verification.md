@@ -4,6 +4,17 @@
 
 Optimizar coste sin inventar garantías. Un resultado filtrado es `SUBSET`; NUNCA convertirlo en PASS de `FULL`. La política de cada proyecto decide cuándo exige full, certificación independiente o gates adicionales.
 
+## Planificador local implementado (sin ejecutar tests)
+
+La skill incluye `scripts/impact-plan.py`, herramienta read-only con solo Git local + Python stdlib:
+
+```bash
+python3 scripts/impact-plan.py --root . --base "<commit-local-validado>"
+python3 scripts/test_impact_plan.py
+```
+
+El esquema `pipelinek.impact-plan/v1` expresa `DOC_GATE_CANDIDATE`, `AFFECTED_CANDIDATE`, `FULL_REQUIRED_AT_INTEGRATION` o `NO_CHANGES`. NO prueba consumidores inversos, no genera comandos ni concede PASS; es una propuesta de alcance previa a consultar el build real. Nunca descargar refs remotas para obtener la base. Si el análisis reconoce un módulo pero no su red de dependencias, el agente debe ampliar a consumidores o gate completo según el riesgo.
+
 ## Procedimiento (offline, reproducible)
 
 1. Fijar base real `BASE` y worktree; observar `git diff --name-status BASE..HEAD`, `git diff --name-status`, `git diff --cached --name-status` y `git ls-files --others --exclude-standard`. Distinguir staged, unstaged, untracked, renames, borrados y submódulos. Una base no verificada produce `UNKNOWN_BASE`.
