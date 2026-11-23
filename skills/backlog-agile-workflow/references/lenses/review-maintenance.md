@@ -9,3 +9,7 @@
 6. `backlog doctor --fix`, borrados y operaciones destructivas necesitan revisión por su efecto real. `backlog board export` es opcional y nunca requisito de cierre.
 
 **Salida:** próxima entrega valiosa y **decisión de recuperación ejecutable**, no un informe sobre la inactividad.
+
+## Rendimiento local de automatizaciones (opcional)
+
+Cuando el proyecto utiliza PipelineK y tiene evidencias temporales, consultar `pipelinek-local-ci` modo `metrics` para distinguir duración por stage/step y recursos disponibles al inicio. Comparar runs con toolchain, máquina, cobertura y condiciones comparables; priorizar regresiones persistentes, no una muestra aislada. No exigir un dashboard o un informe para cerrar tareas. No instalar colectores ni crear una segunda base de datos de tareas. La evidencia de rendimiento pertenece a la ejecución y el backlog solo conserva referencias si cambia una decisión.
