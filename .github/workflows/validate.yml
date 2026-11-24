@@ -185,6 +185,8 @@ jobs:
         run: python3 -m unittest discover -s skills/cognicode-diagrams/tests -p 'test_*.py' -v
       - name: Check CogniCode diagrams affordances smoke
         run: python3 skills/cognicode-diagrams/scripts/affordances.py skills/cognicode-diagrams/examples/session-c4.json
+      - name: Run PipelineK local CI impact planner tests
+        run: python3 -m unittest discover -s skills/pipelinek-local-ci/tests -p 'test_*.py' -v
       - name: Run delivery-first-testing router tests
         run: python3 -m unittest discover -s skills/delivery-first-testing/tests -p 'test_*.py' -v
       - name: Check delivery-first-testing navigation smoke

@@ -26,5 +26,19 @@
     "onStatusChange": false
   },
   "authorized": false,
-  "defaultStatus": "To Do"
+  "defaultStatus": "To Do",
+  "acceptanceTaskDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "currentContractCompared": true,
+  "deliveryAssessment": {
+    "schemaVersion": 1,
+    "kind": "delivery-assessment",
+    "taskId": "TASK-7",
+    "taskDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "scope": "internal",
+    "targetRef": "example@revision",
+    "acceptanceCriteriaCount": 2,
+    "definitionOfDoneCount": 1,
+    "observationDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "status": "CANDIDATE_READY"
+  }
 }

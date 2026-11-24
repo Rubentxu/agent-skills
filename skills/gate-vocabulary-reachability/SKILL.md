@@ -106,3 +106,6 @@ Y para cada `mapped-only` o `rule-only`, el sitio donde **debería** construirse
 Separar intención humana verificada de política configurada y rutas realmente alcanzables en producción. Un comentario de agente no crea permisos ni vocabulario normativo. Reportar tanto permisos declarados sin constructor como cambios de política sin autoridad humana contrastable.
 
 Si `backlog-agile-workflow` está disponible, enlazar IDs de tarea/decisión y su origen. Si no, conservar la incertidumbre sin crear otra autoridad.
+
+## Comprobación inversa para capacidades públicas
+Cuando el contrato anuncie operaciones consumibles, contrastar también implementaciones y pruebas frente al registro y punto de entrada públicos. Distinguir implementación interna deliberada de capacidad pública inaccesible; no habilitar automáticamente una modalidad solo porque exista código. Enumerar el recorrido real de configuración/uso y un test discriminante que falle al retirar el wiring. Un test con fixture interno no acredita entrada pública. Registrar límites y evidencia por revisión; reconciliar con la tarea autorizada.

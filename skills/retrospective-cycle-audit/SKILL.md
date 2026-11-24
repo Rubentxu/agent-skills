@@ -70,3 +70,6 @@ Los pasos 1-5 no tocan código. El 6 sí, y sólo para lo confirmado.
 Al retomar trabajo ajeno, contrastar IDs de Backlog, mensajes originales, revisión del código y gates antes de aceptar el handoff. «El propietario aprobó» en un informe de agente no acredita autoría. Evidencia ejecutable determina comportamiento actual; decisión humana contrastada determina objetivo.
 
 Si `backlog-agile-workflow` está disponible, enlazar IDs de tarea/decisión y su origen. Si no, conservar la incertidumbre sin crear otra autoridad.
+
+## Cierres contradichos
+Si una tarea Done no resulta consumible, reconstruir AC originales, destino, PR y evidencia primaria; distinguir el veredicto de sesión del de entrega. Buscar bypass de fixtures, pruebas que omiten cliente exigido, falta de integración y cambios de alcance. Refutar antes de reabrir; preservar commits y notas, comprobar dependientes y entregar un caso de regresión focalizado. Una tarea abierta con código existente se inspecciona antes de redelegar.

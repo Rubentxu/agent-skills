@@ -25,3 +25,10 @@ class FactTests(unittest.TestCase):
         v["currentSources"][0]["digest"]="a"*64
         v["experiments"][0]["outcome"]="inconclusive"
         self.assertEqual(experiments(v)["experiments"][0]["state"],"REVALIDATE")
+
+    def test_administrative_and_delivery_claims_are_live(self):
+        for kind in ("administrative","delivery"):
+            v=fixture();v["facts"][0]["kind"]=kind
+            self.assertEqual(assess(v)["facts"][0]["state"],"RECHECK_ON_USE")
+            v["contradictedIds"]=["F1"]
+            self.assertEqual(assess(v)["facts"][0]["state"],"CONTRADICTED")

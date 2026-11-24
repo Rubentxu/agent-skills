@@ -123,7 +123,8 @@ class RouterTests(unittest.TestCase):
         o = router.affordances(state(intent="close", mode="apply", task={"id": "TASK-7", "archived": False,
             "acceptanceCriteriaCount": 2, "acceptanceCriteriaCompleted": 2,
             "definitionOfDoneCount": 2, "definitionOfDoneCompleted": 2}))
-        self.assertEqual(o["decision"], "AUTHORIZED_ACTION")
+        self.assertEqual(o["decision"], "PROPOSE_ONLY")
+        self.assertIn("assess-delivery", [x["rel"] for x in o["_links"]])
         self.assertEqual(o["status"], "NAVIGATION_ONLY")
 
     def test_proposal_never_changes_task(self):

@@ -292,7 +292,10 @@ def affordances(state: dict[str, Any]) -> dict[str, Any]:
         result["decision"] = "INSPECT_MORE"
         result["_links"].append(_notice("inspect-dependencies", "Hay dependencias declaradas sin resolver: comprobar cuáles son bloqueos funcionales reales"))
         return result
+    if intent in {"review", "maintain", "align-work"}:
+        result["_links"].append(_notice("reconcile-delivery", "Contrastar entregas y estados observados sin mutar", href=_local("references/lenses/review-maintenance.md")))
     if intent == "close":
+        result["_links"].append(_notice("assess-delivery", "Contadores no acreditan entrega; usar el planner con evidencia del destino y contrato original", href=_local("scripts/board_crud.py")))
         for prefix in ("acceptanceCriteria", "definitionOfDone"):
             count, done = task.get(prefix + "Count"), task.get(prefix + "Completed")
             if count is None or done is None:
@@ -331,6 +334,9 @@ def affordances(state: dict[str, Any]) -> dict[str, Any]:
     elif mode == "propose":
         result["decision"] = "PROPOSE_ONLY"
         result["_links"].append(_notice("draft-change", "Proponer cambio, sin ejecutar CLI"))
+    elif intent == "close" and not any(config.values()) and all(v is not None for v in config.values()):
+        result["decision"] = "PROPOSE_ONLY"
+        result["warnings"].append("Cierre requiere observación técnica mediante board_crud.py; el router no autoriza por contadores")
     elif intent not in WRITE_INTENTS:
         result["decision"] = "KEEP_AS_IS"
         if intent == "document-code":

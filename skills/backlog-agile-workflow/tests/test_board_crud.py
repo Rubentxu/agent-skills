@@ -33,6 +33,13 @@ def state(op="transition", **overrides):
                          "bypassGitHooks": False, "onStatusChange": False},
               "authorized": False}
     result.update(overrides)
+    result.setdefault("acceptanceTaskDigest", "sha256:" + "a"*64)
+    result.setdefault("currentContractCompared", True)
+    result.setdefault("deliveryAssessment", {"schemaVersion":1,"kind":"delivery-assessment",
+        "taskId":result["task"]["id"],"taskDigest":result["acceptanceTaskDigest"],
+        "acceptanceCriteriaCount":result["task"].get("acceptanceCriteriaCount"),
+        "definitionOfDoneCount":result["task"].get("definitionOfDoneCount"),
+        "scope":"internal","targetRef":"repo@revision","observationDigest":"b"*64,"status":"CANDIDATE_READY"})
     return result
 
 
@@ -79,6 +86,27 @@ class BoardCrudTests(unittest.TestCase):
         # Administrative gates and summary fields do not stop verified delivery.
         self.assertEqual(board.plan(state(gateResult="NOT_RUN",
                                           task={**task(), "finalSummaryRecorded": False}))["decision"], "PROPOSE_ONLY")
+
+    def test_close_needs_delivery_evidence(self):
+        s=state();del s["deliveryAssessment"]
+        self.assertEqual(board.plan(s)["decision"],"INSPECT_MORE")
+        s=state();s["deliveryAssessment"]["status"]="FAIL"
+        self.assertEqual(board.plan(s)["decision"],"BLOCKED")
+        s=state();s["deliveryAssessment"]["taskDigest"]="sha256:"+"f"*64
+        self.assertEqual(board.plan(s)["decision"],"INSPECT_MORE")
+        s=state(currentContractCompared=False)
+        self.assertEqual(board.plan(s)["decision"],"INSPECT_MORE")
+
+    def test_reconcile_does_not_invent_regression_or_duplicate_work(self):
+        closed={**task(),"status":"Done","acceptanceCriteriaCompleted":1}
+        open_task={**task(),"id":"HSP-232","status":"To Do"}
+        unknown={**task(),"id":"HSP-229","status":"Done"}
+        result=board.reconcile_delivery({"schemaVersion":1,"kind":"delivery-reconciliation-input",
+            "terminalStatus":"Done","tasks":[closed,open_task,unknown],
+            "observations":[{"taskId":"HSP-232","status":"CANDIDATE_READY","evidenceRefs":["ci:existing"]}]})
+        self.assertEqual([x["decision"] for x in result["findings"]],
+                         ["RECONCILE_CLOSURE","INSPECT_EXISTING_DELIVERY","INSPECT_EVIDENCE"])
+        self.assertFalse(result["authorized"])
 
     def test_transition_uses_configured_custom_statuses(self):
         s = state(statuses=["Pendiente", "En curso", "Comprobado"],

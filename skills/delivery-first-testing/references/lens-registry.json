@@ -27,7 +27,7 @@
     {
       "id": "ephemeral-uat",
       "status": "ready",
-      "question": "La feature funciona para el consumidor",
+      "question": "La feature funciona desde la entrada pública del consumidor",
       "playbook": "references/lenses/ephemeral-uat.md",
       "intents": [
         "feature"
@@ -35,7 +35,8 @@
       "signals": [
         "ui",
         "api",
-        "domain"
+        "domain",
+        "protocol"
       ]
     },
     {
