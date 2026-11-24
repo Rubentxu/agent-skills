@@ -29,6 +29,7 @@ class DeliveryHandoffIntegration(unittest.TestCase):
             plan=cli("delivery-first-testing","verification_plan.py",payload=dict(schemaVersion=1,kind="verification-plan-input",taskId=task,repository="repo",baseRevision=rev,scope="bounded",impactRef="synthetic:impact",selector="manual",budgetMs=10000,guarantees=[dict(id="AC-1",statement="Cancel safely",stage="acceptance")],candidates=[dict(id="cancel-test",argv=["fixture-runner","cancel"],cwd=".",covers=["AC-1"],stage="worker",mandatory=True,independent=False,costMs=100,sourceRef="synthetic:runner")]))
             facts=cli("software-knowledge","verified_facts.py",payload=dict(schemaVersion=1,kind="fact-reuse-input",project="demo",facts=[dict(id="F1",claim="cancel exists",scope="cancel",sourcePins=[dict(ref="symbol:cancel",digest="b"*64)],evidenceRef="synthetic:source",kind="static")],currentSources=[dict(ref="symbol:cancel",digest="b"*64)],contradictedIds=[]))
             draft=dict(schemaVersion=2,kind="delegation-envelope",project="demo",runId="r",attemptId="a",taskId=task,
+                deliveryTarget=dict(scope="internal",targetRef="local:repo",authorityRef="policy:1",consumerJourney=[]),
                 objective="Cancel safely",criteria=[dict(id="AC-1",kind="AC",text="Cancel safely")],
                 repositories=[dict(id="repo",baseSha=rev,paths=["src"])],policyRefs=["policy:1"],authorityHandoffRef="private:authority",
                 knowledgePackRef=None,reviewProfile="none",contextBudgetBytes=12000,resultBudgetBytes=4000,briefRevision=1,

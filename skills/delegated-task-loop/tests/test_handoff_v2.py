@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/"scripts"))
-from delegation_contract import validate,digest,assess_acceptance
+from delegation_contract import validate,digest,assess_acceptance,project_acceptance
 
 def fixture():
     e=json.loads((ROOT/"examples/envelope.json").read_text())
@@ -83,3 +83,24 @@ class DeliveryTests(unittest.TestCase):
         e=fixture()
         with self.assertRaises(ValueError):
             validate("amendment",e,delta(e,{"deliveryTarget":e["deliveryTarget"]|{"scope":"internal","consumerJourney":[]}}))
+
+    def test_project_acceptance_pins_integrated_observations(self):
+        e=fixture();repo=e["repositories"][0]["id"]
+        pin="sha256:"+"c"*64
+        e["deliveryTarget"]["integration"]={"repository":repo,"contractDigest":pin}
+        r=result(e)
+        target="d"*40
+        good=dict(status="PASS",evidenceRefs=["ci:observation"])
+        checks={k:e[k] for k in ("schemaVersion","project","runId","attemptId","taskId")} | dict(
+            kind="acceptance-check-observations",briefRevision=e["briefRevision"],briefDigest=digest(e),resultDigest=digest(r),
+            reviewerRef="supervisor:review",targetEvidence=good,
+            integration=dict(contractDigest=pin,candidateCommit=r["revisions"][0]["headSha"],targetCommit=target,generation=2),
+            checkResults=[dict(id=c["id"],repository=repo,revision=target,**good)
+                          for stage in ("workerChecks","supervisorChecks") for c in e["verificationPlan"][stage]])
+        assessment=project_acceptance(e,r,checks)
+        self.assertEqual(assessment["status"],"CANDIDATE_READY")
+        self.assertEqual(assessment["targetCommit"],target)
+        self.assertEqual(assessment["contractDigest"],pin)
+        self.assertEqual(project_acceptance(e,r,checks|{"checkResults":[]})["status"],"NOT_RUN")
+        checks["checkResults"][0]["revision"]="e"*40
+        with self.assertRaises(ValueError):project_acceptance(e,r,checks)
