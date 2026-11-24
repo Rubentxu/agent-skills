@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 import json
+import hashlib
 import re
 from typing import Any
 
@@ -18,14 +19,14 @@ MAX_EVENTS = 1000
 MAX_EVENT_BYTES = 8192
 COORD_LABELS = frozenset({
     "coord:claimed", "coord:stalled", "coord:yield-requested",
-    "coord:handoff-ready", "coord:needs-recovery", "coord:quarantined",
+    "coord:handoff-ready", "coord:needs-recovery", "coord:quarantined", "coord:awaiting-integration",
 })
 TASK_ID = re.compile(r"^[A-Za-z][A-Za-z0-9_.-]{0,63}$")
 RESOURCE = re.compile(r"^(repo|api|k8s|test|service)://[A-Za-z0-9._/@:+*=-]+$")
 ID = re.compile(r"^[A-Za-z0-9_.:@/-]{1,160}$")
 EVENTS = frozenset({"CLAIM", "HEARTBEAT", "PROGRESS", "YIELD_REQUESTED",
                     "YIELD_ACK", "YIELD_DEFERRED", "CHECKPOINT_READY",
-                    "RELEASE", "QUARANTINE", "RECOVER"})
+                    "RELEASE", "QUARANTINE", "RECOVER", "DELIVER", "ADOPT", "COMPLETE"})
 
 
 class Conflict(ValueError):
@@ -61,6 +62,53 @@ def _resources(items: Any) -> list[str]:
     return sorted(items)
 
 
+def contract_digest(task):
+    """Pin semantic task contract, not mutable status, checkboxes or comments."""
+    def criteria(name):
+        values = task.get(name)
+        if not isinstance(values, list):
+            raise ValueError("Full criterion text required: " + name)
+        result = []
+        for entry in values:
+            if isinstance(entry, str) and entry.strip():
+                result.append(entry)
+            elif isinstance(entry, dict):
+                item = {k: v for k, v in entry.items() if k not in {"checked", "completed", "isCompleted"}}
+                if not item or not any(isinstance(v, str) and v.strip() for v in item.values()):
+                    raise ValueError("Missing criterion text")
+                result.append(item)
+            else:
+                raise ValueError("Missing criterion text")
+        return result
+    ac, dod = criteria("acceptanceCriteria"), criteria("definitionOfDone")
+    if not ac or not isinstance(task.get("description"), str) or not isinstance(task.get("title"), str):
+        raise ValueError("Full task contract required")
+    value = {k: task.get(k) for k in ("id", "title", "description", "dependencies", "references", "documentation")}
+    value.update(acceptanceCriteria=ac, definitionOfDone=dod)
+    return "sha256:" + hashlib.sha256(json.dumps(value, sort_keys=True, ensure_ascii=False,
+                        separators=(",", ":"), allow_nan=False).encode()).hexdigest()
+
+
+def candidate_payload(value):
+    if not isinstance(value, dict) or set(value) != {"repository", "baseCommit", "candidateCommit",
+            "candidateRef", "targetRef", "contractDigest", "scope"}:
+        raise ValueError("Invalid integration candidate")
+    _id(value["repository"], "canonical repository")
+    for key in ("baseCommit", "candidateCommit"):
+        if not isinstance(value[key], str) or not re.fullmatch(r"(?:[a-f0-9]{40}|[a-f0-9]{64})", value[key]):
+            raise ValueError("Full commit required: " + key)
+    for key in ("candidateRef", "targetRef"):
+        if not isinstance(value[key], str) or not re.fullmatch(r"refs/(heads|tags)/[A-Za-z0-9][A-Za-z0-9._/-]{0,240}", value[key]) or ".." in value[key] or "//" in value[key]:
+            raise ValueError("Durable Git ref required: " + key)
+    if not value["targetRef"].startswith("refs/heads/"):
+        raise ValueError("Integration target must be a branch")
+    if not isinstance(value["contractDigest"], str) or not re.fullmatch(r"sha256:[a-f0-9]{64}", value["contractDigest"]):
+        raise ValueError("Semantic contract digest required")
+    if value["scope"] not in ("integration", "product-capability", "release"):
+        raise ValueError("Candidate flow is for integrated deliveries")
+    return value
+
+
 def _event(obj: Any) -> dict[str, Any]:
     if not isinstance(obj, dict) or obj.get("v") != 1 or obj.get("type") not in EVENTS:
         raise ValueError("Unknown coordination event")
@@ -70,21 +118,32 @@ def _event(obj: Any) -> dict[str, Any]:
         _id(obj.get(key), key)
     utc(obj.get("at"))
     t = obj["type"]
-    if t in {"CLAIM", "HEARTBEAT", "PROGRESS", "YIELD_ACK", "YIELD_DEFERRED", "CHECKPOINT_READY", "RELEASE"}:
+    if t in {"CLAIM", "HEARTBEAT", "PROGRESS", "YIELD_ACK", "YIELD_DEFERRED", "CHECKPOINT_READY", "RELEASE", "DELIVER", "ADOPT", "COMPLETE"}:
         _id(obj.get("claimId"), "claimId")
-    if t == "CLAIM":
+    if t in {"CLAIM", "ADOPT"}:
         _resources(obj.get("resources"))
         _id(obj.get("harness"), "harness")
         utc(obj.get("leaseUntil"))
+        if "contractDigest" in obj and not re.fullmatch(r"sha256:[a-f0-9]{64}", str(obj["contractDigest"])):
+            raise ValueError("Invalid contract digest")
         if "originalStatus" in obj or "workingStatus" in obj:
             for field in ("originalStatus", "workingStatus"):
                 if not isinstance(obj.get(field), str) or not obj[field].strip() or len(obj[field]) > 120:
                     raise ValueError("Invalid claim status: " + field)
     elif t == "HEARTBEAT":
         utc(obj.get("leaseUntil"))
-    elif t in {"RELEASE", "RECOVER"}:
+    elif t in {"RELEASE", "RECOVER", "DELIVER", "COMPLETE"}:
         if obj.get("resourcesClear") is not True or not isinstance(obj.get("evidenceRef"), str) or not obj["evidenceRef"].strip():
             raise ValueError("Release/recovery requires confirmed clear inventory evidence")
+        if t == "DELIVER":
+            candidate_payload(obj.get("candidate"))
+        if t == "COMPLETE":
+            if not re.fullmatch(r"(?:[a-f0-9]{40}|[a-f0-9]{64})", str(obj.get("targetCommit", ""))):
+                raise ValueError("Observed integrated revision required")
+            if not isinstance(obj.get("terminalStatus"), str) or not obj["terminalStatus"].strip():
+                raise ValueError("Configured terminal status required")
+            if not re.fullmatch(r"[a-f0-9]{64}", str(obj.get("assessmentDigest", ""))):
+                raise ValueError("Acceptance assessment digest required")
     elif t == "QUARANTINE":
         if not isinstance(obj.get("reason"), str) or not obj["reason"].strip():
             raise ValueError("Quarantine must state its reason")
@@ -128,19 +187,24 @@ def replay(events: list[dict[str, Any]]) -> dict[str, Any]:
                              "leaseUntil": None, "resources": [], "phase": "AVAILABLE",
                              "lastHeartbeatAt": None, "lastProgressAt": None,
                              "checkpointRef": None, "requestId": None, "claimAt": None, "lastReason": None, "requestStatus": None,
-                             "originalStatus": None, "workingStatus": None}
+                             "originalStatus": None, "workingStatus": None, "candidate": None, "contractDigest": None, "integrationOwner": False, "completion": None}
     for obj in events:
         ev = _event(obj)
         t, gen, actor = ev["type"], ev["generation"], ev["actor"]
         prev = state["generation"]
-        if t == "CLAIM":
-            if state["phase"] != "AVAILABLE" or gen != prev + 1:
+        if t in {"CLAIM", "ADOPT"}:
+            required_phase = "AVAILABLE" if t == "CLAIM" else "AWAITING_INTEGRATION"
+            if state["phase"] != required_phase or gen != prev + 1:
                 raise Conflict("Conflicting claim or stale generation")
             state.update(owner=actor, claimId=ev["claimId"], generation=gen,
                          resources=_resources(ev["resources"]), leaseUntil=ev["leaseUntil"],
                          lastHeartbeatAt=ev["at"], claimAt=ev["at"], lastProgressAt=None,
                          requestId=None, lastReason=None, requestStatus=None, phase="ACTIVE",
-                         originalStatus=ev.get("originalStatus"), workingStatus=ev.get("workingStatus"))
+                         originalStatus=ev.get("originalStatus"), workingStatus=ev.get("workingStatus"),
+                         contractDigest=ev.get("contractDigest") if t == "CLAIM" else state["contractDigest"],
+                         integrationOwner=(t == "ADOPT"))
+            if t == "CLAIM":
+                state.update(candidate=None, completion=None)
             continue
         if gen != prev:
             raise Conflict("Stale event generation")
@@ -157,7 +221,7 @@ def replay(events: list[dict[str, Any]]) -> dict[str, Any]:
         if t == "RECOVER":
             if state["phase"] != "QUARANTINED":
                 raise Conflict("Recovery requires quarantine")
-            state.update(phase="AVAILABLE", owner=None, claimId=None,
+            state.update(phase="AWAITING_INTEGRATION" if state["candidate"] else "AVAILABLE", owner=None, claimId=None,
                          leaseUntil=None, resources=[], requestId=None,
                          originalStatus=None, workingStatus=None)
             continue
@@ -179,8 +243,20 @@ def replay(events: list[dict[str, Any]]) -> dict[str, Any]:
             if state["phase"] != "YIELD_REQUESTED" or ev["inReplyTo"] != state["requestId"]:
                 raise Conflict("Stale or missing yield request to defer")
             state["requestStatus"] = "DEFERRED"
+        elif t == "DELIVER":
+            if state["phase"] != "ACTIVE" or not state["contractDigest"] or ev["candidate"]["contractDigest"] != state["contractDigest"]:
+                raise Conflict("Candidate requires unchanged claimed contract")
+            if state["candidate"] is not None:
+                raise Conflict("Existing candidate must be reconciled, not overwritten")
+            state.update(phase="AWAITING_INTEGRATION", candidate=ev["candidate"], owner=None,
+                         claimId=None, resources=[], leaseUntil=None, checkpointRef=ev["evidenceRef"])
+        elif t == "COMPLETE":
+            if state["phase"] != "ACTIVE" or not state["integrationOwner"] or state["candidate"] is None:
+                raise Conflict("Completion requires adopted candidate")
+            state.update(phase="COMPLETED", completion=ev, owner=None, claimId=None,
+                         resources=[], leaseUntil=None)
         elif t == "RELEASE":
-            state.update(phase="AVAILABLE", owner=None, claimId=None, resources=[],
+            state.update(phase="AWAITING_INTEGRATION" if state["candidate"] else "AVAILABLE", owner=None, claimId=None, resources=[],
                          leaseUntil=None, requestId=None, requestStatus=None,
                          originalStatus=None, workingStatus=None)
     return state
@@ -229,6 +305,8 @@ def conflict_with_active(resources: list[str], tasks: list[dict[str, Any]], targ
 
 def task_candidate(task: dict[str, Any], state: dict[str, Any], statuses: list[str] | None = None) -> str:
     """Fail closed: isReady is only DAG-readiness, not a free claim."""
+    if state["phase"] == "AWAITING_INTEGRATION":
+        return "INTEGRATION_PENDING"
     if task.get("archived") is not False or task.get("isReady") is not True:
         return "NOT_READY"
     if state["phase"] != "AVAILABLE":
@@ -271,7 +349,8 @@ def triage(tasks: list[dict[str, Any]], now: str, no_progress_minutes: int = 30)
         rows.append({"taskId": task["id"], "health": health, "owner": state["owner"],
                      "generation": state["generation"], "leaseExpired": expired,
                      "lastProgressAt": state["lastProgressAt"], "checkpointRef": state["checkpointRef"],
-                     "reason": state["lastReason"], "requestStatus": state["requestStatus"]})
+                     "reason": state["lastReason"], "requestStatus": state["requestStatus"],
+                     "candidate": state["candidate"], "completion": state["completion"]})
     return {"kind": "coordination-triage-v1", "total": len(rows), "tasks": rows,
             "notice": "Advisory: lack of heartbeat/progress does not prove the old worker stopped."}
 
@@ -289,4 +368,6 @@ def labels_for_phase(phase: str) -> set[str]:
         "YIELD_REQUESTED": {"coord:claimed", "coord:yield-requested"},
         "QUARANTINED": {"coord:quarantined", "coord:needs-recovery"},
         "AVAILABLE": set(),
+        "AWAITING_INTEGRATION": {"coord:awaiting-integration"},
+        "COMPLETED": set(),
     }[phase]

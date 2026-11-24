@@ -68,7 +68,9 @@ class DistributedSmoke(unittest.TestCase):
         (initial/"backlog"/"tasks").mkdir(parents=True)
         task = {"id":"TASK-1", "title":"Work", "isReady":True, "archived":False,
                 "status":"To Do", "assignees":[], "labels":[], "path":"backlog/tasks/task-1.json",
-                "comments":[]}
+                "comments":[], "description":"Deliver behavior", "acceptanceCriteria":[{"text":"usable","checked":True}],
+                "definitionOfDone":[], "acceptanceCriteriaCount":1, "acceptanceCriteriaCompleted":1,
+                "definitionOfDoneCount":0,"definitionOfDoneCompleted":0}
         (initial/"backlog"/"tasks"/"task-1.json").write_text(json.dumps(task,indent=2)+'\n')
         git("add", ".", cwd=initial)
         git("commit", "-m", "init", cwd=initial)
@@ -234,5 +236,62 @@ class DistributedSmoke(unittest.TestCase):
                                   reason="unresponsive", evidence_ref="observed", grace_minutes=0)
         self.assertNotEqual(too_early.returncode,0)
 
+
+    def test_candidate_survives_worker_and_integration_recovery(self):
+        sys.path.insert(0,str(ROOT/"scripts"))
+        from multi_agent import contract_digest
+        product=self.root/"product"
+        git("init","--initial-branch=main",str(product))
+        git("config","user.name","Test",cwd=product)
+        git("config","user.email","test@example.test",cwd=product)
+        (product/"base").write_text("base")
+        git("add",".",cwd=product);git("commit","-m","base",cwd=product)
+        base=git("rev-parse","HEAD",cwd=product)
+        git("checkout","-b","candidate",cwd=product)
+        (product/"feature").write_text("feature")
+        git("add",".",cwd=product);git("commit","-m","feature",cwd=product)
+        candidate=git("rev-parse","HEAD",cwd=product)
+        task=json.loads((self.root/"initial/backlog/tasks/task-1.json").read_text())
+        pin=contract_digest(task)
+        c={"repository":"product","baseCommit":base,"candidateCommit":candidate,"candidateRef":"refs/heads/candidate",
+           "targetRef":"refs/heads/main","contractDigest":pin,"scope":"integration"}
+        path=self.root/"candidate.json";path.write_text(json.dumps(c))
+        def call(action,actor="worker",claim_id="c1",generation=1,**kw):
+            return self.cli_call(action,task="TASK-1",actor=actor,claim_id=claim_id,generation=generation,**kw)
+        one=call("claim",generation=0,harness="codex",lease_until="2026-11-22T11:30:00Z",
+                 resource=["repo://product/src"],working_status="In Progress")
+        self.assertEqual(one.returncode,0,one.stderr)
+        d=call("deliver",candidate_file=path,product_repo=product,resources_clear=True,evidence_ref="checkpoint")
+        self.assertEqual(d.returncode,0,d.stderr)
+        self.assertEqual(json.loads(d.stdout)["phase"],"AWAITING_INTEGRATION")
+        self.assertNotEqual(call("claim",harness="codex",lease_until="2026-11-22T11:30:00Z",resource=["repo://product/src"]).returncode,0)
+        a=call("adopt",actor="integrator",claim_id="c2",harness="claude",lease_until="2026-11-22T11:30:00Z",
+               resource=["repo://product"],product_repo=product)
+        self.assertEqual(a.returncode,0,a.stderr)
+        self.assertNotEqual(call("verify").returncode,0)
+        released=call("release",actor="integrator",claim_id="c2",generation=2,resources_clear=True,evidence_ref="stop")
+        self.assertEqual(released.returncode,0,released.stderr)
+        self.assertEqual(json.loads(released.stdout)["phase"],"AWAITING_INTEGRATION")
+        # A merge succeeded independently; the next supervisor can recover via the observed remote.
+        remote=self.root/"product.git"
+        git("init","--bare","--initial-branch=main",str(remote))
+        git("remote","add","origin",str(remote),cwd=product)
+        git("checkout","main",cwd=product);git("merge","--ff-only","candidate",cwd=product)
+        git("push","origin","main",cwd=product);git("branch","-d","candidate",cwd=product)
+        a=call("adopt",actor="successor",claim_id="c3",generation=2,harness="codex",lease_until="2026-11-22T11:30:00Z",
+               resource=["repo://product"],product_repo=product,target_remote="origin")
+        self.assertEqual(a.returncode,0,a.stderr)
+        assessment={"kind":"delivery-assessment","schemaVersion":1,"status":"CANDIDATE_READY","taskId":"TASK-1",
+                    "contractDigest":pin,"candidateCommit":candidate,"targetCommit":candidate,"targetRef":"refs/heads/main",
+                    "scope":"integration","generation":3,"observationDigest":"a"*64,"acceptanceCriteriaCount":1,"definitionOfDoneCount":0}
+        proof=self.root/"assessment.json";proof.write_text(json.dumps(assessment))
+        kwargs=dict(actor="successor",claim_id="c3",generation=3,product_repo=product,target_remote="origin",
+                    assessment_file=proof,terminal_status="Done",resources_clear=True,evidence_ref="review",event_id="completion")
+        self.assertEqual(call("complete",**kwargs).returncode,0)
+        again=call("complete",**kwargs)
+        self.assertEqual(again.returncode,0,again.stderr)
+        self.assertEqual(json.loads(again.stdout)["result"],"ALREADY_CONFIRMED")
+        checkout=self.root/"final";git("clone",str(self.remote),str(checkout))
+        self.assertEqual(json.loads((checkout/"backlog/tasks/task-1.json").read_text())["status"],"Done")
 
 if __name__ == '__main__': unittest.main()

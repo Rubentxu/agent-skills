@@ -64,5 +64,21 @@ class SchedulerTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             schedule(plan([row('A')],{'A':['repo://p/a']},details={'B':{}}))
 
+    def test_pending_candidate_not_delegated_again(self):
+        from multi_agent import PREFIX
+        pin="sha256:"+"1"*64
+        claim=dict(v=1,type="CLAIM",id="c",actor="worker",generation=1,at="2026-11-22T11:00:00Z",
+                   claimId="c",harness="codex",resources=["repo://p/a"],leaseUntil="2026-11-22T11:30:00Z",contractDigest=pin)
+        candidate=dict(repository="p",baseCommit="a"*40,candidateCommit="b"*40,candidateRef="refs/heads/feature",
+                       targetRef="refs/heads/main",contractDigest=pin,scope="integration")
+        deliver=dict(v=1,type="DELIVER",id="d",actor="worker",generation=1,at=claim["at"],claimId="c",
+                     resourcesClear=True,evidenceRef="checkpoint",candidate=candidate)
+        a,b,c=row("A",status="Done"),row("B",["A"]),row("C")
+        details={t["id"]:{**t,"comments":[]} for t in (a,b,c)}
+        details["A"]["comments"]=[{"body":PREFIX+json.dumps(x)} for x in (claim,deliver)]
+        result=schedule(plan([a,b,c],{"B":["repo://p/b"],"C":["repo://other/c"]},details=details))
+        self.assertEqual([x["taskId"] for x in result["assignments"]],["C"])
+        self.assertEqual(result["integrationCandidates"][0]["taskId"],"A")
+        self.assertIn("DEPENDENCY_DELIVERY_PENDING",[x["reason"] for x in result["skipped"]])
 
 if __name__ == '__main__': unittest.main()

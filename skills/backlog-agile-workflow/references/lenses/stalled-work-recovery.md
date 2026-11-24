@@ -29,3 +29,5 @@
 **Límites recomendados:** intervalo 5–10 min de heartbeat, 30 min de lease, revisión 20–30 min sin progreso, relevo ordinario ≤60 min. Son parámetros, no SLA ni permisos de reclamación. La hora de la máquina es un indicio; con reloj sesgado, partición o remoto inaccesible, fallar de forma conservadora.
 
 **HATEOAS:** `triage` → esta lente; `yield` → [yield-negotiation](yield-negotiation.md); `quarantine` → ver inventario con `delegated-task-loop` si está disponible; `recover` → [multi-agent-coordination](multi-agent-coordination.md); `verify` → [verification](verification.md).
+
+AWAITING_INTEGRATION es trabajo recuperable sin claim activo, no una tarea libre para reimplementar. Consultar candidate y revisar refs, PR y destino antes de adoptar. Si se perdió el worktree pero el destino contiene el commit, adoptar con --target-remote y reconciliar el cierre sin repetir merge. Si no se observa ninguna copia, UNKNOWN: no eliminar ni redelegar automáticamente.

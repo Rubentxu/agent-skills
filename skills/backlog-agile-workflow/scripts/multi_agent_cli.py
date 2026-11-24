@@ -11,6 +11,8 @@ from __future__ import annotations
 import argparse
 from datetime import datetime, timedelta, timezone
 import json
+import hashlib
+import re
 import os
 from pathlib import Path
 import subprocess
@@ -18,7 +20,7 @@ import sys
 import tempfile
 import uuid
 
-from multi_agent import (COORD_LABELS, Conflict, conflict_with_active,
+from multi_agent import (COORD_LABELS, Conflict, conflict_with_active, contract_digest, candidate_payload,
                          labels_for_phase, make_event, parse_comments,
                          replay, task_candidate, task_state, triage, utc)
 
@@ -69,12 +71,76 @@ def read_task(root: Path, binary: str, task_id: str) -> dict:
     return task
 
 
+def read_object(path):
+    if not path:
+        raise ValueError("Observed input file required")
+    with open(path, "rb") as handle:
+        data = handle.read(262145)
+    if len(data) > 262144:
+        raise ValueError("Input exceeds budget")
+    value = json.loads(data)
+    if not isinstance(value, dict):
+        raise ValueError("Expected object")
+    return value
+
+
+def observe_candidate(candidate, product_repo, target_remote=None):
+    """Read Git only. Local preservation is not publication or authorization."""
+    candidate_payload(candidate)
+    if not product_repo:
+        raise ValueError("Product checkout required")
+    root = Path(product_repo).resolve()
+    def ancestor(left, right):
+        if cmd(["git", "merge-base", "--is-ancestor", left, right], root, check=False).returncode:
+            raise Conflict("Candidate or base not reachable from observed revision")
+    if target_remote is None:
+        ref = cmd(["git", "rev-parse", "--verify", candidate["candidateRef"] + "^{commit}"], root).stdout.strip()
+        ancestor(candidate["baseCommit"], candidate["candidateCommit"])
+        ancestor(candidate["candidateCommit"], ref)
+        return ref
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,120}", target_remote):
+        raise ValueError("Explicit configured remote name required")
+    # The caller must select the authorized checkout/remote. A local tracking ref may be stale.
+    rows = cmd(["git", "ls-remote", "--exit-code", target_remote, candidate["targetRef"]], root).stdout.splitlines()
+    matches = [line.split()[0] for line in rows if len(line.split()) == 2 and line.split()[1] == candidate["targetRef"]]
+    if len(matches) != 1 or not re.fullmatch(r"(?:[a-f0-9]{40}|[a-f0-9]{64})", matches[0]):
+        raise Conflict("Target revision unknown")
+    ancestor(candidate["candidateCommit"], matches[0])
+    return matches[0]
+
+
+def observe_completion(opts, task, state):
+    candidate = state["candidate"]
+    if not candidate or not state["integrationOwner"] or contract_digest(task) != candidate["contractDigest"]:
+        raise Conflict("Candidate contract changed or integration not adopted")
+    if not opts.target_remote:
+        raise ValueError("Completion needs observed remote target")
+    target = observe_candidate(candidate, opts.product_repo, opts.target_remote)
+    a = read_object(opts.assessment_file)
+    required = {"taskId": task["id"], "contractDigest": candidate["contractDigest"],
+                "candidateCommit": candidate["candidateCommit"], "targetCommit": target,
+                "targetRef": candidate["targetRef"], "scope": candidate["scope"],
+                "generation": state["generation"]}
+    if a.get("kind") != "delivery-assessment" or a.get("schemaVersion") != 1 or a.get("status") != "CANDIDATE_READY" or any(a.get(k) != v for k,v in required.items()):
+        raise Conflict("Independent acceptance does not match exact candidate, generation and target")
+    if not isinstance(a.get("observationDigest"), str) or not re.fullmatch(r"[a-f0-9]{64}", a["observationDigest"]):
+        raise ValueError("Acceptance provenance required")
+    for name in ("acceptanceCriteria", "definitionOfDone"):
+        count, done = task.get(name + "Count"), task.get(name + "Completed")
+        if (type(count) is not int or type(done) is not int or count != done
+                or count != len(task[name]) or a.get(name + "Count") != count):
+            raise Conflict("Acceptance/DoD inventory not fully checked")
+    if not opts.terminal_status or not opts.resources_clear or not opts.evidence_ref:
+        raise ValueError("Completion requires configured terminal status and clear inventory evidence")
+    return target, hashlib.sha256(json.dumps(a,sort_keys=True,separators=(",",":"),ensure_ascii=False).encode()).hexdigest()
+
+
 def _retry_matches(existing: dict, action: str, opts: argparse.Namespace) -> bool:
     """Retry only the *same* event semantics; never accept merely the same ID."""
     kinds = {"claim": "CLAIM", "renew": "HEARTBEAT", "progress": "PROGRESS",
              "yield-request": "YIELD_REQUESTED", "yield-ack": "YIELD_ACK",
              "yield-defer": "YIELD_DEFERRED", "checkpoint": "CHECKPOINT_READY",
-             "release": "RELEASE", "quarantine": "QUARANTINE", "recover": "RECOVER"}
+             "release": "RELEASE", "quarantine": "QUARANTINE", "recover": "RECOVER", "deliver": "DELIVER", "adopt": "ADOPT", "complete": "COMPLETE"}
     if existing["type"] != kinds[action] or existing["actor"] != opts.actor:
         return False
     required = {
@@ -90,6 +156,13 @@ def _retry_matches(existing: dict, action: str, opts: argparse.Namespace) -> boo
                     "resourcesClear": opts.resources_clear},
         "quarantine": {"reason": opts.reason, "evidenceRef": opts.evidence_ref},
         "recover": {"evidenceRef": opts.evidence_ref, "resourcesClear": opts.resources_clear},
+        "deliver": {"claimId": opts.claim_id, "evidenceRef": opts.evidence_ref,
+                    "resourcesClear": opts.resources_clear, "candidate": read_object(opts.candidate_file) if action == "deliver" else None},
+        "adopt": {"claimId": opts.claim_id, "harness": opts.harness,
+                  "leaseUntil": opts.lease_until, "resources": sorted(opts.resource)},
+        "complete": {"claimId": opts.claim_id, "evidenceRef": opts.evidence_ref,
+                     "resourcesClear": opts.resources_clear, "terminalStatus": opts.terminal_status,
+                     "assessmentDigest": hashlib.sha256(json.dumps(read_object(opts.assessment_file),sort_keys=True,separators=(",",":"),ensure_ascii=False).encode()).hexdigest() if action == "complete" else None},
     }[action]
     if (any(v is None or v is False or (isinstance(v, list) and not v)
             for v in required.values()) or
@@ -97,7 +170,7 @@ def _retry_matches(existing: dict, action: str, opts: argparse.Namespace) -> boo
         return False
     expected_generation = opts.generation
     if (expected_generation is not None and
-            expected_generation != existing["generation"] - (1 if action == "claim" else 0)):
+            expected_generation != existing["generation"] - (1 if action in {"claim", "adopt"} else 0)):
         return False
     if action == "claim" and opts.working_status and existing.get("workingStatus") != opts.working_status:
         return False
@@ -109,10 +182,10 @@ def _event_for(action: str, opts: argparse.Namespace, state: dict, now: str,
     kind = {"claim": "CLAIM", "renew": "HEARTBEAT", "progress": "PROGRESS",
             "yield-request": "YIELD_REQUESTED", "yield-ack": "YIELD_ACK",
             "yield-defer": "YIELD_DEFERRED", "checkpoint": "CHECKPOINT_READY",
-            "release": "RELEASE", "quarantine": "QUARANTINE", "recover": "RECOVER"}[action]
+            "release": "RELEASE", "quarantine": "QUARANTINE", "recover": "RECOVER", "deliver": "DELIVER", "adopt": "ADOPT", "complete": "COMPLETE"}[action]
     fields: dict = {}
     generation = state["generation"]
-    if action == "claim":
+    if action in {"claim", "adopt"}:
         generation += 1
         if not opts.claim_id or not opts.harness or not opts.resource:
             raise ValueError("claim requires --claim-id, --harness and at least one --resource")
@@ -122,7 +195,20 @@ def _event_for(action: str, opts: argparse.Namespace, state: dict, now: str,
                   "resources": opts.resource, "leaseUntil": opts.lease_until,
                   "originalStatus": task["status"],
                   "workingStatus": opts.working_status or task["status"]}
-    elif action in {"renew", "progress", "yield-ack", "yield-defer", "checkpoint", "release"}:
+        if action == "claim":
+            try:
+                fields["contractDigest"] = contract_digest(task)
+            except ValueError:
+                pass  # Legacy task views can still claim, but not submit integrated candidates.
+        else:
+            if state["candidate"] is None or contract_digest(task) != state["candidate"]["contractDigest"]:
+                raise Conflict("Candidate contract changed; reconcile first")
+            # If a previous merge succeeded before a crash, allow adopting from the integrated target.
+            if opts.target_remote:
+                observe_candidate(state["candidate"], opts.product_repo, opts.target_remote)
+            else:
+                observe_candidate(state["candidate"], opts.product_repo)
+    elif action in {"renew", "progress", "yield-ack", "yield-defer", "checkpoint", "release", "deliver", "complete"}:
         if not opts.claim_id or opts.claim_id != state["claimId"]:
             raise Conflict("Owner must provide the observed claimId")
         fields = {"claimId": opts.claim_id}
@@ -132,8 +218,20 @@ def _event_for(action: str, opts: argparse.Namespace, state: dict, now: str,
             fields["leaseUntil"] = opts.lease_until
         if action in {"progress", "checkpoint"}:
             fields["evidenceRef"] = opts.evidence_ref
-        if action == "release":
+        if action in {"release", "deliver", "complete"}:
             fields.update(resourcesClear=opts.resources_clear, evidenceRef=opts.evidence_ref)
+        if action in {"deliver", "complete"}:
+            if not state["leaseUntil"] or utc(now) >= utc(state["leaseUntil"]):
+                raise Conflict("Current lease required")
+        if action == "deliver":
+            candidate = candidate_payload(read_object(opts.candidate_file))
+            if contract_digest(task) != candidate["contractDigest"]:
+                raise Conflict("Task contract changed")
+            observe_candidate(candidate, opts.product_repo)
+            fields["candidate"] = candidate
+        if action == "complete":
+            target, assessment_digest = observe_completion(opts, task, state)
+            fields.update(targetCommit=target, assessmentDigest=assessment_digest, terminalStatus=opts.terminal_status)
     elif action == "yield-request":
         fields["reason"] = opts.reason
     elif action == "quarantine":
@@ -155,7 +253,7 @@ def _apply(opts: argparse.Namespace, root: Path) -> dict:
     binary = opts.backlog
     # Only a new claim must examine every other task's resources. Renew,
     # checkpoint, release and takeover transitions are task-local.
-    if opts.action == "claim":
+    if opts.action in {"claim", "adopt"}:
         _, details = read_backlog(root, binary)
         if opts.task not in details:
             raise ValueError("Task not found in authoritative Backlog.md")
@@ -177,9 +275,17 @@ def _apply(opts: argparse.Namespace, root: Path) -> dict:
                 "eventId":opts.event_id, "notice":"Revalidate current claim before effects"}
     if opts.generation is not None and opts.generation != state["generation"]:
         raise Conflict("Expected generation differs from authoritative task")
-    if opts.action == "claim":
-        if task_candidate(task, state, opts.claimable_status or None) != "CANDIDATE":
+    if opts.action in {"claim", "adopt"}:
+        if opts.action == "claim" and task_candidate(task, state, opts.claimable_status or None) != "CANDIDATE":
             raise Conflict("Task is not available for exclusive claim")
+        if opts.action == "adopt" and (state["phase"] != "AWAITING_INTEGRATION" or task.get("archived") is not False):
+            raise Conflict("No candidate available for adoption")
+        if opts.action == "claim":
+            # New writers must not build on a managed dependency still awaiting integration.
+            for dep in task.get("dependencies") or []:
+                parent = details.get(dep)
+                if parent is None or task_state(parent)["candidate"] and task_state(parent)["phase"] != "COMPLETED":
+                    raise Conflict("Dependency delivery not integrated: " + dep)
         colliding = conflict_with_active(opts.resource, list(details.values()), opts.task)
         if colliding:
             raise Conflict("Resource scopes conflict with tasks: " + ", ".join(colliding))
@@ -188,14 +294,14 @@ def _apply(opts: argparse.Namespace, root: Path) -> dict:
     # Captures original column in CLAIM and restores it automatically on
     # RELEASE/RECOVER, even for localized or customized boards.
     restore_status = opts.ready_status
-    if opts.action in {"release", "recover"} and state["originalStatus"]:
+    if opts.action in {"release", "recover"} and state["originalStatus"] and not state["candidate"]:
         expected = {state["originalStatus"], state["workingStatus"]}
         if task.get("status") not in expected:
             raise Conflict("Status changed outside coordination; investigate before release")
         if restore_status and restore_status != state["originalStatus"]:
             raise Conflict("Requested ready status differs from claim baseline")
         restore_status = state["originalStatus"]
-    if opts.action in {"claim", "renew"}:
+    if opts.action in {"claim", "adopt", "renew"}:
         if utc(opts.lease_until) > utc(opts.at) + timedelta(minutes=opts.max_lease_minutes):
             raise ValueError("Requested lease exceeds configured maximum duration")
     event = _event_for(opts.action, opts, state, opts.at, task)
@@ -213,9 +319,11 @@ def _apply(opts: argparse.Namespace, root: Path) -> dict:
         # --label is supported in older Backlog.md releases too; avoid assuming
         # incremental --add-label/--remove-label options exist on every host.
         argv.extend(["--label", ",".join(sorted(desired_labels))])
-    if opts.action == "claim" and opts.working_status:
+    if opts.action in {"claim", "adopt"} and opts.working_status:
         argv.extend(["--status", opts.working_status])
-    if opts.action in {"release", "recover"} and restore_status and restore_status != task.get("status"):
+    if opts.action == "complete":
+        argv.extend(["--status", opts.terminal_status])
+    if opts.action in {"release", "recover"} and not state["candidate"] and restore_status and restore_status != task.get("status"):
         argv.extend(["--status", restore_status])
     before = cmd(["git", "rev-parse", "HEAD"], root).stdout.strip()
     cmd(argv, root)
@@ -249,7 +357,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=["claim", "renew", "progress", "yield-request",
                                            "yield-ack", "yield-defer", "checkpoint", "release",
-                                           "quarantine", "recover", "triage", "verify"])
+                                           "quarantine", "recover", "triage", "verify", "deliver", "adopt", "complete"])
     parser.add_argument("--remote", required=True, help="Canonical remote for authoritative Home Repo")
     parser.add_argument("--ref", default="main", help="Shared authority branch; NOT a per-worker branch")
     parser.add_argument("--backlog", default="backlog", help="Backlog.md CLI executable")
@@ -272,6 +380,11 @@ def main() -> None:
     parser.add_argument("--resources-clear", action="store_true")
     parser.add_argument("--grace-minutes", type=int, default=20)
     parser.add_argument("--at", help="UTC observation time; host must ensure trustworthy clock")
+    parser.add_argument("--candidate-file")
+    parser.add_argument("--assessment-file")
+    parser.add_argument("--product-repo")
+    parser.add_argument("--target-remote")
+    parser.add_argument("--terminal-status")
     parser.add_argument("--dry-run", action="store_true")
     opts = parser.parse_args()
     if not revalidate_ref(opts.ref):
@@ -281,8 +394,10 @@ def main() -> None:
     opts.event_id = opts.event_id or "evt-" + uuid.uuid4().hex
     if opts.action != "triage" and (not opts.task or not opts.actor):
         parser.error("Mutations need --task and --actor")
-    if opts.action in {"claim", "renew"} and not opts.lease_until:
+    if opts.action in {"claim", "adopt", "renew"} and not opts.lease_until:
         parser.error("Lease operations need --lease-until")
+    if opts.action in {"deliver", "adopt", "complete"} and opts.generation is None:
+        parser.error("Delivery transitions require expected generation")
     if opts.grace_minutes < 0 or not 1 <= opts.max_lease_minutes <= 1440:
         parser.error("Invalid grace or max lease duration")
     try:
