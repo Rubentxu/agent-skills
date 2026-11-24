@@ -6,7 +6,7 @@ import subprocess
 import tempfile
 import unittest
 
-source = Path(__file__).with_name("impact-plan.py")
+source = Path(__file__).resolve().parents[1] / "scripts" / "impact-plan.py"
 spec = importlib.util.spec_from_file_location("impact_plan", source)
 impact = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(impact)

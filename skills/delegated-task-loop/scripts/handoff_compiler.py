@@ -13,6 +13,8 @@ def compile_handoff(v):
     draft=v["draft"]
     if not isinstance(draft,dict) or draft.get("schemaVersion")!=2:
         raise ValueError("v2 draft required")
+    if "deliveryTarget" not in draft:
+        raise ValueError("new handoff requires authorized delivery target and consumer journey when applicable")
     if set(draft)&{"verificationPlan","verifiedFacts","taskDigest"}:
         raise ValueError("compiler owns projected fields")
     task=draft.get("taskId")

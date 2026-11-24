@@ -140,12 +140,36 @@ def schedule(payload: dict[str, Any]) -> dict[str, Any]:
             raise InvalidPlan("Invalid worker capacity/capabilities")
     candidates = []
     skipped = []
+    integration = []
+    states = {tid: task_state(details[tid]) for tid in ids}
+    for task in tasks:
+        state = states[task["id"]]
+        if state["phase"] == "AWAITING_INTEGRATION":
+            integration.append({"taskId": task["id"], "candidate": state["candidate"],
+                                "generation": state["generation"], "action": "ADOPT_OR_RECONCILE"})
+    pending = len(integration)
+    max_pending = payload.get("maxPendingIntegrations")
+    if max_pending is not None and (type(max_pending) is not int or max_pending < 1):
+        raise InvalidPlan("Invalid integration WIP limit")
+    busy_repositories = {row["candidate"]["repository"] for row in integration}
+    # Repository hints are explicit; never infer effect scopes from names.
+    repositories = payload.get("repositories", {})
+    if not isinstance(repositories, dict):
+        raise InvalidPlan("Invalid repository hints")
     for rank, task in enumerate(tasks):
         tid = task["id"]
-        state = task_state(details[tid])
+        state = states[tid]
         eligible = task_candidate(task, state, claimable_statuses)
         if eligible != "CANDIDATE":
             skipped.append({"taskId": tid, "reason": eligible})
+            continue
+        blocked_deps = [dep for dep in task.get("dependencies", [])
+                        if dep not in states or (states[dep]["candidate"] and states[dep]["phase"] != "COMPLETED")]
+        if blocked_deps:
+            skipped.append({"taskId": tid, "reason": "DEPENDENCY_DELIVERY_PENDING", "dependencies": blocked_deps})
+            continue
+        if max_pending is not None and pending >= max_pending and repositories.get(tid) in busy_repositories:
+            skipped.append({"taskId": tid, "reason": "PRIORITIZE_INTEGRATION"})
             continue
         if tid not in resources or resources[tid] is None:
             skipped.append({"taskId": tid, "reason": "EFFECT_SCOPES_UNKNOWN"})
@@ -184,7 +208,7 @@ def schedule(payload: dict[str, Any]) -> dict[str, Any]:
         assignments.append({"taskId": tid, "agentId": chosen["id"], "resources": scopes,
                             "authority": "PROPOSAL_ONLY"})
     return {"kind": "multi-agent-proposal-v1", "status": "PROPOSAL_ONLY",
-            "assignments": assignments, "skipped": skipped, "_links": [
+            "assignments": assignments, "skipped": skipped, "integrationCandidates": integration, "pendingIntegrations": pending, "_links": [
                 {"rel": "claim", "href": "references/lenses/multi-agent-coordination.md"},
                 {"rel": "recover", "href": "references/lenses/stalled-work-recovery.md"}],
             "notice": "Recheck all claims and scopes atomically on authority branch before execution."}

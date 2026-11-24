@@ -37,3 +37,7 @@ class CompilerTests(unittest.TestCase):
         v["budgetDecisionRef"]="decision:budget";compile_handoff(v)
         v["authorityReceipt"]["taskDigest"]="sha256:"+"b"*64
         with self.assertRaises(ValueError):compile_handoff(v)
+
+    def test_new_handoff_requires_delivery_target(self):
+        v=sample();del v["draft"]["deliveryTarget"]
+        with self.assertRaises(ValueError):compile_handoff(v)

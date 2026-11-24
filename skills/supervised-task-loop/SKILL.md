@@ -136,3 +136,6 @@ El runtime no mide JSON vacío, incompleto ni error de arranque como sesión ter
 ## Endurance Relay externo
 
 Máximo 60 minutos por sesión, soft deadline antes del hard. El relay externo admite un segundo intento explícitamente reconciliado de la misma tarea (ver [fallos](references/04-failure-modes.md)); conserva presupuesto acumulado de 120 min y evidencia. No confundir bloqueo de pipeline con autorización de retry. La versión nativa sigue en delegated-task-loop y no requiere este driver.
+
+## Evidencia de entrega (fail closed)
+El informe v2 distingue sesión de entrega. El runtime no certifica código ni interpreta Done como éxito. Para continuar automáticamente tras un cierre, el operador/verificador autorizado aporta una observación técnica vinculada a los snapshots y a la sesión mediante `AGENT_DELIVERY_OBSERVATION`; sin ella la entrega es NOT_RUN. Ver [contrato de observación](references/delivery-observation.md). La comprobación estructural no autentica al revisor ni ejecuta pruebas; el host debe controlar esa frontera. No se añaden gates al producto ni se presume una rama de entrega.

@@ -33,6 +33,7 @@ import argparse
 import collections
 import datetime as dt
 import json
+import hashlib
 import os
 import re
 import subprocess
@@ -162,6 +163,8 @@ def estados_del_tabulario(documento: dict) -> dict[str, dict]:
             "status": str(tarea.get("status", "")),
             "ac_completados": tarea.get("acceptanceCriteriaCompleted"),
             "ac_total": tarea.get("acceptanceCriteriaCount"),
+            "dod_completados": tarea.get("definitionOfDoneCompleted"),
+            "dod_total": tarea.get("definitionOfDoneCount"),
             "labels": tarea.get("labels") or [],
         }
     return estados
@@ -197,6 +200,10 @@ def diff_del_tabulario(antes: dict[str, dict], despues: dict[str, dict],
             "a": ahora["status"],
             "ac_completados": ahora.get("ac_completados"),
             "ac_total": ahora.get("ac_total"),
+            "ac_total_antes": antes_del.get("ac_total"),
+            "dod_completados": ahora.get("dod_completados"),
+            "dod_total": ahora.get("dod_total"),
+            "dod_total_antes": antes_del.get("dod_total"),
         }
         if ahora["status"] in terminal:
             cerradas.append(movimiento)
@@ -456,12 +463,12 @@ def rama_limpia(repo: str, rama: str) -> bool:
     return True
 
 
-def id_de_tarea_de_la_rama(rama: str) -> str | None:
-    coincidencia = re.search(r"(pkh[-_]?\d{2,4})", rama, re.IGNORECASE)
-    if not coincidencia:
-        return None
-    digitos = re.sub(r"\D", "", coincidencia.group(1))
-    return f"PKH-{digitos.zfill(3)}"
+def id_de_tarea_de_la_rama(rama: str, task_ids=()) -> str | None:
+    """Attribute only an unambiguous, observed board ID."""
+    matches = [tid for tid in task_ids if isinstance(tid, str) and tid
+               and re.search(r"(?<![A-Za-z0-9])" + re.escape(tid) + r"(?![A-Za-z0-9])",
+                             rama, re.IGNORECASE)]
+    return matches[0] if len(matches) == 1 else None
 
 
 # --------------------------------------------------------------------------------------
@@ -515,8 +522,8 @@ def diagnostico(session: dict, tablero: dict, handoff: dict, verdict: str, exit_
             "sessionState": estado_sesion(session), "exitCode": exit_code,
             "retryAuthorized": False}
 
-def decidir_veredicto(session: dict, tablero: dict, handoff: dict,
-                       sesion_arrancada: bool) -> tuple[str, str]:
+def decidir_sesion(session: dict, tablero: dict, handoff: dict,
+                    sesion_arrancada: bool) -> tuple[str, str]:
     """(veredicto, razon). El veredicto usa el vocabulario cerrado del workspace."""
     if not sesion_arrancada:
         return NOT_RUN, "la sesion no llego a arrancar"
@@ -535,10 +542,96 @@ def decidir_veredicto(session: dict, tablero: dict, handoff: dict,
         # no puede continuar. Falla aunque el codigo este perfecto.
         return FAIL, "la tarea se cerro pero el handoff no se actualizo"
     if hay_cierre and handoff_ok:
-        return PASS, "tarea cerrada y handoff actualizado"
+        return PASS, "cierre observado y handoff actualizado; no acredita entrega"
     if not hay_cierre:
         return FAIL, "la sesion termino sin cerrar ninguna tarea" + (": " + extracto_resultado(session) if extracto_resultado(session) else "")
     return NOT_RUN, "no se pudo determinar el veredicto"
+
+
+def snapshot_digest(value: dict) -> str:
+    """Content pin for an observed JSON snapshot, not an authentication proof."""
+    return hashlib.sha256(json.dumps(value, sort_keys=True, ensure_ascii=False,
+                                     separators=(",", ":"), allow_nan=False).encode()).hexdigest()
+
+
+def evaluar_entrega(session, tablero, observation=None, before=None, after=None,
+                    expected_task=None):
+    """Fail closed on missing independent observations. This is not a test runner."""
+    closed = tablero.get("tasks_closed")
+    task = tablero.get("task_closed")
+    if not isinstance(closed, list) or len(closed) != 1 or not isinstance(task, dict) or task != closed[0]:
+        return FAIL, "se requiere exactamente un cierre atribuible"
+    tid = task.get("id")
+    if not tid or (expected_task and tid != expected_task):
+        return FAIL, "identidad de tarea no coincide"
+    ac = task.get("ac_total")
+    completed = task.get("ac_completados")
+    dod = task.get("dod_total")
+    if type(ac) is not int or type(completed) is not int:
+        return NOT_RUN, "faltan contadores AC observados"
+    if ac <= 0 or completed != ac or task.get("ac_total_antes") != ac:
+        return FAIL, "AC incompletos, vacios o alcance modificado"
+    if dod is not None and (type(dod) is not int or dod < 0
+                            or type(task.get("dod_completados")) is not int
+                            or task["dod_completados"] != dod
+                            or task.get("dod_total_antes") != dod):
+        return FAIL, "DoD incompleto o modificado"
+    if not isinstance(observation, dict) or not observation:
+        return NOT_RUN, "falta observacion tecnica del verificador autorizado"
+    if not isinstance(before, dict) or not isinstance(after, dict) or not session.get("session_id"):
+        return NOT_RUN, "faltan snapshots o identidad de sesion"
+    required = {"schemaVersion", "kind", "taskId", "sessionId", "beforeDigest",
+                "afterDigest", "scope", "targetRef", "reviewerRef", "criteria",
+                "definitionOfDoneCount", "target", "consumer"}
+    if set(observation) != required or type(observation["schemaVersion"]) is not int or observation["schemaVersion"] != 1 or observation["kind"] != "delivery-observation":
+        return FAIL, "contrato de observacion invalido"
+    if (observation["taskId"] != tid or observation["sessionId"] != session["session_id"]
+            or observation["beforeDigest"] != snapshot_digest(before)
+            or observation["afterDigest"] != snapshot_digest(after)):
+        return FAIL, "observacion de otra tarea, sesion o snapshot"
+    scopes = {"research", "internal", "integration", "product-capability", "release"}
+    def ref_ok(v):
+        return isinstance(v, str) and bool(v.strip()) and len(v) <= 2048
+    if (not isinstance(observation["scope"], str) or observation["scope"] not in scopes
+            or not ref_ok(observation["targetRef"]) or not ref_ok(observation["reviewerRef"])):
+        return FAIL, "alcance, destino o procedencia no identificados"
+    count = observation["definitionOfDoneCount"]
+    if type(count) is not int or count < 0 or count > 256 or (dod is not None and count != dod) or ac > 256:
+        return FAIL, "inventario DoD/AC incompatible"
+    criteria = observation["criteria"]
+    ids = {f"AC:{i}" for i in range(1, ac + 1)} | {f"DOD:{i}" for i in range(1, count + 1)}
+    if not isinstance(criteria, dict) or set(criteria) != ids:
+        return FAIL, "evidencia no cubre exactamente AC y DoD"
+    checks = list(criteria.values()) + [observation["target"]]
+    consumer = observation["consumer"]
+    if observation["scope"] in {"product-capability", "release"}:
+        checks.append(consumer)
+    elif consumer is not None:
+        checks.append(consumer)
+    states = []
+    for check in checks:
+        if not isinstance(check, dict) or set(check) != {"status", "evidenceRefs"}:
+            return FAIL, "observacion de garantia invalida"
+        state, refs = check["status"], check["evidenceRefs"]
+        if (not isinstance(state, str) or state not in {PASS, FAIL, BLOCKED, NOT_RUN}
+                or not isinstance(refs, list) or len(refs) > 64
+                or not all(ref_ok(r) for r in refs)):
+            return FAIL, "resultado o referencias invalidos"
+        if state in {PASS, FAIL, BLOCKED} and not refs:
+            return NOT_RUN, "garantia sin referencia de evidencia"
+        states.append(state)
+    for status in (FAIL, BLOCKED, NOT_RUN):
+        if status in states:
+            return status, "garantia de entrega no satisfecha: " + status
+    return PASS, "observaciones de entrega completas; autenticidad y alcance a cargo del verificador"
+
+
+def decidir_veredicto(session: dict, tablero: dict, handoff: dict, sesion_arrancada: bool,
+                       observation=None, before=None, after=None, expected_task=None):
+    operational, reason = decidir_sesion(session, tablero, handoff, sesion_arrancada)
+    if operational != PASS:
+        return operational, reason
+    return evaluar_entrega(session, tablero, observation, before, after, expected_task)
 
 
 # --------------------------------------------------------------------------------------
@@ -559,11 +652,28 @@ def elegir_pr_de_la_tarea(prs: list[dict], id_tarea: str | None) -> dict | None:
     return max(candidatos, key=lambda p: str(p.get("mergedAt") or ""))
 
 
+def attributed_board(board, expected):
+    """Separate unrelated board changes from this task. No task identity guessed."""
+    if not expected:
+        return board
+    scoped = dict(board)
+    for plural,singular in (("tasks_closed","task_closed"),("tasks_started","task_started"),("tasks_advanced",None)):
+        rows = board.get(plural, [])
+        scoped[plural] = [row for row in rows if row.get("id") == expected]
+        if singular:
+            scoped[singular] = next(iter(scoped[plural]), None)
+    return scoped
+
+
 def construir(args) -> dict:
-    antes = estados_del_tabulario(leer_json(args.before))
-    despues = estados_del_tabulario(leer_json(args.after))
+    before_snapshot = leer_json(args.before)
+    after_snapshot = leer_json(args.after)
+    antes = estados_del_tabulario(before_snapshot)
+    despues = estados_del_tabulario(after_snapshot)
     terminal = set(args.terminal_status or ["Done"])
-    tablero = diff_del_tabulario(antes, despues, terminal)
+    all_changes = diff_del_tabulario(antes, despues, terminal)
+    expected = getattr(args, "expected_task", None)
+    tablero = attributed_board(all_changes, expected)
 
     session = leer_json(args.session)
     sesion_arrancada = estado_sesion(session) == "COMPLETED"
@@ -588,7 +698,7 @@ def construir(args) -> dict:
             enriched = dict(pr)
             enriched["repo"] = os.path.basename(repo)
             enriched["ruta"] = repo
-            enriched["task_id"] = id_de_tarea_de_la_rama(str(pr.get("headRefName", "")))
+            enriched["task_id"] = id_de_tarea_de_la_rama(str(pr.get("headRefName", "")), set(antes) | set(despues))
             enriched["branch_cleaned"] = rama_limpia(repo, str(pr.get("headRefName", "")))
             prs.append(enriched)
 
@@ -597,7 +707,7 @@ def construir(args) -> dict:
     # paralelo en el mismo repo—, y esos no son de esta iteracion.
     id_tarea = (tablero.get("task_closed") or {}).get("id")
     pr_de_la_tarea = elegir_pr_de_la_tarea(prs, id_tarea)
-    pr_principal = pr_de_la_tarea or (prs[0] if prs else None)
+    pr_principal = pr_de_la_tarea
 
     # El PR manda sobre el clone local: el agente fusiona por la API y el `main` local no se
     # mueve, asi que el diff del arbol puede decir "0 ficheros" de una entrega que existe.
@@ -665,21 +775,31 @@ def construir(args) -> dict:
 
     transcript = medir_transcript(transcript_de(args.project_dir, str(session.get("session_id") or "")))
 
-    veredicto, razon = decidir_veredicto(session, tablero, handoff, sesion_arrancada)
-
-    expected=getattr(args,"expected_task",None)
-    if expected and veredicto==PASS and [x["id"] for x in tablero["tasks_closed"]]!=[expected]:
-        veredicto,razon=FAIL,"relevo cerro una tarea ajena o mas de una tarea"
+    expected = getattr(args, "expected_task", None)
+    observation_path = getattr(args, "delivery_observation", None)
+    observation = leer_json(observation_path) if observation_path else None
+    session_verdict, session_reason = decidir_sesion(session, tablero, handoff, sesion_arrancada)
+    veredicto, razon = decidir_veredicto(session, tablero, handoff, sesion_arrancada,
+                                        observation, before_snapshot, after_snapshot, expected)
+    if getattr(args, "exit_code", None) not in (None, 0):
+        session_verdict = veredicto = FAIL
+        session_reason = razon = "proceso de sesion termino con codigo no cero"
     informe = {
         "kind": "agent-loop-report",
         "expectedTask": expected,
-        "schema_version": 1,
+        "schema_version": 2,
+        "sessionVerdict": session_verdict,
+        "sessionReason": session_reason,
+        "deliveryObservationDigest": snapshot_digest(observation) if observation else None,
+        "deliveryAuthority": "external-observation-not-authenticated",
         "generated_at": ahora_iso(),
         "iteration": args.iteration,
         "verdict": veredicto,
         "reason": razon,
         "diagnostic": diagnostico(session, tablero, handoff, veredicto, getattr(args, "exit_code", None)),
         "board": tablero,
+        "concurrentBoard": {"unattributedClosures": len(all_changes["tasks_closed"])-len(tablero["tasks_closed"]),
+                            "identityPinned": bool(expected)},
         "session": sesion,
         "transcript": transcript,
         "changes": cambios,
@@ -747,9 +867,10 @@ def self_test() -> int:
         veredicto, _ = decidir_veredicto(leer_json(session), diff, {"updated": False}, True)
         comprobar("tarea cerrada sin handoff da FAIL", veredicto == FAIL)
 
-        # 3. Con handoff, la misma tarea PASA.
+        # 3. Un cierre administrativo no acredita entrega.
         veredicto, _ = decidir_veredicto(leer_json(session), diff, {"updated": True}, True)
-        comprobar("tarea cerrada con handoff da PASS", veredicto == PASS)
+        comprobar("tarea cerrada con handoff sin evidencia da NOT_RUN", veredicto == NOT_RUN)
+        comprobar("la sesion se mide por separado", decidir_sesion(leer_json(session), diff, {"updated": True}, True)[0] == PASS)
 
         # 4. Una sesion que no arranco es NOT_RUN, no un verde.
         veredicto, _ = decidir_veredicto({}, diff, {"updated": True}, False)
@@ -757,7 +878,7 @@ def self_test() -> int:
 
         # 5. El id de la tarea se saca de la rama.
         comprobar("pkh-123-en-la-rama da PKH-123",
-                  id_de_tarea_de_la_rama("feat/pkh-123-algo") == "PKH-123")
+                  id_de_tarea_de_la_rama("feat/pkh-123-algo", ["PKH-123"]) == "PKH-123")
         comprobar("una rama sin id no inventa una tarea",
                   id_de_tarea_de_la_rama("feat/algo") is None)
 
@@ -835,6 +956,7 @@ def main() -> int:
     parser.add_argument("--iteration", default="", help="numero de iteracion")
     parser.add_argument("--exit-code", type=int, default=None)
     parser.add_argument("--expected-task", default=None)
+    parser.add_argument("--delivery-observation", default=None, help="observacion externa autorizada, no salida del worker")
     parser.add_argument("--out", default="", help="fichero de salida JSON")
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args()

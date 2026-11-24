@@ -82,13 +82,13 @@ class VeredictoTests(unittest.TestCase):
         veredicto, _ = self.decidir({}, {}, {}, arrancada=False)
         self.assertEqual(veredicto, informe.NOT_RUN)
 
-    def test_una_tarea_cerrada_con_handoff_es_pass(self):
+    def test_una_tarea_cerrada_con_handoff_no_es_entrega(self):
         veredicto, _ = self.decidir(
             {"is_error": False, "result": "listo"},
             {"task_closed": "PKH-060"},
             {"updated": True},
         )
-        self.assertEqual(veredicto, informe.PASS)
+        self.assertEqual(veredicto, informe.FAIL)
 
     def test_una_tarea_cerrada_sin_handoff_falla(self):
         # La guarda: una entrega que la siguiente sesion no puede continuar, falla aunque el
@@ -125,6 +125,49 @@ class VeredictoTests(unittest.TestCase):
         )
         self.assertEqual(veredicto, informe.FAIL)
 
+
+    def test_concurrent_board_changes_are_not_this_tasks_delivery(self):
+        one={"id":"HSP-228"}
+        other={"id":"IDP-0125"}
+        board={"tasks_closed":[other,one],"task_closed":other,"tasks_started":[other],"tasks_advanced":[other,one]}
+        scoped=informe.attributed_board(board,"HSP-228")
+        self.assertEqual(scoped["tasks_closed"],[one])
+        self.assertEqual(scoped["task_closed"],one)
+        self.assertEqual(scoped["tasks_started"],[])
+        self.assertIsNone(informe.attributed_board(board,"HSP-999")["task_closed"])
+        self.assertEqual(board["task_closed"],other)
+
+    def test_delivery_requires_exact_observed_evidence(self):
+        before = {"tasks": [{"id": "HSP-228", "status": "To Do", "acceptanceCriteriaCount": 1, "acceptanceCriteriaCompleted": 0}]}
+        after = {"tasks": [{"id": "HSP-228", "status": "Done", "acceptanceCriteriaCount": 1, "acceptanceCriteriaCompleted": 1}]}
+        board = informe.diff_del_tabulario(informe.estados_del_tabulario(before), informe.estados_del_tabulario(after), {"Done"})
+        session = {"session_id": "s", "is_error": False}
+        handoff = {"updated": True}
+        good = {"status": "PASS", "evidenceRefs": ["ci:checked-at-revision"]}
+        observation = {"schemaVersion": 1, "kind": "delivery-observation",
+            "taskId": "HSP-228", "sessionId": "s",
+            "beforeDigest": informe.snapshot_digest(before), "afterDigest": informe.snapshot_digest(after),
+            "scope": "product-capability", "targetRef": "repo@revision",
+            "reviewerRef": "authorized-review", "definitionOfDoneCount": 0,
+            "criteria": {"AC:1": good}, "target": good, "consumer": good}
+        def verdict(o):
+            return informe.decidir_veredicto(session, board, handoff, True, o, before, after, "HSP-228")[0]
+        self.assertEqual(verdict(None), informe.NOT_RUN)
+        self.assertEqual(verdict(observation), informe.PASS)
+        self.assertEqual(verdict(dict(observation, consumer={"status": "FAIL", "evidenceRefs": ["http:400"]})), informe.FAIL)
+        self.assertEqual(verdict(dict(observation, consumer={"status": "NOT_RUN", "evidenceRefs": []})), informe.NOT_RUN)
+        self.assertEqual(verdict(dict(observation, criteria={})), informe.FAIL)
+        self.assertEqual(verdict(dict(observation, sessionId="stale")), informe.FAIL)
+        self.assertEqual(verdict(dict(observation, afterDigest="wrong")), informe.FAIL)
+        self.assertEqual(verdict(dict(observation, scope="internal", consumer=None)), informe.PASS)
+        board["task_closed"]["ac_completados"] = 0
+        self.assertEqual(verdict(observation), informe.FAIL)
+
+    def test_task_identity_not_project_specific_or_ambiguous(self):
+        self.assertEqual(informe.id_de_tarea_de_la_rama("feat/hsp-228-oci", ["HSP-228", "PKH-001"]), "HSP-228")
+        self.assertEqual(informe.id_de_tarea_de_la_rama("feat/idp-0125-fix", ["IDP-0125"]), "IDP-0125")
+        self.assertIsNone(informe.id_de_tarea_de_la_rama("feat/hsp-228-idp-0125", ["HSP-228", "IDP-0125"]))
+        self.assertIsNone(informe.id_de_tarea_de_la_rama("feat/hsp-2280", ["HSP-228"]))
 
 class SelfTestTests(unittest.TestCase):
     def test_el_informe_se_certifica(self):

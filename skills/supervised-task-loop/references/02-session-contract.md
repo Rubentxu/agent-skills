@@ -90,7 +90,7 @@ coste de la sesión:
 - **Trabajo largo** (> 2 min): en background, **dentro de su slice**, y se espera a su
   **fichero de veredicto** con timeout holgado (`await_verdict.py`). Nunca un timeout corto
   que expire antes del trabajo; nunca bucles `until ... sleep` para sondear.
-- **PRs**: autorización implícita para push, PR y merge, pero el título y el cuerpo en el
+- **PRs**: push, PR y merge requieren autorización efectiva; el título y el cuerpo en el
   estilo del repo y **sin mencionar herramientas ni agentes** (la política del repo lo
   bloquea).
 - **Al terminar**: actualizar el handoff, **liberar lo que la tarea creó** (worktrees, ramas,
@@ -101,3 +101,5 @@ coste de la sesión:
 La sesión no hereda el contexto, pero tampoco hereda los recursos: lo que la sesión anterior
 dejó vivo (un daemon, un clúster, un worktree) es ruido para la siguiente y un riesgo para la
 máquina. Por eso "lo que se usa, se libera" es parte del contrato y no una buena intención.
+
+Para ejecuciones concurrentes, el host fija AGENT_EXPECTED_TASK, AGENT_HANDOFF_DOC_ID (documento existente de handoff exclusivo de ese intento, título contiene handoff) y AGENT_STATE separado. El runtime conserva la identidad en el artefacto del intento y filtra otros cambios del tablero; no usa el doc global para atribuir una entrega. El host debe asegurar exclusividad de documento, claim y ruta. La ejecución secuencial conserva el descubrimiento anterior. No interpretar el cierre de otra tarea como propio ni activar publicación implícita.

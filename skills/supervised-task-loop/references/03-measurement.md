@@ -54,12 +54,12 @@ contexto en cero y sin el handoff no puede continuar. Es una entrega que se pier
 
 | Veredicto | Cuándo |
 |---|---|
-| `PASS` | una tarea cerrada **y** handoff actualizado |
+| `PASS` | sesión correcta, un cierre atribuible y observación técnica externa completa |
 | `FAIL` | la sesión cerró la tarea pero no dejó handoff, o no cerró nada, o terminó en error |
 | `BLOCKED` | el agente declaró que no puede avanzar (y no cerró nada) |
 | `NOT_RUN` | la sesión ni siquiera arrancó, o no se pudo determinar |
 
-El veredicto es el **código de salida** de la etapa: `PASS` → 0, `FAIL` → 3, y cualquier
+`sessionVerdict` mide continuidad operativa; `verdict` exige entrega. Un cierre con handoff pero sin observación técnica queda `NOT_RUN` y detiene el bucle. Los PASS de esquema 1 no se reutilizan como entrega. El veredicto es el **código de salida** de la etapa: `PASS` → 0, `FAIL` → 3, y cualquier
 otra cosa → 2 (no pude medir). Nunca un verde por defecto.
 
 ## La línea base

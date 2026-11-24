@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/"scripts"))
-from delegation_contract import validate,digest
+from delegation_contract import validate,digest,assess_acceptance,project_acceptance
 
 def fixture():
     e=json.loads((ROOT/"examples/envelope.json").read_text())
@@ -19,6 +19,7 @@ def fixture():
              criterionOwners={ids[0]:"worker",**{x:"supervisor" for x in ids[1:]}},nonGoals=["full suite"],openQuestions=[],
              contingencies=dict(anchorMissing="ask-supervisor",newRisk="request-plan-amendment",backgroundWork="report-pending",ambiguity="ask-supervisor",stopWhen="worker criteria pass"),
              executionPolicy=dict(modelProfile="balanced",explorationBudgetMinutes=15,outputMode="compact",publication="forbidden",administrativeWork="delegated"))
+    e["deliveryTarget"] = dict(scope="product-capability", targetRef="repo:target", authorityRef="task:contract", consumerJourney=[dict(id="public", statement="Use public entrypoint", checkId="audit")])
     return e
 def result(e):
     r=json.loads((ROOT/"examples/result.json").read_text())
@@ -55,3 +56,51 @@ class HandoffTests(unittest.TestCase):
         item=dict(id="r1",kind="job",operationKey="op1",originAttempt="prev",state="running",identityRef="native:1",evidenceRef="obs:1",verifiedAt="2026-11-19T12:00:00Z",effects=["build"],adoption="observe-only",resultRef="test:1")
         e["liveResources"]["resources"]=[item,item|{"id":"r2"}]
         with self.assertRaises(ValueError):validate("envelope",e)
+
+class DeliveryTests(unittest.TestCase):
+    def observation(self, e, r):
+        good = dict(status="PASS", evidenceRefs=["observation:checked"])
+        return {k:e[k] for k in ("schemaVersion","project","runId","attemptId","taskId")} | dict(
+            kind="acceptance-observation", briefRevision=e["briefRevision"], briefDigest=digest(e),
+            taskDigest=e["taskDigest"], resultDigest=digest(r), reviewerRef="supervisor:review",
+            targetRef=e["deliveryTarget"]["targetRef"], targetEvidence=good,
+            criteria={c["id"]:good for c in e["criteria"]}, journey={"public":good})
+    def test_public_journey_is_assigned_to_supervisor(self):
+        e=fixture()
+        for steps in ([], [dict(id="public",statement="consumer",checkId="test")]):
+            with self.assertRaises(ValueError):
+                validate("envelope", e | {"deliveryTarget":e["deliveryTarget"] | {"consumerJourney":steps}})
+    def test_acceptance_checks_all_observations(self):
+        e=fixture();r=result(e);o=self.observation(e,r)
+        a=assess_acceptance(e,r,o)
+        self.assertEqual(a["status"],"CANDIDATE_READY")
+        self.assertFalse(a["authorized"]);self.assertFalse(a["runtimeVerified"])
+        self.assertEqual(assess_acceptance(e,r,o | {"journey":{"public":{"status":"FAIL","evidenceRefs":["http:400"]}}})["status"],"FAIL")
+        self.assertEqual(assess_acceptance(e,r,o | {"journey":{"public":{"status":"NOT_RUN","evidenceRefs":[]}}})["status"],"NOT_RUN")
+        for change in ({"criteria":{}},{"journey":{}},{"resultDigest":"a"*64},{"targetRef":"other"}):
+            with self.assertRaises(ValueError):assess_acceptance(e,r,o|change)
+    def test_cannot_amend_delivery_scope_silently(self):
+        e=fixture()
+        with self.assertRaises(ValueError):
+            validate("amendment",e,delta(e,{"deliveryTarget":e["deliveryTarget"]|{"scope":"internal","consumerJourney":[]}}))
+
+    def test_project_acceptance_pins_integrated_observations(self):
+        e=fixture();repo=e["repositories"][0]["id"]
+        pin="sha256:"+"c"*64
+        e["deliveryTarget"]["integration"]={"repository":repo,"contractDigest":pin}
+        r=result(e)
+        target="d"*40
+        good=dict(status="PASS",evidenceRefs=["ci:observation"])
+        checks={k:e[k] for k in ("schemaVersion","project","runId","attemptId","taskId")} | dict(
+            kind="acceptance-check-observations",briefRevision=e["briefRevision"],briefDigest=digest(e),resultDigest=digest(r),
+            reviewerRef="supervisor:review",targetEvidence=good,
+            integration=dict(contractDigest=pin,candidateCommit=r["revisions"][0]["headSha"],targetCommit=target,generation=2),
+            checkResults=[dict(id=c["id"],repository=repo,revision=target,**good)
+                          for stage in ("workerChecks","supervisorChecks") for c in e["verificationPlan"][stage]])
+        assessment=project_acceptance(e,r,checks)
+        self.assertEqual(assessment["status"],"CANDIDATE_READY")
+        self.assertEqual(assessment["targetCommit"],target)
+        self.assertEqual(assessment["contractDigest"],pin)
+        self.assertEqual(project_acceptance(e,r,checks|{"checkResults":[]})["status"],"NOT_RUN")
+        checks["checkResults"][0]["revision"]="e"*40
+        with self.assertRaises(ValueError):project_acceptance(e,r,checks)

@@ -38,7 +38,7 @@ class RecoveryTests(unittest.TestCase):
             d=Path(root)
             (d/"session.json").write_text('{"session_id":"s","is_error":false,"num_turns":2}')
             (d/"report.json").write_text('{"kind":"agent-loop-report","iteration":"1","verdict":"PASS","session":{"session_id":"s"}}')
-            self.assertTrue(iteration.valid_report(d,"1"))
+            self.assertFalse(iteration.valid_report(d,"1"))  # legacy administrative PASS is not delivery
             a=iteration.archive_attempt(d,"obs:1")
             self.assertTrue((a/"report.json").exists());self.assertFalse((d/"report.json").exists())
     def test_catalog(self):

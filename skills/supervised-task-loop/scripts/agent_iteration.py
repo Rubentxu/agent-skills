@@ -247,8 +247,13 @@ def construir_informe(rt: Runtime, dir_iter: Path, handoff: dict[str, str], inic
         str(informe),
     ]
     relay=report.leer_json(str(dir_iter/"relay-state.json"))
-    if relay.get("taskId"):
-        orden.extend(["--expected-task",relay["taskId"]])
+    expected=relay.get("taskId") or handoff.get("expected_task")
+    if expected:
+        orden.extend(["--expected-task",expected])
+    # The operator/outer supervisor supplies this observation after checking evidence.
+    observation = os.environ.get("AGENT_DELIVERY_OBSERVATION", "").strip()
+    if observation:
+        orden.extend(["--delivery-observation", str(Path(observation).resolve())])
     completion=report.leer_json(str(dir_iter/"completion.json"))
     if type(completion.get("exitCode")) is int:
         orden.extend(["--exit-code",str(completion["exitCode"])])
@@ -297,6 +302,9 @@ def valid_report(d,iteration):
     session=report.leer_json(str(d/"session.json"))
     return (value.get("kind")=="agent-loop-report" and str(value.get("iteration"))==iteration
             and value.get("verdict") in ("PASS","FAIL","BLOCKED")
+            and (value.get("verdict") != "PASS" or (value.get("schema_version") == 2
+                 and value.get("sessionVerdict") == "PASS"
+                 and bool(value.get("deliveryObservationDigest"))))
             and report.estado_sesion(session)=="COMPLETED"
             and isinstance(value.get("session"),dict) and value["session"].get("session_id")==session.get("session_id"))
 
@@ -304,6 +312,8 @@ def finish_report(rt,d,iteration):
     value=report.leer_json(str(d/"report.json"))
     if not value:
         raise Negativa("informe invalido")
+    if value.get("verdict") == "PASS" and not valid_report(d, iteration):
+        raise Negativa("PASS historico o sin observacion tecnica; reconciliar")
     dest=rt.home_repo/"build/reports/agent-loop"
     dest.mkdir(parents=True,exist_ok=True)
     # Existing report is immutable; copy rather than remeasure.
@@ -389,6 +399,9 @@ def ejecutar_bajo_lock(rt: Runtime, iteracion: str) -> int:
     if valid_report(d,iteracion) and (not relay_task or ledger.get("attempts")==2 or report.leer_json(str(d/"report.json")).get("verdict")=="PASS"):
         return finish_report(rt,d,iteracion)
     if relay_task:
+        pinned=report.leer_json(str(d/"handoff.json")).get("expected_task")
+        if pinned and relay_task != pinned:
+            raise Negativa("relevo de otra tarea que la sesion fijada")
         if not any((d/n).exists() for n in ("session.json","launch-intent.json","report.json","sesion.pid")):
             raise Negativa("relevo sin intento anterior")
         ledger=prepare_relay(rt,d,iteracion,process,recovery_ref(iteracion),relay_task)
@@ -427,6 +440,9 @@ def ejecutar_bajo_lock(rt: Runtime, iteracion: str) -> int:
         write_json(d/"handoff.json",handoff)
         prompt=d/"prompt.md"
         shutil.copyfile(rt.state/"prompt.md",prompt)
+        if handoff.get("expected_task"):
+            with prompt.open("a",encoding="utf-8") as f:
+                f.write("\\n\\n## Encargo concurrente fijado\\nTrabaja exclusivamente en "+handoff["expected_task"]+". Verifica claim/generacion, conserva el candidato si no puedes integrar y no edites handoffs de otros agentes.\\n".replace("\\n","\n"))
         snapshot(rt,d/"board-before.json")
         inicio=dt.datetime.now(dt.timezone.utc).isoformat()
         (d/"inicio.txt").write_text(inicio,encoding="utf-8")

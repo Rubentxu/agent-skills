@@ -60,6 +60,89 @@ def verified(task):
 
 
 
+def delivery_guard(data, task):
+    """Observe technical acceptance, not just checkbox totals. No CLI execution."""
+    if task.get("acceptanceCriteriaCount", 0) <= 0:
+        return outcome("transition", "BLOCKED", "Final status requires actual acceptance criteria")
+    assessment = data.get("deliveryAssessment")
+    if not isinstance(assessment, dict):
+        return outcome("transition", "INSPECT_MORE", "Observe technical acceptance at the authorized delivery target")
+    if (assessment.get("kind") != "delivery-assessment" or assessment.get("schemaVersion") != 1
+            or assessment.get("taskId") != task["id"]
+            or assessment.get("acceptanceCriteriaCount") != task["acceptanceCriteriaCount"]
+            or assessment.get("definitionOfDoneCount") != task["definitionOfDoneCount"]):
+        return outcome("transition", "INSPECT_MORE", "Delivery assessment identity or criteria inventory differs")
+    pin = data.get("acceptanceTaskDigest")
+    if (not isinstance(pin, str) or not re.fullmatch(r"sha256:[0-9a-f]{64}", pin)
+            or assessment.get("taskDigest") != pin or data.get("currentContractCompared") is not True):
+        return outcome("transition", "INSPECT_MORE", "Compare original authorized contract with current task before closing")
+    scope = assessment.get("scope")
+    proof = assessment.get("observationDigest")
+    if (scope not in ("research", "internal", "integration", "product-capability", "release")
+            or not isinstance(assessment.get("targetRef"), str) or not assessment["targetRef"].strip()
+            or not isinstance(proof, str) or not re.fullmatch(r"[0-9a-f]{64}", proof)):
+        return outcome("transition", "INSPECT_MORE", "Scope, target and observation provenance required")
+    if assessment.get("status") in ("FAIL", "BLOCKED"):
+        return outcome("transition", "BLOCKED", "Technical acceptance not satisfied")
+    if assessment.get("status") != "CANDIDATE_READY":
+        return outcome("transition", "INSPECT_MORE", "Technical acceptance not yet evidenced")
+    # The caller independently checks the sources. A JSON projection grants no permissions.
+    return None
+
+
+def reconcile_delivery(data):
+    """Inspect supplied task/evidence observations without mutating the tracker."""
+    if data.get("schemaVersion") != 1 or data.get("kind") != "delivery-reconciliation-input":
+        raise ValueError("invalid reconciliation input")
+    terminal = text(data.get("terminalStatus"), "terminal status")
+    tasks = data.get("tasks")
+    observations = data.get("observations")
+    if not isinstance(tasks, list) or not isinstance(observations, list) or len(tasks) > 1000:
+        raise ValueError("observed inventories required")
+    by_id = {}
+    for row in observations:
+        if not isinstance(row, dict) or row.get("status") not in ("CANDIDATE_READY", "FAIL", "BLOCKED", "NOT_RUN"):
+            raise ValueError("invalid technical observation")
+        ident = text(row.get("taskId"), "task identity")
+        if ident in by_id:
+            raise ValueError("duplicate observation")
+        if row["status"] != "NOT_RUN" and not strings(row.get("evidenceRefs", []), "evidence references"):
+            raise ValueError("positive or negative claim requires evidence")
+        by_id[ident] = row
+    findings = []
+    seen = set()
+    for task in tasks:
+        task = task_observed(task)
+        ident = task["id"]
+        if ident in seen:
+            raise ValueError("duplicate task")
+        seen.add(ident)
+        row = by_id.get(ident)
+        state = row["status"] if row else "NOT_RUN"
+        reasons = []
+        for k in ("acceptanceCriteria", "definitionOfDone"):
+            count, done = task.get(k + "Count"), task.get(k + "Completed")
+            if count is not None and done is not None and count != done:
+                reasons.append(k + " incomplete")
+        if task["status"] == terminal:
+            if reasons or state == "FAIL":
+                decision = "RECONCILE_CLOSURE"
+            elif not verified(task) or state != "CANDIDATE_READY":
+                decision = "INSPECT_EVIDENCE"
+            else:
+                decision = "KEEP_AS_IS"
+        elif state == "CANDIDATE_READY":
+            decision = "INSPECT_EXISTING_DELIVERY"
+        else:
+            decision = "KEEP_OPEN"
+        findings.append({"taskId": ident, "decision": decision, "reasons": reasons,
+                         "observationStatus": state, "evidenceRefs": row.get("evidenceRefs", []) if row else []})
+    if set(by_id) - seen:
+        raise ValueError("unknown observed task")
+    return {"schemaVersion": 1, "kind": "delivery-reconciliation", "findings": findings,
+            "authorized": False, "runtimeVerified": False}
+
+
 def _owners(value):
     """An empty observed assignees list is a shared, unassigned WIP lane."""
     if not isinstance(value, list) or any(not isinstance(x, str) or not x.strip() for x in value):
@@ -188,6 +271,10 @@ def plan(data):
                 return outcome(op, "NO_CHANGE", "Already in target column")
             if target == terminal and not verified(task):
                 return outcome(op, "BLOCKED", "Final status requires observed completion of AC/DoD; no administrative gate is required")
+            if target == terminal:
+                guard = delivery_guard(data, task)
+                if guard is not None:
+                    return guard
             if current == terminal and target != terminal and not data.get("reopenReason"):
                 return outcome(op, "INSPECT_MORE", "Reopening needs an explicit reason")
             if current == default and target != terminal and task.get("isReady") is False:
@@ -233,7 +320,8 @@ def main():
     if len(sys.argv) != 2:
         raise SystemExit("Usage: board_crud.py <board-operation.json>")
     data = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
-    print(json.dumps(plan(data), ensure_ascii=False, indent=2))
+    result = reconcile_delivery(data) if data.get("kind") == "delivery-reconciliation-input" else plan(data)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
 
 
 if __name__ == "__main__":

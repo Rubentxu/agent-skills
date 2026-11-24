@@ -30,7 +30,7 @@ def assess(v):
     for f in rows(v["facts"]):
         fields(f,("id","claim","scope","sourcePins","evidenceRef","kind"))
         fid=txt(f["id"]);txt(f["claim"]);txt(f["scope"]);txt(f["evidenceRef"])
-        if fid in seen or f["kind"] not in ("static","runtime","permission","security"): raise ValueError("invalid fact")
+        if fid in seen or f["kind"] not in ("static","runtime","permission","security","administrative","delivery"): raise ValueError("invalid fact")
         seen.add(fid)
         pins={}
         for p in rows(f["sourcePins"]):

@@ -163,3 +163,6 @@ Un hook de lectura puede añadir al contexto IDs de propietario C4 observados, p
 ## Delegación preparada
 
 Antes de asignar un worker aplicar [readiness técnica](references/lenses/technical-readiness.md) y el handoff de autoridad actual con pin de contenido. Un agente administrativo efímero autorizado registra evidencias/estado decidido sin reexaminar implementación ni alterar AC/DoD unilateralmente; si el estado cambió, reconciliar con el supervisor. Usar delivery-first-testing para planes mínimos con garantías reales.
+
+## Veracidad de la entrega
+Antes de cerrar o usar una dependencia Done, comprobar el resultado comprometido cuando haya señales de contradicción; no confundir tracker y realidad técnica. Aplicar [verificación](references/lenses/verification.md) y [revisión](references/lenses/review-maintenance.md). No degradar el alcance a posteriori ni desbloquear dependientes con una capacidad incompleta.

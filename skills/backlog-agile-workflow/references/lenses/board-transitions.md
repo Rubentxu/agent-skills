@@ -9,3 +9,5 @@
 7. Revisar callbacks `onStatusChange`, efectos Git y permisos según riesgos reales de cada operación; releer el estado después de mutar.
 
 `board_crud.py` propone argumentos; sus simulaciones optativas de WIP o evidencia no sustituyen la CLI ni el juicio técnico.
+
+En terminal, los contadores completos son necesarios, no suficientes. Contrastar alcance de entrega, AC/DoD originales y evidencia primaria vigente. Si hay discrepancia, no proponer ni ejecutar cierre; preservar trabajo parcial y consultar verificación. No archivar como completado un cierre contradicho.
