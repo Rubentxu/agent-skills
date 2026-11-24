@@ -114,3 +114,6 @@ A los 45 min aproximadamente evalúa trabajo restante; a 50 min prepara salida, 
 ## Eficiencia y continuidad
 
 El supervisor de esta sesion prepara las comprobaciones afectadas con delivery-first-testing, no repite hechos vigentes ni ejecuta suites ajenas. No generar prosa extensa; si un recurso queda vivo, dejar operationKey, identidad, estado observado, resultado esperado y siguiente accion en el handoff. La siguiente sesion adopta el recurso, no lo relanza. Respetar deadlines absolutos anexados al prompt y entregar estado parcial antes del soft deadline.
+
+## Aceptación técnica
+Antes de cerrar, contrasta cada AC y DoD original con evidencia vigente y el destino de entrega autorizado. Una prueba interna no acredita acceso público; un cliente nativo exigido no se sustituye por un fixture. Si falta una garantía, conserva la tarea abierta y el checkpoint. El handoff y la transición son hechos operativos, no certifican entrega. No fabriques ni escribas la observación externa de aceptación: corresponde al verificador autorizado que controla el runtime.

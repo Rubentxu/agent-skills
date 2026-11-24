@@ -90,7 +90,7 @@ coste de la sesión:
 - **Trabajo largo** (> 2 min): en background, **dentro de su slice**, y se espera a su
   **fichero de veredicto** con timeout holgado (`await_verdict.py`). Nunca un timeout corto
   que expire antes del trabajo; nunca bucles `until ... sleep` para sondear.
-- **PRs**: autorización implícita para push, PR y merge, pero el título y el cuerpo en el
+- **PRs**: push, PR y merge requieren autorización efectiva; el título y el cuerpo en el
   estilo del repo y **sin mencionar herramientas ni agentes** (la política del repo lo
   bloquea).
 - **Al terminar**: actualizar el handoff, **liberar lo que la tarea creó** (worktrees, ramas,

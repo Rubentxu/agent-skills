@@ -249,6 +249,10 @@ def construir_informe(rt: Runtime, dir_iter: Path, handoff: dict[str, str], inic
     relay=report.leer_json(str(dir_iter/"relay-state.json"))
     if relay.get("taskId"):
         orden.extend(["--expected-task",relay["taskId"]])
+    # The operator/outer supervisor supplies this observation after checking evidence.
+    observation = os.environ.get("AGENT_DELIVERY_OBSERVATION", "").strip()
+    if observation:
+        orden.extend(["--delivery-observation", str(Path(observation).resolve())])
     completion=report.leer_json(str(dir_iter/"completion.json"))
     if type(completion.get("exitCode")) is int:
         orden.extend(["--exit-code",str(completion["exitCode"])])
@@ -297,6 +301,9 @@ def valid_report(d,iteration):
     session=report.leer_json(str(d/"session.json"))
     return (value.get("kind")=="agent-loop-report" and str(value.get("iteration"))==iteration
             and value.get("verdict") in ("PASS","FAIL","BLOCKED")
+            and (value.get("verdict") != "PASS" or (value.get("schema_version") == 2
+                 and value.get("sessionVerdict") == "PASS"
+                 and bool(value.get("deliveryObservationDigest"))))
             and report.estado_sesion(session)=="COMPLETED"
             and isinstance(value.get("session"),dict) and value["session"].get("session_id")==session.get("session_id"))
 
@@ -304,6 +311,8 @@ def finish_report(rt,d,iteration):
     value=report.leer_json(str(d/"report.json"))
     if not value:
         raise Negativa("informe invalido")
+    if value.get("verdict") == "PASS" and not valid_report(d, iteration):
+        raise Negativa("PASS historico o sin observacion tecnica; reconciliar")
     dest=rt.home_repo/"build/reports/agent-loop"
     dest.mkdir(parents=True,exist_ok=True)
     # Existing report is immutable; copy rather than remeasure.
