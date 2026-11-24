@@ -28,6 +28,7 @@ CÓDIGOS DE SALIDA
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 import sys
@@ -261,7 +262,16 @@ def preparar(rt: Runtime) -> dict[str, str]:
     Si el documento no existe, se crea con su esqueleto: siempre hay un handoff valido, aunque
     la sesion falle.
     """
-    doc_id = resolver_doc(rt)
+    expected=os.environ.get("AGENT_EXPECTED_TASK","").strip()
+    explicit=os.environ.get("AGENT_HANDOFF_DOC_ID","").strip()
+    if expected:
+        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,127}",expected):
+            raise Negativa("taskId fijado invalido")
+        if not re.fullmatch(r"doc-[0-9]+",explicit) or not os.environ.get("AGENT_STATE","").strip():
+            raise Negativa("modo concurrente requiere documento exclusivo y AGENT_STATE propio")
+    elif explicit:
+        raise Negativa("handoff exclusivo requiere AGENT_EXPECTED_TASK")
+    doc_id = explicit or resolver_doc(rt)
     if not doc_id:
         print(
             f"handoff: el documento \"{TITULO_DOC}\" no existe; se crea con su esqueleto.",
@@ -283,6 +293,7 @@ def preparar(rt: Runtime) -> dict[str, str]:
         "doc_id": doc_id,
         "doc_path": doc_path,
         "updated_before": updated_antes,
+        "expected_task": expected or None,
         "ronda": ronda,
     }
 

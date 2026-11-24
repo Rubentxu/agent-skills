@@ -126,6 +126,17 @@ class VeredictoTests(unittest.TestCase):
         self.assertEqual(veredicto, informe.FAIL)
 
 
+    def test_concurrent_board_changes_are_not_this_tasks_delivery(self):
+        one={"id":"HSP-228"}
+        other={"id":"IDP-0125"}
+        board={"tasks_closed":[other,one],"task_closed":other,"tasks_started":[other],"tasks_advanced":[other,one]}
+        scoped=informe.attributed_board(board,"HSP-228")
+        self.assertEqual(scoped["tasks_closed"],[one])
+        self.assertEqual(scoped["task_closed"],one)
+        self.assertEqual(scoped["tasks_started"],[])
+        self.assertIsNone(informe.attributed_board(board,"HSP-999")["task_closed"])
+        self.assertEqual(board["task_closed"],other)
+
     def test_delivery_requires_exact_observed_evidence(self):
         before = {"tasks": [{"id": "HSP-228", "status": "To Do", "acceptanceCriteriaCount": 1, "acceptanceCriteriaCompleted": 0}]}
         after = {"tasks": [{"id": "HSP-228", "status": "Done", "acceptanceCriteriaCount": 1, "acceptanceCriteriaCompleted": 1}]}

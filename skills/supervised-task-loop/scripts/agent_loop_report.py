@@ -652,13 +652,28 @@ def elegir_pr_de_la_tarea(prs: list[dict], id_tarea: str | None) -> dict | None:
     return max(candidatos, key=lambda p: str(p.get("mergedAt") or ""))
 
 
+def attributed_board(board, expected):
+    """Separate unrelated board changes from this task. No task identity guessed."""
+    if not expected:
+        return board
+    scoped = dict(board)
+    for plural,singular in (("tasks_closed","task_closed"),("tasks_started","task_started"),("tasks_advanced",None)):
+        rows = board.get(plural, [])
+        scoped[plural] = [row for row in rows if row.get("id") == expected]
+        if singular:
+            scoped[singular] = next(iter(scoped[plural]), None)
+    return scoped
+
+
 def construir(args) -> dict:
     before_snapshot = leer_json(args.before)
     after_snapshot = leer_json(args.after)
     antes = estados_del_tabulario(before_snapshot)
     despues = estados_del_tabulario(after_snapshot)
     terminal = set(args.terminal_status or ["Done"])
-    tablero = diff_del_tabulario(antes, despues, terminal)
+    all_changes = diff_del_tabulario(antes, despues, terminal)
+    expected = getattr(args, "expected_task", None)
+    tablero = attributed_board(all_changes, expected)
 
     session = leer_json(args.session)
     sesion_arrancada = estado_sesion(session) == "COMPLETED"
@@ -783,6 +798,8 @@ def construir(args) -> dict:
         "reason": razon,
         "diagnostic": diagnostico(session, tablero, handoff, veredicto, getattr(args, "exit_code", None)),
         "board": tablero,
+        "concurrentBoard": {"unattributedClosures": len(all_changes["tasks_closed"])-len(tablero["tasks_closed"]),
+                            "identityPinned": bool(expected)},
         "session": sesion,
         "transcript": transcript,
         "changes": cambios,

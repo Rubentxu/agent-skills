@@ -68,7 +68,8 @@ class SchedulerTests(unittest.TestCase):
         from multi_agent import PREFIX
         pin="sha256:"+"1"*64
         claim=dict(v=1,type="CLAIM",id="c",actor="worker",generation=1,at="2026-11-22T11:00:00Z",
-                   claimId="c",harness="codex",resources=["repo://p/a"],leaseUntil="2026-11-22T11:30:00Z",contractDigest=pin)
+                   claimId="c",harness="codex",resources=["repo://p/a"],leaseUntil="2026-11-22T11:30:00Z",contractDigest=pin,
+                   deliveryIntent=dict(repository="p",targetRef="refs/heads/main",targetRemote="origin",scope="integration",authorityRef="policy:approved"))
         candidate=dict(repository="p",baseCommit="a"*40,candidateCommit="b"*40,candidateRef="refs/heads/feature",
                        targetRef="refs/heads/main",contractDigest=pin,scope="integration")
         deliver=dict(v=1,type="DELIVER",id="d",actor="worker",generation=1,at=claim["at"],claimId="c",

@@ -117,3 +117,5 @@ El supervisor de esta sesion prepara las comprobaciones afectadas con delivery-f
 
 ## Aceptación técnica
 Antes de cerrar, contrasta cada AC y DoD original con evidencia vigente y el destino de entrega autorizado. Una prueba interna no acredita acceso público; un cliente nativo exigido no se sustituye por un fixture. Si falta una garantía, conserva la tarea abierta y el checkpoint. El handoff y la transición son hechos operativos, no certifican entrega. No fabriques ni escribas la observación externa de aceptación: corresponde al verificador autorizado que controla el runtime.
+
+Si existe protocolo de coordinación activo, antes de cerrar seguir DELIVER/ADOPT/COMPLETE de backlog-agile-workflow. No eliminar el último ref del candidato, ramas consumidas por dependientes ni evidencias necesarias. Si el trabajo está preservado pero no integrado, reportar pendiente, no reimplementar ni marcar Done. Usar el modo de handoff exclusivo si la sesión es concurrente.

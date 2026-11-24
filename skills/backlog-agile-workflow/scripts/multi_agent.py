@@ -89,6 +89,21 @@ def contract_digest(task):
                         separators=(",", ":"), allow_nan=False).encode()).hexdigest()
 
 
+def delivery_intent(value):
+    if not isinstance(value, dict) or set(value) != {"repository", "targetRef", "targetRemote", "scope", "authorityRef"}:
+        raise ValueError("Explicit authorized delivery intent required")
+    _id(value["repository"], "canonical repository")
+    if not isinstance(value["targetRef"], str) or not re.fullmatch(r"refs/heads/[A-Za-z0-9][A-Za-z0-9._/-]{0,240}", value["targetRef"]) or ".." in value["targetRef"] or "//" in value["targetRef"]:
+        raise ValueError("Explicit target branch required")
+    if not isinstance(value["targetRemote"], str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,120}", value["targetRemote"]):
+        raise ValueError("Explicit configured target remote required")
+    if value["scope"] not in ("integration", "product-capability", "release"):
+        raise ValueError("Integration intent requires integrated delivery scope")
+    if not isinstance(value["authorityRef"], str) or not value["authorityRef"].strip() or len(value["authorityRef"]) > 512:
+        raise ValueError("Observed policy reference required")
+    return value
+
+
 def candidate_payload(value):
     if not isinstance(value, dict) or set(value) != {"repository", "baseCommit", "candidateCommit",
             "candidateRef", "targetRef", "contractDigest", "scope"}:
@@ -124,6 +139,10 @@ def _event(obj: Any) -> dict[str, Any]:
         _resources(obj.get("resources"))
         _id(obj.get("harness"), "harness")
         utc(obj.get("leaseUntil"))
+        if "deliveryIntent" in obj:
+            if t != "CLAIM":
+                raise ValueError("Intent cannot change on adoption")
+            delivery_intent(obj["deliveryIntent"])
         if "contractDigest" in obj and not re.fullmatch(r"sha256:[a-f0-9]{64}", str(obj["contractDigest"])):
             raise ValueError("Invalid contract digest")
         if "originalStatus" in obj or "workingStatus" in obj:
@@ -187,7 +206,7 @@ def replay(events: list[dict[str, Any]]) -> dict[str, Any]:
                              "leaseUntil": None, "resources": [], "phase": "AVAILABLE",
                              "lastHeartbeatAt": None, "lastProgressAt": None,
                              "checkpointRef": None, "requestId": None, "claimAt": None, "lastReason": None, "requestStatus": None,
-                             "originalStatus": None, "workingStatus": None, "candidate": None, "contractDigest": None, "integrationOwner": False, "completion": None}
+                             "originalStatus": None, "workingStatus": None, "candidate": None, "contractDigest": None, "deliveryIntent": None, "integrationOwner": False, "completion": None}
     for obj in events:
         ev = _event(obj)
         t, gen, actor = ev["type"], ev["generation"], ev["actor"]
@@ -204,7 +223,7 @@ def replay(events: list[dict[str, Any]]) -> dict[str, Any]:
                          contractDigest=ev.get("contractDigest") if t == "CLAIM" else state["contractDigest"],
                          integrationOwner=(t == "ADOPT"))
             if t == "CLAIM":
-                state.update(candidate=None, completion=None)
+                state.update(candidate=None, completion=None, deliveryIntent=ev.get("deliveryIntent"))
             continue
         if gen != prev:
             raise Conflict("Stale event generation")
@@ -246,6 +265,9 @@ def replay(events: list[dict[str, Any]]) -> dict[str, Any]:
         elif t == "DELIVER":
             if state["phase"] != "ACTIVE" or not state["contractDigest"] or ev["candidate"]["contractDigest"] != state["contractDigest"]:
                 raise Conflict("Candidate requires unchanged claimed contract")
+            intent = state["deliveryIntent"]
+            if not intent or any(ev["candidate"][k] != intent[k] for k in ("repository","targetRef","scope")):
+                raise Conflict("Candidate differs from authorized intent at claim")
             if state["candidate"] is not None:
                 raise Conflict("Existing candidate must be reconciled, not overwritten")
             state.update(phase="AWAITING_INTEGRATION", candidate=ev["candidate"], owner=None,

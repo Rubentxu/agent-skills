@@ -256,11 +256,15 @@ class DistributedSmoke(unittest.TestCase):
         c={"repository":"product","baseCommit":base,"candidateCommit":candidate,"candidateRef":"refs/heads/candidate",
            "targetRef":"refs/heads/main","contractDigest":pin,"scope":"integration"}
         path=self.root/"candidate.json";path.write_text(json.dumps(c))
+        intent=self.root/"intent.json";intent.write_text(json.dumps(dict(repository="product",targetRef="refs/heads/main",targetRemote="origin",scope="integration",authorityRef="policy:authorized")))
         def call(action,actor="worker",claim_id="c1",generation=1,**kw):
             return self.cli_call(action,task="TASK-1",actor=actor,claim_id=claim_id,generation=generation,**kw)
         one=call("claim",generation=0,harness="codex",lease_until="2026-11-22T11:30:00Z",
-                 resource=["repo://product/src"],working_status="In Progress")
+                 resource=["repo://product/src"],working_status="In Progress",delivery_intent_file=intent)
         self.assertEqual(one.returncode,0,one.stderr)
+        path.write_text(json.dumps(c|{"targetRef":"refs/heads/other"}))
+        self.assertNotEqual(call("deliver",candidate_file=path,product_repo=product,resources_clear=True,evidence_ref="checkpoint").returncode,0)
+        path.write_text(json.dumps(c))
         d=call("deliver",candidate_file=path,product_repo=product,resources_clear=True,evidence_ref="checkpoint")
         self.assertEqual(d.returncode,0,d.stderr)
         self.assertEqual(json.loads(d.stdout)["phase"],"AWAITING_INTEGRATION")

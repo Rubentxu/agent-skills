@@ -20,7 +20,7 @@ import sys
 import tempfile
 import uuid
 
-from multi_agent import (COORD_LABELS, Conflict, conflict_with_active, contract_digest, candidate_payload,
+from multi_agent import (COORD_LABELS, Conflict, conflict_with_active, contract_digest, candidate_payload, delivery_intent,
                          labels_for_phase, make_event, parse_comments,
                          replay, task_candidate, task_state, triage, utc)
 
@@ -113,8 +113,8 @@ def observe_completion(opts, task, state):
     candidate = state["candidate"]
     if not candidate or not state["integrationOwner"] or contract_digest(task) != candidate["contractDigest"]:
         raise Conflict("Candidate contract changed or integration not adopted")
-    if not opts.target_remote:
-        raise ValueError("Completion needs observed remote target")
+    if not opts.target_remote or not state["deliveryIntent"] or opts.target_remote != state["deliveryIntent"]["targetRemote"]:
+        raise ValueError("Completion needs the originally authorized remote target")
     target = observe_candidate(candidate, opts.product_repo, opts.target_remote)
     a = read_object(opts.assessment_file)
     required = {"taskId": task["id"], "contractDigest": candidate["contractDigest"],
@@ -174,6 +174,8 @@ def _retry_matches(existing: dict, action: str, opts: argparse.Namespace) -> boo
         return False
     if action == "claim" and opts.working_status and existing.get("workingStatus") != opts.working_status:
         return False
+    if action == "claim" and existing.get("deliveryIntent") != (read_object(opts.delivery_intent_file) if opts.delivery_intent_file else None):
+        return False
     return True
 
 
@@ -200,11 +202,17 @@ def _event_for(action: str, opts: argparse.Namespace, state: dict, now: str,
                 fields["contractDigest"] = contract_digest(task)
             except ValueError:
                 pass  # Legacy task views can still claim, but not submit integrated candidates.
+            if opts.delivery_intent_file:
+                fields["deliveryIntent"] = delivery_intent(read_object(opts.delivery_intent_file))
+                if not fields.get("contractDigest"):
+                    raise ValueError("Integrated delivery needs full task contract")
         else:
             if state["candidate"] is None or contract_digest(task) != state["candidate"]["contractDigest"]:
                 raise Conflict("Candidate contract changed; reconcile first")
             # If a previous merge succeeded before a crash, allow adopting from the integrated target.
             if opts.target_remote:
+                if opts.target_remote != state["deliveryIntent"]["targetRemote"]:
+                    raise Conflict("Remote differs from original intent")
                 observe_candidate(state["candidate"], opts.product_repo, opts.target_remote)
             else:
                 observe_candidate(state["candidate"], opts.product_repo)
@@ -380,6 +388,7 @@ def main() -> None:
     parser.add_argument("--resources-clear", action="store_true")
     parser.add_argument("--grace-minutes", type=int, default=20)
     parser.add_argument("--at", help="UTC observation time; host must ensure trustworthy clock")
+    parser.add_argument("--delivery-intent-file", help="Authorized scope and target before delegation")
     parser.add_argument("--candidate-file")
     parser.add_argument("--assessment-file")
     parser.add_argument("--product-repo")
