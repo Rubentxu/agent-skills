@@ -38,3 +38,6 @@ Si el host descubre `backlog-agile-workflow` en `available_skills`, consultar [g
 - No afirmar aislamiento ni observabilidad no demostrados; las pruebas puras no certifican el host.
 - Si falta una skill, declarar la capacidad degradada; no inventar equivalentes ni instalar automáticamente. La ausencia de conocimiento no bloquea trabajo técnicamente independiente autorizado.
 - Ver [recuperación](references/recovery.md) para interrupciones y reconciliación.
+
+## Aceptación de entrega
+Antes de delegar fijar deliveryTarget autorizado y, para producto/release, el recorrido público y su comprobación del supervisor. READY_FOR_REVIEW nunca es aceptación. Seguir [verificación proporcional](references/proportional-verification.md) y validar la observación independiente con el contrato accept; no conceder Done por estructura válida. Un cambio de alcance requiere nuevo brief autorizado.

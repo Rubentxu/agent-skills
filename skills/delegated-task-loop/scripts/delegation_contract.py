@@ -61,7 +61,7 @@ def envelope(v):
              "liveResources", "verificationPlan", "executionPolicy", "criterionOwners", "nonGoals",
              "contingencies", "openQuestions") if version == 2 else ()
     header(v, "delegation-envelope", ("objective", "criteria", "repositories", "policyRefs",
-           "authorityHandoffRef", "knowledgePackRef", "reviewProfile", "contextBudgetBytes", "resultBudgetBytes", *extra), optional=("pacing","continuity") if version==2 else (), version=version)
+           "authorityHandoffRef", "knowledgePackRef", "reviewProfile", "contextBudgetBytes", "resultBudgetBytes", *extra), optional=("pacing","continuity","deliveryTarget") if version==2 else (), version=version)
     text(v["objective"], "objective", 4096)
     cs = items(v["criteria"], "criteria")
     if not cs:
@@ -100,6 +100,8 @@ def envelope(v):
             raise ValueError("invalid budget " + k)
     if version == 2:
         extended(v, ids, names)
+        if "deliveryTarget" in v:
+            delivery_target(v)
         if "pacing" in v: validate_schedule(v["pacing"])
         if "continuity" in v:
             c=v["continuity"]
@@ -218,6 +220,73 @@ def extended(v, ids, repos):
     text(contingencies["stopWhen"],"stop condition")
     if refs(v["openQuestions"],"material questions"):
         raise ValueError("resolve material questions before implementation")
+
+def delivery_target(e):
+    """Pin the authorized delivery boundary and map public steps to supervisor checks."""
+    target = e["deliveryTarget"]
+    obj(target, ("scope", "targetRef", "authorityRef", "consumerJourney"))
+    if target["scope"] not in ("research", "internal", "integration", "product-capability", "release"):
+        raise ValueError("unknown delivery scope")
+    text(target["targetRef"], "delivery target")
+    text(target["authorityRef"], "delivery authority")
+    steps = items(target["consumerJourney"], "consumer journey", 24)
+    if target["scope"] in ("product-capability", "release") and not steps:
+        raise ValueError("public delivery requires consumer journey")
+    checks = {c["id"] for c in e["verificationPlan"]["supervisorChecks"]}
+    seen = set()
+    for step in steps:
+        obj(step, ("id", "statement", "checkId"))
+        sid = text(step["id"], "journey step")
+        text(step["statement"], "consumer observable", 4096)
+        if sid in seen or step["checkId"] not in checks:
+            raise ValueError("journey step lacks assigned supervisor check")
+        seen.add(sid)
+
+
+def assess_acceptance(e, r, observation):
+    """Project independently observed evidence. Never authorize or authenticate it."""
+    result(r, e)
+    if e["schemaVersion"] != 2 or "deliveryTarget" not in e:
+        raise ValueError("delivery target required for acceptance; legacy briefs need revalidation")
+    header(observation, "acceptance-observation",
+           ("briefRevision", "briefDigest", "resultDigest", "taskDigest",
+            "reviewerRef", "targetRef", "targetEvidence", "criteria", "journey"), version=2)
+    match(observation, e)
+    if observation["resultDigest"] != digest(r) or observation["taskDigest"] != e["taskDigest"]:
+        raise ValueError("stale worker result or task")
+    target = e["deliveryTarget"]
+    if observation["targetRef"] != target["targetRef"]:
+        raise ValueError("delivery target changed")
+    text(observation["reviewerRef"], "supervisor observation source")
+    outcomes = []
+    def check(row):
+        obj(row, ("status", "evidenceRefs"))
+        state = row["status"]
+        if state not in ("PASS", "FAIL", "BLOCKED", "NOT_RUN"):
+            raise ValueError("invalid observation status")
+        evidence = refs(row["evidenceRefs"], "observed evidence")
+        if state != "NOT_RUN" and not evidence:
+            raise ValueError("observation needs primary evidence")
+        outcomes.append(state)
+    check(observation["targetEvidence"])
+    for field, ids in (("criteria", {c["id"] for c in e["criteria"]}),
+                       ("journey", {s["id"] for s in target["consumerJourney"]})):
+        entries = observation[field]
+        if not isinstance(entries, dict) or set(entries) != ids:
+            raise ValueError("incomplete or unknown " + field + " evidence")
+        for row in entries.values():
+            check(row)
+    status = next((s for s in ("FAIL", "BLOCKED", "NOT_RUN") if s in outcomes), "CANDIDATE_READY")
+    if r["outcome"] != "READY_FOR_REVIEW" and status == "CANDIDATE_READY":
+        status = "NOT_RUN"
+    return {"schemaVersion": 1, "kind": "delivery-assessment", "taskId": e["taskId"],
+            "taskDigest": e["taskDigest"], "briefDigest": digest(e), "resultDigest": digest(r),
+            "scope": target["scope"], "targetRef": target["targetRef"],
+            "observationDigest": digest(observation), "status": status,
+            "acceptanceCriteriaCount": sum(c["kind"] == "AC" for c in e["criteria"]),
+            "definitionOfDoneCount": sum(c["kind"] == "DoD" for c in e["criteria"]),
+            "runtimeVerified": False, "authorized": False}
+
 
 def receipt(v, e):
     envelope(e)
@@ -356,6 +425,9 @@ def read(name):
 
 def main():
     try:
+        if len(sys.argv) == 5 and sys.argv[1] == "accept":
+            print(json.dumps(assess_acceptance(read(sys.argv[2]), read(sys.argv[3]), read(sys.argv[4])), sort_keys=True))
+            return 0
         if len(sys.argv) not in (3, 4) or (sys.argv[1] == "envelope") != (len(sys.argv) == 3):
             raise ValueError("usage: delegation_contract.py envelope FILE | result/checkpoint/receipt/amendment ENVELOPE FILE")
         k = sys.argv[1]

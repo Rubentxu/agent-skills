@@ -10,3 +10,6 @@
 9. No archivar automáticamente y no borrar sin autorización.
 
 **Resultado:** tarea terminada con evidencia o problema técnico pendiente descrito. Nunca declarar DONE sin garantía suficiente ni BLOCKED solo por burocracia.
+
+## Alcance de entrega
+Fijar antes del trabajo el resultado y destino autorizados: investigación, implementación interna, integración, capacidad consumible o release. No reducirlos para cerrar. Antes de marcar criterios, contrastar cada AC/DoD original con evidencia primaria de la revisión/artefacto objetivo; para capacidad pública verificar el recorrido de descubrimiento, configuración y uso por la interfaz real, incluyendo cliente nativo exigido. Fixtures internos no demuestran disponibilidad. Si integración/publicación es parte del objetivo y falta autorización o evidencia, conservar pendiente; si no forma parte, no inventar esa obligación. Cierre de sesión, PR fusionada, contadores y PASS internos son observaciones, no aceptación. Revisar el resultado del contrato accept de delegated-task-loop cuando esté disponible; su estructura no acredita la semántica ni autoriza editar. Registrar referencias compactas a evidencia existente, no informes duplicados.
